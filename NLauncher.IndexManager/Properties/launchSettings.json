@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NLauncher.IndexManager": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\CodingProjects\\NLauncher-Index\\Index"
+    }
+  }
+}
