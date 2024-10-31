@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLauncher.Index.Models.Applications.Installs;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;

@@ -1,0 +1,135 @@
+### Blazor WASM/MAUI hybrid? AOT compiled? ###
+Wait for .NET 9 though, since https://github.com/dotnet/runtime/blob/main/src/libraries/System.Text.Json/src/System/Text/Json/Serialization/JsonStringEnumMemberNameAttribute.cs
+
+[ Repository Spec ]
+File layout:
+- Index
+    - index.json
+    - aliases.json
+
+    - $publisher
+        - $app_name
+            - manifest.json
+            - description.md // description.md build resolves all relative paths to this directory.
+            - assets // (optional) a directory containing all of the assets description.md uses.
+
+            // additional image sizes can be implemented later if needed. Like "icon_512.png" for 512x512 px icon for example
+            - icon.png // 1024x1024 px icon image, used for Discord Rich Presence
+            - banner.png // 1920x1080 px image, used in store page and as a wide library game icon
+            - panel.png // 720x1080 px image, used as the vertical library game icon
+- Binaries
+    - $publisher
+        - $app_name
+            - $vernum ($version_identifier)    // vernum: an incrementing integer value (i.e. 6), version_identifier: The identifier of the release (i.e. 1.9.6)
+                - [zip file | diff file]
+
+[index.json]
+{
+    "repository": {
+        "owner": "string",
+        "repo": "string",
+        "path": "string", // Path from the root of the repository to the root of the index. Use slash '/' for root.
+        "release_asset_name": "string?" // The name of the index JSON file in releases. Can be omitted if release only contains a single file.
+    }
+}
+
+[ aliases.json Spec ]
+// Currently aliases is a dictionary so we can't have duplicated safenames by accident. This can be changed to an object later if necessary. (breaking change)
+// This is also compiled into the index so it's easier to track when we need to refresh the index from GitHub (we can check the release tag before downloading)
+{
+    // Values are nested inside "aliases" so that we can easily extend this json document if necessary (add version counter etc.)
+    "aliases": {
+        // A dictionary which maps all of the reserved app names into their respective apps' UUIDs
+        // safename must be URL safe (i.e. "koponen-dating-simulator")
+        "$safename": "$uuid"
+    }
+}
+
+[ manifest.json Spec ]
+// nullable values can be omitted
+{
+    "display_name": "string",
+    "uuid": "string" // Use UUID to decouple app names from identifiers (so that the publisher and app_name directories can be renamed at will)
+    "developer": "string", // Developer display name
+    "publisher": "string", // Publisher display name, will not be displayed if it is the same as the developer display name
+    "release": {
+        "state": "string", // released | early_access | not_released  (when not_released, app cannot be downloaded)
+        "date": "string?", // Release date as YYYY-MM-DD or null for TBD (should this be higher resolution due to timezones?)
+    },
+    "age_rating": number?, // 3, 7, 10, 13, 16 or 18 as age rating or null for no rating
+    "color": "string?", // #XXXXXX hex color for the app or NLauncher default if omitted
+    "priority": "number?", // an integer to determine the priority of this app in sorting, defaults to 0 if omitted.
+    "versions": [
+        {
+            "vernum": "number", // (i.e. 6)
+            "identifier": "string", // (i.e. 1.9.6)
+            "installs": [
+                // Multiple install options so that we can have separate binary and binary_diff downloads depending on whether the app is updating or installing for the first time
+                // App will pick the best install option during runtime
+                // Empty list means that this app version cannot be installed
+                {
+                    // platforms flag enum can be added later if needed. Currently we only support Windows.
+                    "type": "string", // binary | msix | website (binary_diff type file format not yet determined)
+                #IF BINARY
+                    "download_url": "string", // URL of the zip
+                    "download_hash": "string", // SHA256 hash of the download
+                    "executable_path": "string"
+                #ELIF MSIX
+                    "download_url": "string",
+                    "download_hash": "string",
+                    "app_id": "string" // TODO: Determine the best way to detect that a given MSIX app is installed and how to run it
+                #ELIF WEBSITE
+                    "url": "string",
+                    "supports_pwa": "bool?" // Defaults to false if omitted. PWA functionality is in the backlog and has not yet been implemented.
+                #ENDIF
+                }
+            ]
+        }
+    ]
+}
+
+[ Index Spec ]
+// GitHub repository is compiled into an index on every push, this is a (minified?) JSON file with the following data:
+{
+    "aliases": ..., // copied from aliases.json
+    "metadata": ..., // copied from index.json
+    "index": [
+        {
+            "manifest": ..., // copied from manifest.json
+            "description_html": "string?", // description markdown rendered as HTML. Null if description.md is missing. This could be an attack vector if someone were to make a malicious index release where the HTML contains script tags etc. I'm not that conserned since this is a hobby project, but if this project gets bigger, this should be changed into markdown and compiled into HTML on the user's machine locally instead.
+            "assets": [
+                {
+                    "type": "string", // icon | banner | panel
+                    "width": "number",
+                    "height": "number",
+                    "url": "string"
+                }
+            ]
+        }
+    ]
+}
+
+[ Web Application ]
+Installation:
+- Binary executable
+    - Ask for user to install NLauncher
+	- OR allow to download .zip for manual install (choose from the 2 options)
+	- Playtime will not be tracked.
+- Windows App, MSIX
+	- Ask for user to install NLauncher
+    - OR warn for manual install and open browser to download the MSIX package
+	- Playtime will not be tracked.
+- Website
+    - Navigate to website on a new tab
+
+[ Desktop Application ]
+Installation:
+- Binary executable (KDS, Matriisit, ...)
+	- Track playtime by starting a new process that does not render UI etc. thus reducing system load during gameplay.
+- Windows App, MSIX
+	- Ask user whether they trust the dev certificates and if they do, we install them to Windows.
+	- Playtime will not be tracked. User can start the application easily through Windows.
+- Website
+	- Playtime will not be tracked.
+
+No custom installer implementation yet since I have no idea how I could make a system to detect whether a given app is installed and how to run it.

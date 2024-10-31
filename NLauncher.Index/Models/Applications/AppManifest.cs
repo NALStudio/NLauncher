@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.Applications;
 
-public abstract class AppManifest
+public class AppManifest
 {
     public required string DisplayName { get; init; }
     public required Guid Uuid { get; init; }
@@ -20,6 +20,7 @@ public abstract class AppManifest
 
     public required AppRelease Release { get; init; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public AgeRating AgeRating { get; init; } = AgeRating.Unrated;
 
     [JsonConverter(typeof(NullableColor24HexJsonConverter))]
@@ -35,6 +36,7 @@ public abstract class AppManifest
     /// <remarks>
     /// Values range from -128 to 127 (inclusive)
     /// </remarks>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public sbyte Priority { get; init; } = 0;
 
     public required ImmutableArray<AppVersion> Versions { get; init; }

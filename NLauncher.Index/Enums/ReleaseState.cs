@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace NLauncher.Index.Enums;
 
 // TODO: Use snake_case
-[JsonConverter(typeof(JsonStringEnumConverter<AssetType>))]
+[JsonConverter(typeof(JsonStringEnumConverter<ReleaseState>))]
 public enum ReleaseState
 {
     Released,
@@ -18,5 +18,5 @@ public enum ReleaseState
 
 public static class ReleaseStateEnum
 {
-    public static bool DownloadAllowed(this ReleaseState state) => state != ReleaseState.NotReleased;
+    public static bool IsReleased(this ReleaseState state) => state != ReleaseState.NotReleased;
 }

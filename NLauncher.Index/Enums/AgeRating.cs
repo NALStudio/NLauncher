@@ -5,7 +5,8 @@ namespace NLauncher.Index.Enums;
 [JsonConverter(typeof(JsonNumberEnumConverter<AgeRating>))]
 public enum AgeRating
 {
-    Unrated = -1,
+    // Use 0 so this is the default value ignored by JsonSerializer
+    Unrated = 0,
 
     R3 = 3,
     R7 = 7,
