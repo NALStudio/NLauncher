@@ -13,6 +13,7 @@ public class IndexAssetCollection
 
     private readonly ILookup<AssetType, IndexAsset> typeLookup;
 
+    public IndexAssetCollection(IEnumerable<IndexAsset> assets) : this(assets.ToImmutableArray()) { }
     public IndexAssetCollection(ImmutableArray<IndexAsset> assets)
     {
         Assets = assets;

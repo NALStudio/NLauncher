@@ -13,10 +13,11 @@ File layout:
             - description.md // description.md build resolves all relative paths to this directory.
             - assets // (optional) a directory containing all of the assets description.md uses.
 
-            // additional image sizes can be implemented later if needed. Like "icon_512.png" for 512x512 px icon for example
-            - icon.png // 1024x1024 px icon image, used for Discord Rich Presence
-            - banner.png // 1920x1080 px image, used in store page and as a wide library game icon
-            - panel.png // 720x1080 px image, used as the vertical library game icon
+            // additional image sizes can be added "icon_512.png" for 512x512 px icon for example
+            // The value after the underscore doesn't matter, we only determine the type of the image from the prefix itself (icon_, banner_, panel_).
+            - icon.png // 1:1 ratio icon image (recommended: 1024x1024 px), used for Discord Rich Presence
+            - banner.png // 16:9 ratio image (recommended: 1920x1080 px), used in store page and as a wide library game icon
+            - panel.png // 2:3 ratio image (recommended: 720x1080 px), used as the vertical library game icon
 - Binaries
     - $publisher
         - $app_name
@@ -28,8 +29,7 @@ File layout:
     "repository": {
         "owner": "string",
         "repo": "string",
-        "path": "string", // Path from the root of the repository to the root of the index. Use slash '/' for root.
-        "release_asset_name": "string?" // The name of the index JSON file in releases. Can be omitted if release only contains a single file.
+        "path": "string" // Path from the root of the repository to the root of the index. Use slash '/' for root.
     }
 }
 

@@ -50,17 +50,30 @@ internal sealed class IndexContext
     }
 }
 
-internal sealed class IndexPaths
+internal abstract class DirectoryPathProvider
+{
+    public string Directory { get; }
+
+    protected DirectoryPathProvider(string directory)
+    {
+        Directory = directory;
+    }
+
+    public string GetRelativePath(string path)
+    {
+        return Path.GetRelativePath(Directory, path);
+    }
+}
+
+internal sealed class IndexPaths : DirectoryPathProvider
 {
     /// <summary>
     /// This directory is guaranteed to exist if the index exists.
     /// </summary>
-    public string Directory { get; }
+    public new string Directory => base.Directory;
 
-    public IndexPaths(string directory)
+    public IndexPaths(string directory) : base(directory)
     {
-        Directory = directory;
-
         IndexFile = Path.Join(directory, "index.json");
         AliasesFile = Path.Join(directory, "aliases.json");
     }
@@ -73,28 +86,23 @@ internal sealed class IndexPaths
     public string AliasesFile { get; }
 }
 
-internal sealed class ManifestPaths
+internal sealed class ManifestPaths : DirectoryPathProvider
 {
-    public string Directory { get; }
     public string AssetsDirectory { get; }
 
-    public ManifestPaths(string directory)
+    public ManifestPaths(string directory) : base(directory)
     {
-        Directory = directory;
         AssetsDirectory = Path.Join(directory, "assets");
 
         ManifestFile = Path.Join(directory, "manifest.json");
         DescriptionFile = Path.Join(directory, "description.md");
-
-        IconImageFile = Path.Join(directory, "icon.png");
-        BannerImageFile = Path.Join(directory, "banner.png");
-        PanelImageFile = Path.Join(directory, "panel.png");
     }
 
     public string ManifestFile { get; }
     public string DescriptionFile { get; }
 
-    public string IconImageFile { get; }
-    public string BannerImageFile { get; }
-    public string PanelImageFile { get; }
+    public IEnumerable<string> EnumerateImageFiles()
+    {
+        return System.IO.Directory.EnumerateFiles(Directory, "*.png");
+    }
 }

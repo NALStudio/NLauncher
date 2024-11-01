@@ -38,6 +38,7 @@ internal class CreateCommand : AsyncCommand<MainSettings>
         AnsiConsole.Write(new Rule("Repository Info").LeftJustified());
         string owner = AnsiConsole.Ask<string>("Repository Owner:");
         string repoName = AnsiConsole.Ask<string>("Repository Name:");
+        string branch = AnsiConsole.Ask("Repository Branch:", "main");
 
         string indexPath = AnsiConsole.Prompt(
             new TextPrompt<string>("Path To Index:")
@@ -51,7 +52,8 @@ internal class CreateCommand : AsyncCommand<MainSettings>
             {
                 Owner = owner,
                 Repo = repoName,
-                Path = indexPath
+                Path = indexPath,
+                Branch = branch
             }
         };
 
@@ -90,7 +92,7 @@ internal class CreateCommand : AsyncCommand<MainSettings>
         string indexJson = JsonSerializer.Serialize(index, IndexJsonSerializerContext.Default.IndexMeta);
         await File.WriteAllTextAsync(paths.IndexFile, indexJson);
 
-        // Create url_aliases.json file
+        // Create aliases.json file
         string aliasesJson = JsonSerializer.Serialize(AppAliases.Empty, IndexJsonSerializerContext.Default.AppAliases);
         await File.WriteAllTextAsync(paths.AliasesFile, aliasesJson);
     }

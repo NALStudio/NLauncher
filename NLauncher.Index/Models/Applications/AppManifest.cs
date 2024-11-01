@@ -24,7 +24,7 @@ public class AppManifest
     public AgeRating AgeRating { get; init; } = AgeRating.Unrated;
 
     [JsonConverter(typeof(NullableColor24HexJsonConverter))]
-    public required Color24? Color { get; init; }
+    public Color24? Color { get; init; } = null;
 
     /// <summary>
     /// <code>

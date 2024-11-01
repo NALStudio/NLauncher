@@ -10,7 +10,6 @@ public class IndexRepository
 {
     public required string Owner { get; init; }
     public required string Repo { get; init; }
-    public string Path { get; init; } = string.Empty;
-
-    public string? ReleaseAssetName { get; init; }
+    public required string Branch { get; init; }
+    public string Path { get; init; } = "/";
 }
