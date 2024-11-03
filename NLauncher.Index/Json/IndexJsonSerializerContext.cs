@@ -15,7 +15,6 @@ namespace NLauncher.Index.Json;
 [JsonSerializable(typeof(IndexManifest))]
 [JsonSerializable(typeof(AppManifest))]
 [JsonSerializable(typeof(ImmutableArray<IndexAsset>?))] // for IndexAssetCollectionJsonConverter.cs
-[JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-public partial class IndexJsonSerializerContext : JsonSerializerContext
+internal partial class IndexJsonSerializerContext : JsonSerializerContext
 {
 }

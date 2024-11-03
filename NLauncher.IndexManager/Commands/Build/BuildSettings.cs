@@ -1,4 +1,4 @@
-﻿using NLauncher.IndexManager.Commands.Main;
+﻿using NLauncher.IndexManager.Commands.Commands.Main;
 using Spectre.Console.Cli;
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Commands.Build;
+namespace NLauncher.IndexManager.Commands.Commands.Build;
 internal class BuildSettings : MainSettings
 {
     [CommandOption("-o|--output <path>")]

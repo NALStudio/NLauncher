@@ -1,4 +1,6 @@
-﻿using NLauncher.IndexManager.Commands.Main;
+﻿using NLauncher.IndexManager.Commands.Commands.Main;
+using NLauncher.IndexManager.Components.AnsiFormatter;
+using NLauncher.IndexManager.Components.FileChangeTree;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System;
@@ -7,31 +9,46 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Commands;
-internal class DeleteCommand : Command<MainSettings>
+namespace NLauncher.IndexManager.Commands.Commands;
+internal class DeleteCommand : Command<MainSettings>, IMainCommand
 {
-    public override int Execute(CommandContext context, MainSettings settings)
+    public override int Execute(CommandContext context, MainSettings settings) => Execute(settings);
+    public override ValidationResult Validate(CommandContext context, MainSettings settings) => Validate(settings);
+
+    public Task<int> ExecuteAsync(MainSettings settings) => Task.FromResult(Execute(settings));
+    public ValidationResult Validate(MainSettings settings)
+    {
+        return ValidationResult.Success();
+    }
+
+    private static int Execute(MainSettings settings)
     {
         // Just so we don't accidentally purge the wrong directory
         settings.Context.ThrowIfIndexNotExists();
         string directory = settings.Context.Paths.Directory;
 
-        AnsiConsole.Write(new Rule("Delete Index").HeavyBorder());
-        AnsiConsole.WriteLine();
+        AnsiFormatter.WriteHeader("Delete Index");
 
-        AnsiConsole.Write(new Markup($"Deleting: [yellow]{directory.EscapeMarkup()}[/]...\n"));
+        AnsiConsole.MarkupLine($"Deleting: [yellow]{directory.EscapeMarkup()}[/]...");
         bool delete = AnsiConsole.Confirm("Are you sure you want to delete this index?", defaultValue: false);
 
-        if (delete)
+        if (!delete)
         {
-            AnsiConsole.WriteLine("Deleting Index...");
-            Directory.Delete(directory, recursive: true);
-            AnsiConsole.Write(new Markup("[red]Index deleted.[/]\n"));
+            AnsiConsole.MarkupLine("[yellow]Index deletion cancelled.[/]");
+            return 0;
         }
-        else
-        {
-            AnsiConsole.Write(new Markup("[yellow]Index deletion cancelled.[/]\n"));
-        }
+
+        AnsiFormatter.WriteSectionTitle("Delete Log");
+        AnsiConsole.WriteLine("Deleting Index...");
+        AnsiConsole.WriteLine();
+
+        // Create tree manually before delete since listening to changes doesn't seem to work
+        // if the directory that we listen is deleted.
+        FileChangeTreeNode fileChanges = FileChangeTree.ApplyToDirectory(directory, FileChange.Deleted);
+
+        Directory.Delete(directory, recursive: true);
+
+        AnsiConsole.Write(FileChangeTree.Render(fileChanges));
 
         return 0;
     }

@@ -6,7 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PublishAot>true</PublishAot>
-    <InvariantGlobalization>true</InvariantGlobalization>
+	  
+	<!-- I don't care if this app's size, only that it looks nice :) -->
+    <!--<InvariantGlobalization>true</InvariantGlobalization>-->
+	  
+	<!-- Consistent serialization behaviour for IndexManager and WASM -->
+	<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
   </PropertyGroup>
 
   <ItemGroup>

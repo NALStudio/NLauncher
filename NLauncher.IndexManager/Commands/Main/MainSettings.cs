@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Commands.Main;
+namespace NLauncher.IndexManager.Commands.Commands.Main;
 internal class MainSettings : CommandSettings
 {
     [CommandArgument(0, "[path]")]

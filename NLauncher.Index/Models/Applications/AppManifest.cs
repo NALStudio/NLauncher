@@ -1,4 +1,5 @@
 ﻿using NLauncher.Index.Enums;
+using NLauncher.Index.Interfaces;
 using NLauncher.Index.Json.Converters;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.Applications;
 
-public class AppManifest
+public class AppManifest : IIndexSerializable
 {
     public required string DisplayName { get; init; }
     public required Guid Uuid { get; init; }

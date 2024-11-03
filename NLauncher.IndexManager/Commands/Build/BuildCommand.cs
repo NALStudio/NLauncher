@@ -1,8 +1,9 @@
 ﻿using NLauncher.Index.Enums;
+using NLauncher.Index.Interfaces;
 using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
-using NLauncher.IndexManager.Commands.Main;
+using NLauncher.IndexManager.Commands.Commands.Main;
 using NLauncher.IndexManager.Components;
 using SkiaSharp;
 using Spectre.Console;
@@ -18,15 +19,21 @@ using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Commands.Build;
-internal class BuildCommand : AsyncCommand<BuildSettings>
+namespace NLauncher.IndexManager.Commands.Commands.Build;
+internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand
 {
     private readonly record struct ImageSize(int Width, int Height);
 
-#pragma warning disable CA1822 // Mark members as static
-    public override async Task<int> ExecuteAsync(CommandContext context, BuildSettings settings) => await ExecuteAsync(context, settings, outputPath: settings.OutputPath, minifyOutput: settings.MinifyOutput);
-    public async Task<int> ExecuteAsync(CommandContext context, MainSettings settings, string? outputPath, bool minifyOutput)
-#pragma warning restore CA1822 // Mark members as static
+    public override async Task<int> ExecuteAsync(CommandContext context, BuildSettings settings) => await ExecuteAsync(settings, outputPath: settings.OutputPath, minifyOutput: settings.MinifyOutput);
+    public async Task<int> ExecuteAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, minifyOutput: false);
+
+    public override ValidationResult Validate(CommandContext context, BuildSettings settings) => Validate(settings);
+    public ValidationResult Validate(MainSettings settings)
+    {
+        return ValidationResult.Success();
+    }
+
+    public static async Task<int> ExecuteAsync(MainSettings settings, string? outputPath, bool minifyOutput)
     {
         // We don't create the directories due to safety reasons (we don't want to accidentally create a bunch of directories in the wrong place)
 
@@ -59,14 +66,11 @@ internal class BuildCommand : AsyncCommand<BuildSettings>
             return null;
 
         ctx.Status("Serializing output...");
-        string json = JsonSerializer.Serialize(manifest, IndexJsonSerializerContext.Default.IndexManifest);
-
+        IndexSerializationOptions options = IndexSerializationOptions.None;
         if (minifyOutput)
-        {
-            // Cannot remove all whitespace, removes spaces from app names and descriptions
-            // Cannot trim each line and remove newlines, is dependant on the input format which isn't a guarantee
-            throw new NotImplementedException("JsonSerializerContext doesn't allow for WriteIndented to be changed after the fact.");
-        }
+            options |= IndexSerializationOptions.Minify;
+
+        string json = IndexJsonSerializer.Serialize(manifest, options);
 
         ctx.Status("Writing output...");
         if (File.Exists(outputPath))
@@ -82,12 +86,12 @@ internal class BuildCommand : AsyncCommand<BuildSettings>
     private static async ValueTask<IndexManifest?> TryBuild(StatusContext ctx, IndexPaths paths)
     {
         ctx.Status($"Loading {paths.GetRelativePath(paths.IndexFile)}...");
-        IndexMeta? meta = await TryLoadAndDeserialize(paths, paths.IndexFile, IndexJsonSerializerContext.Default.IndexMeta);
+        IndexMeta? meta = await TryLoadAndDeserialize<IndexMeta>(paths, paths.IndexFile);
         if (meta is null)
             return null;
 
         ctx.Status($"Loading {paths.GetRelativePath(paths.AliasesFile)}...");
-        AppAliases? aliases = await TryLoadAndDeserialize(paths, paths.AliasesFile, IndexJsonSerializerContext.Default.AppAliases);
+        AppAliases? aliases = await TryLoadAndDeserialize<AppAliases>(paths, paths.AliasesFile);
         if (aliases is null)
             return null;
 
@@ -108,7 +112,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>
     {
         Dictionary<Guid, IndexEntry> entries = new();
 
-        foreach (DirectoryInfo dir in ManifestHelper.DiscoverManifests(paths))
+        foreach (DirectoryInfo dir in ManifestHelper.DiscoverManifestDirectories(paths))
         {
             ManifestPaths mPaths = new(dir.FullName);
 
@@ -131,7 +135,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>
 
     private static async ValueTask<IndexEntry?> TryConstructEntry(IndexMeta meta, IndexPaths indexPaths, ManifestPaths manifestPaths)
     {
-        AppManifest? manifest = await TryLoadAndDeserialize(manifestPaths, manifestPaths.ManifestFile, IndexJsonSerializerContext.Default.AppManifest);
+        AppManifest? manifest = await TryLoadAndDeserialize<AppManifest>(manifestPaths, manifestPaths.ManifestFile);
         if (manifest is null)
             return null;
 
@@ -206,13 +210,13 @@ internal class BuildCommand : AsyncCommand<BuildSettings>
         return await File.ReadAllTextAsync(filepath);
     }
 
-    private static async ValueTask<T?> TryLoadAndDeserialize<T>(DirectoryPathProvider paths, string filepath, JsonTypeInfo<T> jsonTypeInfo) where T : class
+    private static async ValueTask<T?> TryLoadAndDeserialize<T>(DirectoryPathProvider paths, string filepath) where T : class, IIndexSerializable
     {
         string? json = await TryLoad(paths, filepath);
         if (json is null)
             return null;
 
-        T? deserialized = JsonSerializer.Deserialize(json, jsonTypeInfo);
+        T? deserialized = IndexJsonSerializer.Deserialize<T>(json);
         if (deserialized is null)
         {
             Error($"{paths.GetRelativePath(filepath)} could not be deserialized.");

@@ -1,7 +1,9 @@
 ﻿using NLauncher.Index.Json;
 using NLauncher.Index.Models.Index;
-using NLauncher.IndexManager.Commands.Main;
+using NLauncher.IndexManager.Commands.Commands.Main;
 using NLauncher.IndexManager.Components;
+using NLauncher.IndexManager.Components.AnsiFormatter;
+using NLauncher.IndexManager.Components.FileChangeTree;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System;
@@ -12,30 +14,20 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Commands;
-internal class CreateCommand : AsyncCommand<MainSettings>
+namespace NLauncher.IndexManager.Commands.Commands;
+internal class CreateCommand : AsyncCommand<MainSettings>, IMainCommand
 {
-    private static ValidationResult ValidateIndexPath(string path)
-    {
-        if (!path.StartsWith('/'))
-            return ValidationResult.Error("Path must start with a slash.");
-        if (!Uri.IsWellFormedUriString(path, UriKind.Relative))
-            return ValidationResult.Error("Path is not a valid relative path.");
-        if (path.EndsWith('/'))
-            return ValidationResult.Error("Path cannot end with a slash.");
+    public override async Task<int> ExecuteAsync(CommandContext context, MainSettings settings) => await ExecuteAsync(settings);
+    public override ValidationResult Validate(CommandContext context, MainSettings settings) => Validate(settings);
 
-        return ValidationResult.Success();
-    }
-
-    public override async Task<int> ExecuteAsync(CommandContext context, MainSettings settings)
+    public async Task<int> ExecuteAsync(MainSettings settings)
     {
         string dirpath = settings.Context.Paths.Directory;
         Debug.Assert(!DirectoryContainsFiles(dirpath));
 
-        AnsiConsole.Write(new Rule("Create Index").HeavyBorder());
-        AnsiConsole.WriteLine();
+        AnsiFormatter.WriteHeader("Create Index");
 
-        AnsiConsole.Write(new Rule("Repository Info").LeftJustified());
+        AnsiFormatter.WriteSectionTitle("Repository Info");
         string owner = AnsiConsole.Ask<string>("Repository Owner:");
         string repoName = AnsiConsole.Ask<string>("Repository Name:");
         string branch = AnsiConsole.Ask("Repository Branch:", "main");
@@ -57,14 +49,28 @@ internal class CreateCommand : AsyncCommand<MainSettings>
             }
         };
 
+        AnsiFormatter.WriteSectionTitle("Create Log");
+
         AnsiConsole.WriteLine("Creating Index...");
-        await Create(settings.Context.Paths, meta);
-        AnsiConsole.Write(new Markup("[green]Index created.[/]\n"));
+        AnsiConsole.WriteLine();
+
+        // We need to create the directory first, FileSystemWatcher cannot watch a non-existent directory.
+        FileChange? rootChange = null;
+        if (!Directory.Exists(settings.Context.Paths.Directory))
+        {
+            Directory.CreateDirectory(settings.Context.Paths.Directory);
+            rootChange = FileChange.Created;
+        }
+
+        using (FileChangeTree.ListenAndWrite(settings.Context.Paths.Directory, rootChange: rootChange))
+        {
+            await Create(settings.Context.Paths, meta);
+        }
 
         return 0;
     }
 
-    public override ValidationResult Validate(CommandContext context, MainSettings settings)
+    public ValidationResult Validate(MainSettings settings)
     {
         if (DirectoryContainsFiles(settings.Context.Paths.Directory))
             return ValidationResult.Error("Cannot create index, directory contains files.");
@@ -83,17 +89,26 @@ internal class CreateCommand : AsyncCommand<MainSettings>
         return Directory.EnumerateFileSystemEntries(dirpath).Any();
     }
 
+    private static ValidationResult ValidateIndexPath(string path)
+    {
+        if (!path.StartsWith('/'))
+            return ValidationResult.Error("Path must start with a slash.");
+        if (!Uri.IsWellFormedUriString(path, UriKind.Relative))
+            return ValidationResult.Error("Path is not a valid relative path.");
+        if (path.EndsWith('/'))
+            return ValidationResult.Error("Path cannot end with a slash.");
+
+        return ValidationResult.Success();
+    }
+
     private static async Task Create(IndexPaths paths, IndexMeta index)
     {
-        // Create directory
-        Directory.CreateDirectory(paths.Directory);
-
         // Create index.json file
-        string indexJson = JsonSerializer.Serialize(index, IndexJsonSerializerContext.Default.IndexMeta);
+        string indexJson = IndexJsonSerializer.Serialize(index);
         await File.WriteAllTextAsync(paths.IndexFile, indexJson);
 
         // Create aliases.json file
-        string aliasesJson = JsonSerializer.Serialize(AppAliases.Empty, IndexJsonSerializerContext.Default.AppAliases);
+        string aliasesJson = IndexJsonSerializer.Serialize(AppAliases.Empty);
         await File.WriteAllTextAsync(paths.AliasesFile, aliasesJson);
     }
 }
