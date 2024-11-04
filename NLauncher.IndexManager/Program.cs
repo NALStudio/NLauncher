@@ -1,6 +1,6 @@
 ﻿using NLauncher.IndexManager.Commands;
 using NLauncher.IndexManager.Commands.Commands;
-using NLauncher.IndexManager.Commands.Commands.Main;
+using NLauncher.IndexManager.Commands.Main;
 using Spectre.Console;
 using Spectre.Console.Cli;
 

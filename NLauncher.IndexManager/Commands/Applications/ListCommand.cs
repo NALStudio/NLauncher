@@ -1,7 +1,7 @@
 ﻿using NLauncher.Index.Enums;
 using NLauncher.Index.Models;
 using NLauncher.Index.Models.Applications;
-using NLauncher.IndexManager.Commands.Commands.Main;
+using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
 using Spectre.Console;
 using Spectre.Console.Cli;

@@ -1,7 +1,7 @@
 ﻿using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
-using NLauncher.IndexManager.Commands.Commands.Main;
+using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
 using NLauncher.IndexManager.Components.FileChangeTree;
 using Spectre.Console;

@@ -1,6 +1,7 @@
 ﻿using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,5 +27,17 @@ internal static class AnsiFormatter
     public static void WriteOperationCancelled()
     {
         AnsiConsole.MarkupLine("[yellow]Operation was cancelled by the user.[/]");
+    }
+
+    public static TextPath DeletedFile(string pathToFileOrDirectory) => ColoredPath(pathToFileOrDirectory, Color.Yellow).LeafColor(Color.Red);
+    public static TextPath CreatedFile(string pathToFileOrDirectory) => ColoredPath(pathToFileOrDirectory, Color.Yellow).LeafColor(Color.Green);
+
+    public static TextPath ColoredPath(string path, Color color)
+    {
+        return new TextPath(path)
+            .LeafColor(color)
+            .RootColor(color)
+            .SeparatorColor(color)
+            .StemColor(color);
     }
 }

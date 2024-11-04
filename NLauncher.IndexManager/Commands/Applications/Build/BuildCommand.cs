@@ -3,7 +3,7 @@ using NLauncher.Index.Interfaces;
 using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
-using NLauncher.IndexManager.Commands.Commands.Main;
+using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
 using SkiaSharp;
 using Spectre.Console;
@@ -20,18 +20,23 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Commands.Applications.Build;
-internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand
+internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCommandVariant
 {
     private readonly record struct ImageSize(int Width, int Height);
 
+    #region AsyncCommand
     public override async Task<int> ExecuteAsync(CommandContext context, BuildSettings settings) => await ExecuteAsync(settings, outputPath: settings.OutputPath, humanReadable: !settings.MinifyOutput);
-    public async Task<int> ExecuteAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, humanReadable: true);
-
     public override ValidationResult Validate(CommandContext context, BuildSettings settings) => Validate(settings);
-    public ValidationResult Validate(MainSettings settings)
-    {
-        return ValidationResult.Success();
-    }
+    #endregion
+
+    #region IMainCommand
+    public async Task<int> ExecuteAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, humanReadable: true);
+    public ValidationResult Validate(MainSettings settings) => ValidationResult.Success();
+    #endregion
+
+    #region IMainCommandVariant
+    public async Task<int> ExecuteVariantAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, humanReadable: false);
+    #endregion
 
     public static async Task<int> ExecuteAsync(MainSettings settings, string? outputPath, bool humanReadable)
     {
@@ -55,7 +60,10 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand
         if (actualOutputPath is null)
             return 1;
 
-        AnsiConsole.Write(new Markup($"[green]Index built: '{actualOutputPath.EscapeMarkup()}'[/]"));
+        AnsiConsole.Write("Index built: ");
+        AnsiConsole.Write(AnsiFormatter.CreatedFile(actualOutputPath));
+        AnsiConsole.WriteLine();
+
         return 0;
     }
 

@@ -1,4 +1,4 @@
-﻿using NLauncher.IndexManager.Commands.Commands.Main;
+﻿using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
 using NLauncher.IndexManager.Components.FileChangeTree;
 using Spectre.Console;
@@ -29,8 +29,8 @@ internal class DeleteCommand : Command<MainSettings>, IMainCommand
 
         AnsiFormatter.WriteHeader("Delete Index");
 
-        AnsiConsole.Markup("Deleting: ");
-        AnsiConsole.Write(new TextPath(directory).RootColor(Color.Yellow).SeparatorColor(Color.Yellow).StemColor(Color.Yellow).LeafColor(Color.Red));
+        AnsiConsole.Write("Deleting: ");
+        AnsiConsole.Write(AnsiFormatter.DeletedFile(directory));
         AnsiConsole.WriteLine();
 
         bool delete = AnsiConsole.Confirm("Are you sure you want to delete this index?", defaultValue: false);

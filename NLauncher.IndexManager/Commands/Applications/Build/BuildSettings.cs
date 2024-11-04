@@ -1,4 +1,4 @@
-﻿using NLauncher.IndexManager.Commands.Commands.Main;
+﻿using NLauncher.IndexManager.Commands.Main;
 using Spectre.Console.Cli;
 using System;
 using System.Collections.Generic;

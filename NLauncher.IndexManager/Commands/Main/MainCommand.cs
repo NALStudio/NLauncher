@@ -1,5 +1,6 @@
 ﻿using NLauncher.IndexManager.Commands.Applications;
 using NLauncher.IndexManager.Commands.Applications.Build;
+using NLauncher.IndexManager.Commands.Commands;
 using NLauncher.IndexManager.Commands.Commands.Aliases;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -10,19 +11,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Commands.Commands.Main;
+namespace NLauncher.IndexManager.Commands.Main;
 internal sealed class MainCommand : AsyncCommand<MainSettings>
 {
     private readonly struct KnownCommand
     {
         public string Name { get; }
+        public bool ExecuteVariant { get; }
 
         public Func<IMainCommand>? Instantiate { get; }
         public ImmutableArray<KnownCommand> Children { get; }
 
-        private KnownCommand(string name, Func<IMainCommand>? instantiate, ImmutableArray<KnownCommand> children)
+        private KnownCommand(string name, bool executeVariant, Func<IMainCommand>? instantiate, ImmutableArray<KnownCommand> children)
         {
             Name = name;
+            ExecuteVariant = executeVariant;
             Instantiate = instantiate;
             Children = children;
         }
@@ -31,7 +34,18 @@ internal sealed class MainCommand : AsyncCommand<MainSettings>
         {
             return new KnownCommand(
                 name: name,
+                executeVariant: false,
                 instantiate: static () => new T(),
+                children: ImmutableArray<KnownCommand>.Empty
+            );
+        }
+
+        public static KnownCommand CommandVariant<T>(string name) where T : ICommand, IMainCommand, IMainCommandVariant, new()
+        {
+            return new KnownCommand(
+                name: name,
+                executeVariant: true,
+                instantiate: () => new T(),
                 children: ImmutableArray<KnownCommand>.Empty
             );
         }
@@ -40,6 +54,7 @@ internal sealed class MainCommand : AsyncCommand<MainSettings>
         {
             return new KnownCommand(
                 name: name,
+                executeVariant: false,
                 instantiate: null,
                 children: childCommands
             );
@@ -64,8 +79,14 @@ internal sealed class MainCommand : AsyncCommand<MainSettings>
                     KnownCommand.Command<AliasesListCommand>("List All"),
                 ]
             ),
-            KnownCommand.Command<BuildCommand>("Build Index"),
-            KnownCommand.Command<DeleteCommand>("Delete Index"),
+            KnownCommand.Category(
+                "Index",
+                [
+                    KnownCommand.Command<BuildCommand>("Build Index"),
+                    KnownCommand.CommandVariant<BuildCommand>("Build Index (minified)"),
+                    KnownCommand.Command<DeleteCommand>("Delete Index"),
+                ]
+            )
         ]
     );
 
@@ -93,13 +114,16 @@ internal sealed class MainCommand : AsyncCommand<MainSettings>
             return -99;
         }
 
-        return await commandInstance.ExecuteAsync(settings);
+        return command.ExecuteVariant
+            ? await ((IMainCommandVariant)commandInstance).ExecuteVariantAsync(settings)
+            : await commandInstance.ExecuteAsync(settings);
     }
 
     private static SelectionPrompt<KnownCommand> ConstructSelect(KnownCommand root)
     {
         SelectionPrompt<KnownCommand> selection = new SelectionPrompt<KnownCommand>()
             .Title("Choose Action")
+            .PageSize(20)
             .UseConverter(static cmd => cmd.Name);
 
         // Construct command tree
