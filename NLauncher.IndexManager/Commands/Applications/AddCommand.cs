@@ -3,11 +3,11 @@ using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
 using NLauncher.IndexManager.Commands.Commands.Main;
 using NLauncher.IndexManager.Components;
-using NLauncher.IndexManager.Components.AnsiFormatter;
 using NLauncher.IndexManager.Components.FileChangeTree;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -16,7 +16,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Commands.Commands;
+namespace NLauncher.IndexManager.Commands.Applications;
 internal class AddCommand : AsyncCommand<MainSettings>, IMainCommand
 {
     public override async Task<int> ExecuteAsync(CommandContext context, MainSettings settings) => await ExecuteAsync(settings);
@@ -46,10 +46,10 @@ internal class AddCommand : AsyncCommand<MainSettings>, IMainCommand
                     .DefaultValue(DateOnly.FromDateTime(DateTime.Now))
             );
 
+            AnsiConsole.WriteLine();
             Spectre.Console.Calendar calendar = new Spectre.Console.Calendar(release.Year, release.Month, release.Day)
                 .Culture(CultureInfo.CurrentCulture)
-                .AddCalendarEvent(release.Year, release.Month, release.Day)
-                .HideHeader();
+                .AddCalendarEvent(release.Year, release.Month, release.Day);
             AnsiConsole.Write(calendar);
 
             releaseDate = release;
@@ -104,7 +104,7 @@ internal class AddCommand : AsyncCommand<MainSettings>, IMainCommand
         Directory.CreateDirectory(paths.Directory);
 
         // Create manifest.json
-        string manifestJson = IndexJsonSerializer.Serialize(manifest, IndexSerializationOptions.WriteNulls); // write nulls so that user can explicitly see which settings they can change
+        string manifestJson = IndexJsonSerializer.Serialize(manifest, IndexSerializationOptions.HumanReadable); // write nulls so that user can explicitly see which settings they can change
         await File.WriteAllTextAsync(paths.ManifestFile, manifestJson);
 
         // Create description.md
@@ -118,13 +118,18 @@ internal class AddCommand : AsyncCommand<MainSettings>, IMainCommand
 
     private static string GetDirPath(IndexPaths paths, AppManifest manifest, int index)
     {
-        string publisher = ToSnakeCase(manifest.Publisher);
+        string publisher = NameToPath(manifest.Publisher);
 
-        string appName = ToSnakeCase(manifest.DisplayName);
+        string appName = NameToPath(manifest.DisplayName);
         if (index != 0)
             appName += "_" + index.ToString(CultureInfo.InvariantCulture);
 
         return Path.Join(paths.Directory, publisher, appName);
+    }
+
+    private static string NameToPath(string name)
+    {
+        return AsciiNormalizer.AsLowerCaseAscii(ToSnakeCase(name));
     }
 
     private static string ToSnakeCase(string sentence)

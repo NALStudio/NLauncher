@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace NLauncher.Index.Json.Converters;
 
-internal class Color24HexJsonConverter : JsonConverter<Color24>
+internal class JsonColor24HexConverter : JsonConverter<Color24>
 {
     public override Color24 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

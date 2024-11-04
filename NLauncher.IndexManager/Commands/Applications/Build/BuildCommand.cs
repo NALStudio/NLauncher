@@ -19,13 +19,13 @@ using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Commands.Commands.Build;
+namespace NLauncher.IndexManager.Commands.Applications.Build;
 internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand
 {
     private readonly record struct ImageSize(int Width, int Height);
 
-    public override async Task<int> ExecuteAsync(CommandContext context, BuildSettings settings) => await ExecuteAsync(settings, outputPath: settings.OutputPath, minifyOutput: settings.MinifyOutput);
-    public async Task<int> ExecuteAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, minifyOutput: false);
+    public override async Task<int> ExecuteAsync(CommandContext context, BuildSettings settings) => await ExecuteAsync(settings, outputPath: settings.OutputPath, humanReadable: !settings.MinifyOutput);
+    public async Task<int> ExecuteAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, humanReadable: true);
 
     public override ValidationResult Validate(CommandContext context, BuildSettings settings) => Validate(settings);
     public ValidationResult Validate(MainSettings settings)
@@ -33,7 +33,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand
         return ValidationResult.Success();
     }
 
-    public static async Task<int> ExecuteAsync(MainSettings settings, string? outputPath, bool minifyOutput)
+    public static async Task<int> ExecuteAsync(MainSettings settings, string? outputPath, bool humanReadable)
     {
         // We don't create the directories due to safety reasons (we don't want to accidentally create a bunch of directories in the wrong place)
 
@@ -51,7 +51,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand
             return 1;
         }
 
-        string? actualOutputPath = await AnsiConsole.Status().StartAsync("Building Index...", ctx => ExecuteWithStatusAsync(ctx, settings, outputPath: output, minifyOutput: minifyOutput));
+        string? actualOutputPath = await AnsiConsole.Status().StartAsync("Building Index...", ctx => ExecuteWithStatusAsync(ctx, settings, outputPath: output, humanReadable: humanReadable));
         if (actualOutputPath is null)
             return 1;
 
@@ -59,16 +59,18 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand
         return 0;
     }
 
-    private static async Task<string?> ExecuteWithStatusAsync(StatusContext ctx, MainSettings settings, string outputPath, bool minifyOutput)
+    private static async Task<string?> ExecuteWithStatusAsync(StatusContext ctx, MainSettings settings, string outputPath, bool humanReadable)
     {
         IndexManifest? manifest = await TryBuild(ctx, settings.Context.Paths);
         if (manifest is null)
             return null;
 
         ctx.Status("Serializing output...");
-        IndexSerializationOptions options = IndexSerializationOptions.None;
-        if (minifyOutput)
-            options |= IndexSerializationOptions.Minify;
+        IndexSerializationOptions options;
+        if (humanReadable)
+            options = IndexSerializationOptions.HumanReadable;
+        else
+            options = IndexSerializationOptions.None;
 
         string json = IndexJsonSerializer.Serialize(manifest, options);
 

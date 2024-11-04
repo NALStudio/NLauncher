@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Commands.Commands.Build;
+namespace NLauncher.IndexManager.Commands.Applications.Build;
 internal class BuildSettings : MainSettings
 {
     [CommandOption("-o|--output <path>")]

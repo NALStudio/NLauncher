@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace NLauncher.Index.Json.Converters;
 
-internal class IndexAssetCollectionJsonConverter : JsonConverter<IndexAssetCollection>
+internal class JsonIndexAssetCollectionConverter : JsonConverter<IndexAssetCollection>
 {
     public override IndexAssetCollection? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

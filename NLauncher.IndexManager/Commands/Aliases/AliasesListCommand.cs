@@ -3,7 +3,6 @@ using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
 using NLauncher.IndexManager.Commands.Commands.Main;
 using NLauncher.IndexManager.Components;
-using NLauncher.IndexManager.Components.AnsiFormatter;
 using NLauncher.IndexManager.Components.FileChangeTree;
 using Spectre.Console;
 using Spectre.Console.Cli;

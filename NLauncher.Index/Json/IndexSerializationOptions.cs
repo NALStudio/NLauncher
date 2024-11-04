@@ -12,5 +12,7 @@ public enum IndexSerializationOptions
     None = 0,
 
     WriteNulls = 1 << 0,
-    Minify = 1 << 1
+    WriteIndented = 1 << 1,
+
+    HumanReadable = WriteNulls | WriteIndented,
 }

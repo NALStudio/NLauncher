@@ -70,7 +70,7 @@ public static class IndexJsonSerializer
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            WriteIndented = true,
+            WriteIndented = false,
 
             TypeInfoResolver = IndexJsonSerializerContext.Default
         };
@@ -93,8 +93,8 @@ public static class IndexJsonSerializer
 
             if (options.HasFlag(IndexSerializationOptions.WriteNulls))
                 serializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.Never;
-            if (options.HasFlag(IndexSerializationOptions.Minify))
-                serializerOptions.WriteIndented = false;
+            if (options.HasFlag(IndexSerializationOptions.WriteIndented))
+                serializerOptions.WriteIndented = true;
 
             serializerOptions.MakeReadOnly();
             cachedOptions.Add(options, serializerOptions);

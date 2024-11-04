@@ -5,8 +5,8 @@ namespace NLauncher.Index.Enums;
 [JsonConverter(typeof(JsonNumberEnumConverter<AgeRating>))]
 public enum AgeRating
 {
-    // Use 0 so this is the default value ignored by JsonSerializer
-    Unrated = 0,
+    // Do not include AgeRating.Unrated in enum so that we can omit it during minified serialization
+    // Unrated = -1,
 
     R3 = 3,
     R7 = 7,
@@ -14,4 +14,18 @@ public enum AgeRating
     R13 = 13,
     R16 = 16,
     R18 = 18
+}
+
+public static class AgeRatingEnum
+{
+    /// <summary>
+    /// Get the number value of the age rating or 'unrated' if null.
+    /// </summary>
+    public static string GetIdentifier(this AgeRating? rating)
+    {
+        if (rating.HasValue)
+            return rating.Value.ToString("d");
+        else
+            return "unrated";
+    }
 }

@@ -21,8 +21,8 @@ public class AppManifest : IIndexSerializable
 
     public required AppRelease Release { get; init; }
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public AgeRating AgeRating { get; init; } = AgeRating.Unrated;
+    // Do not include AgeRating.Unrated in enum so that we can omit it during minified serialization
+    public AgeRating? AgeRating { get; init; } = null;
 
     [JsonConverter(typeof(NullableColor24HexJsonConverter))]
     public Color24? Color { get; init; } = null;

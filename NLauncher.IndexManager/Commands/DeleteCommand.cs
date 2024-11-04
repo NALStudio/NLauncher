@@ -1,5 +1,5 @@
 ﻿using NLauncher.IndexManager.Commands.Commands.Main;
-using NLauncher.IndexManager.Components.AnsiFormatter;
+using NLauncher.IndexManager.Components;
 using NLauncher.IndexManager.Components.FileChangeTree;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Commands.Commands;
+namespace NLauncher.IndexManager.Commands;
 internal class DeleteCommand : Command<MainSettings>, IMainCommand
 {
     public override int Execute(CommandContext context, MainSettings settings) => Execute(settings);
@@ -29,12 +29,14 @@ internal class DeleteCommand : Command<MainSettings>, IMainCommand
 
         AnsiFormatter.WriteHeader("Delete Index");
 
-        AnsiConsole.MarkupLine($"Deleting: [yellow]{directory.EscapeMarkup()}[/]...");
-        bool delete = AnsiConsole.Confirm("Are you sure you want to delete this index?", defaultValue: false);
+        AnsiConsole.Markup("Deleting: ");
+        AnsiConsole.Write(new TextPath(directory).RootColor(Color.Yellow).SeparatorColor(Color.Yellow).StemColor(Color.Yellow).LeafColor(Color.Red));
+        AnsiConsole.WriteLine();
 
+        bool delete = AnsiConsole.Confirm("Are you sure you want to delete this index?", defaultValue: false);
         if (!delete)
         {
-            AnsiConsole.MarkupLine("[yellow]Index deletion cancelled.[/]");
+            AnsiFormatter.WriteOperationCancelled();
             return 0;
         }
 

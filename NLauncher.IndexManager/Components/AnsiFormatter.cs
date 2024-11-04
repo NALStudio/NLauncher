@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NLauncher.IndexManager.Components.AnsiFormatter;
+namespace NLauncher.IndexManager.Components;
 
 /// <summary>
 /// <see cref="AnsiConsole"/> formatters for IndexManager commands.
@@ -21,5 +21,10 @@ internal static class AnsiFormatter
     {
         AnsiConsole.WriteLine();
         AnsiConsole.Write(new Rule(text).LeftJustified());
+    }
+
+    public static void WriteOperationCancelled()
+    {
+        AnsiConsole.MarkupLine("[yellow]Operation was cancelled by the user.[/]");
     }
 }
