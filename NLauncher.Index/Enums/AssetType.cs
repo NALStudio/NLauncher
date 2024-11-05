@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -21,7 +23,9 @@ public static class AssetTypeEnum
 {
     public readonly record struct Aspect(int Horizontal, int Vertical)
     {
-        public static explicit operator double(Aspect aspect) => aspect.Horizontal / aspect.Vertical;
+        public static explicit operator float(Aspect aspect) => aspect.Horizontal / (float)aspect.Vertical;
+        public static explicit operator double(Aspect aspect) => aspect.Horizontal / (double)aspect.Vertical;
+        public static explicit operator decimal(Aspect aspect) => aspect.Horizontal / (decimal)aspect.Vertical;
         public override string ToString() => $"{Horizontal}:{Vertical}";
     }
 
@@ -38,6 +42,18 @@ public static class AssetTypeEnum
 
     public static AssetType ParseFilename(string filepath)
     {
+        bool success = TryParseFilename(filepath, out AssetType t, throwOnError: true);
+        Debug.Assert(success); // TryParseFilename should've thrown an error already
+        return t;
+    }
+
+    public static bool TryParseFilename(string filepath, out AssetType type)
+    {
+        return TryParseFilename(filepath, out type, throwOnError: false);
+    }
+
+    private static bool TryParseFilename(string filepath, [MaybeNullWhen(false)] out AssetType type, bool throwOnError)
+    {
         static bool NameMatches(AssetType type, string typename)
         {
             string? name = Enum.GetName(type);
@@ -49,8 +65,24 @@ public static class AssetTypeEnum
 
         AssetType[] matched = Enum.GetValues<AssetType>().Where(at => NameMatches(at, typename)).ToArray();
         if (matched.Length > 1)
-            throw new ArgumentException($"Multiple types found for filename: {Path.GetFileName(filepath)}");
+        {
+            if (throwOnError)
+                throw new ArgumentException($"Multiple types found for filename: {Path.GetFileName(filepath)}");
 
-        return matched[0];
+            type = default;
+            return false;
+        }
+
+        if (matched.Length < 1)
+        {
+            if (throwOnError)
+                throw new ArgumentException($"No types found for filename: {Path.GetFileName(filepath)}");
+
+            type = default;
+            return false;
+        }
+
+        type = matched[0];
+        return true;
     }
 }

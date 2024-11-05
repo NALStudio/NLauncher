@@ -7,10 +7,10 @@
     <Nullable>enable</Nullable>
     <PublishAot>true</PublishAot>
 	  
-	<!-- I don't care if this app's size, only that it looks nice :) -->
+	<!-- I don't care about this app's size, only that it looks nice :) -->
     <!--<InvariantGlobalization>true</InvariantGlobalization>-->
 	  
-	<!-- Consistent serialization behaviour for IndexManager and WASM -->
+	<!-- Consistent serialization behaviour between IndexManager and WASM -->
 	<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
   </PropertyGroup>
 

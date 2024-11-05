@@ -7,6 +7,13 @@ File layout:
     - index.json
     - aliases.json
 
+    // We can't implement news in the web app since we must access platform features and thus cannot distribute the app as a web app.
+    - @news  // yes, the folder is actually called @news so that it sorts at the top and doesn't conflict with the publisher directory name
+        - $news_index  // index of the news, they don't need to be sequencial and are only used for sorting (index manager can have news 'slots')
+        - background.png
+        - logo.png
+        - news.json
+
     - $publisher
         - $app_name
             - manifest.json
@@ -86,6 +93,23 @@ File layout:
             ]
         }
     ]
+}
+
+[ news.json Spec ]
+{
+    "title": "string",
+    "text": "string",
+    "interactivity": {
+        "type": "string", // explore, play_now
+    #if EXPLORE
+        // Route the user to the store page
+        // where they can browse all of the applications available
+    #endif
+    #if PLAY_NOW
+        // Route the user to app's store page
+        "app_id": "string"  // the UUID of the application
+    #endif
+    }
 }
 
 [ Index Spec ]

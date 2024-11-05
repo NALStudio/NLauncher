@@ -1,0 +1,26 @@
+﻿@inherits LayoutComponentBase
+
+@inject NavigationManager navigationManager
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar>
+        <MudText Typo="Typo.h5">NLauncher</MudText>
+    </MudAppBar>
+    <MudDrawer Open Variant="DrawerVariant.Persistent" ClipMode="DrawerClipMode.Always">
+        <MudNavMenu Rounded Margin="Margin.Normal" Color="Color.Primary">
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@(Icons.Material.Rounded.Home)">Home</MudNavLink>
+            <MudNavLink Href="/store" Icon="@(Icons.Material.Rounded.Sell)">Store</MudNavLink>
+            <MudNavLink Href="/library" Icon="@(Icons.Material.Rounded.GridView)">Library</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer  MaxWidth="MaxWidth.ExtraLarge">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>

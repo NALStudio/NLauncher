@@ -159,9 +159,14 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         {
             IndexAsset? asset = TryLoadImage(meta, indexPaths, imageFile);
             if (asset is null)
-                AnsiConsole.Write(new Markup("[yellow]Asset ignored.[/]\n"));
+            {
+                string assetRelativePath = Path.GetRelativePath(indexPaths.Directory, imageFile);
+                AnsiConsole.MarkupLine($"[yellow]Asset ignored: '{assetRelativePath.EscapeMarkup()}'[/]");
+            }
             else
+            {
                 assets.Add(asset);
+            }
         }
 
         return new IndexEntry()
@@ -174,7 +179,11 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
 
     private static IndexAsset? TryLoadImage(IndexMeta meta, IndexPaths paths, string filepath)
     {
-        AssetType type = AssetTypeEnum.ParseFilename(filepath);
+        if (!AssetTypeEnum.TryParseFilename(filepath, out AssetType type))
+        {
+            Error($"File name: '{Path.GetFileName(filepath)}' could not be parsed into a type.");
+            return null;
+        }
 
         ImageSize? size = ValidateImageSize(paths, filepath, type.AspectRatio());
         if (!size.HasValue)
@@ -199,7 +208,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         }
 
         SKImage? image = SKImage.FromEncodedData(filepath);
-        int expectedWidth = (int)Math.Round(image.Height * (double)aspectRatio);
+        int expectedWidth = (int)Math.Round(image.Height * (decimal)aspectRatio, MidpointRounding.AwayFromZero);
         if (image.Width != expectedWidth)
         {
             Error($"Invalid image width: {image.Width}. Image must be {expectedWidth} pixels wide (aspect ratio: {aspectRatio}).");
@@ -244,7 +253,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
 
     private static void Error(string msg)
     {
-        AnsiConsole.Write(new Markup($"[red]{msg.EscapeMarkup()}[/]\n"));
+        AnsiConsole.MarkupLine($"[red]{msg.EscapeMarkup()}[/]");
     }
 
     private static Uri ConstructGitHubAssetPath(IndexMeta meta, IndexPaths paths, string assetPath)
@@ -262,12 +271,19 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
 
     private static Uri ConstructUrl(string baseUrl, params string[] parts)
     {
+        // Trim leading and trailing slashes from all parts
+        for (int i = 0; i < parts.Length; i++)
+            parts[i] = parts[i].Trim('/');
+
+        string partsUrl = string.Join('/', parts);
+        if (!Uri.IsWellFormedUriString(partsUrl, UriKind.Relative))
+            throw new ArgumentException($"Invalid URL path: '{partsUrl}'");
+
         if (!baseUrl.EndsWith('/'))
             baseUrl += '/';
-
-        string url = baseUrl + string.Join('/', parts);
-        if (!Uri.IsWellFormedUriString(url, UriKind.Relative))
-            throw new ArgumentException($"Invalid url: '{url}'");
+        string url = baseUrl + partsUrl;
+        if (!Uri.IsWellFormedUriString(url, UriKind.Absolute))
+            throw new ArgumentException($"Invalid URL: '{url}'");
 
         return new Uri(url);
     }
