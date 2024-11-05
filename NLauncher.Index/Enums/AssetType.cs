@@ -48,7 +48,7 @@ public static class AssetTypeEnum
         string typename = filename.Split('_', 1)[0];
 
         AssetType[] matched = Enum.GetValues<AssetType>().Where(at => NameMatches(at, typename)).ToArray();
-        if (matched.Length > 0)
+        if (matched.Length > 1)
             throw new ArgumentException($"Multiple types found for filename: {Path.GetFileName(filepath)}");
 
         return matched[0];
