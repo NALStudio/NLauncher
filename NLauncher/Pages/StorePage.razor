@@ -1,8 +1,14 @@
 ﻿@page "/store"
+@using NLauncher.Components.Cards
 
 <PageTitle>NLauncher - Store</PageTitle>
 
-<h3>StorePage</h3>
+<MudGrid Style="position:relative;top:0;left:0;right:0;bottom:0">
+    @for (int i = 0; i < 20; i++)
+    {
+        <StoreCardItem Entry="null" />
+    }
+</MudGrid>
 
 @code {
 

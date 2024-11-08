@@ -1,0 +1,18 @@
+﻿@using NLauncher.Services.Settings
+
+@inject SettingsService Settings
+
+<MudPopover AnchorOrigin="Origin.BottomRight"
+            TransformOrigin="Origin.TopRight"
+            Open="@Open">
+    <div class="ma-3">
+        <MudSwitch
+            T="bool"
+            Label="Dark Mode"
+            Value="@(GetDarkMode())"
+            ValueChanged="@SetDarkMode"
+            ThumbIcon="@(GetDarkModeIcon())"
+            UncheckedColor="Color.Warning"
+            Color="Color.Dark" />
+    </div>
+</MudPopover>

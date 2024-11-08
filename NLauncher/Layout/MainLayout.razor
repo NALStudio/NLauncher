@@ -1,17 +1,34 @@
-﻿@inherits LayoutComponentBase
+﻿@using NLauncher.Components
+@inherits LayoutComponentBase
 
-@inject NavigationManager navigationManager
-
-<MudThemeProvider />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
+@layout BaseLayout
 
 <MudLayout>
-    <MudAppBar>
+    <MudAppBar Class="appbar-style" Elevation="0" Color="Color.Transparent">
         <MudText Typo="Typo.h5">NLauncher</MudText>
+        <MudSpacer />
+        <MudStack Row AlignItems="AlignItems.Center">
+            <MudAutocomplete T="string"
+                             Placeholder="Search"
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.Start"
+                             AdornmentIcon="@(Icons.Material.Rounded.Search)" />
+
+            <MudDivider FlexItem Vertical DividerType="DividerType.Middle" Class="mx-4 my-4" />
+
+            <MudTooltip Text="Downloads" Delay="1000">
+                <MudIconButton Icon="@(Icons.Material.Rounded.Download)" OnClick="ToggleDownloadsMenu" />
+            </MudTooltip>
+            <DownloadsMenu Open="@downloadsMenuOpen" />
+
+            <MudTooltip Text="Settings" Delay="1000">
+                <MudIconButton Icon="@(Icons.Material.Rounded.Settings)" OnClick="ToggleSettingsMenu" />
+            </MudTooltip>
+            <SettingsMenu Open="@settingsMenuOpen" />
+
+        </MudStack>
     </MudAppBar>
-    <MudDrawer Open Variant="DrawerVariant.Persistent" ClipMode="DrawerClipMode.Always">
+    <MudDrawer Elevation="0" Open Color="Color.Transparent" Variant="DrawerVariant.Persistent" ClipMode="DrawerClipMode.Always">
         <MudNavMenu Rounded Margin="Margin.Normal" Color="Color.Primary">
             <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@(Icons.Material.Rounded.Home)">Home</MudNavLink>
             <MudNavLink Href="/store" Icon="@(Icons.Material.Rounded.Sell)">Store</MudNavLink>
@@ -19,8 +36,36 @@
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent>
-        <MudContainer  MaxWidth="MaxWidth.ExtraLarge">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge">
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
+
+<MudOverlay Visible="@AnyMenuOpen" AutoClose OnClosed="() => SetMenuOpen()" />
+
+<style>
+    .appbar-style {
+        /* background: rgba(255, 255, 255, 0.2); */
+        backdrop-filter: blur(12px);
+    }
+</style>
+
+@code {
+    private bool settingsMenuOpen = false;
+    private bool downloadsMenuOpen = false;
+
+    private bool AnyMenuOpen => settingsMenuOpen || downloadsMenuOpen;
+
+    private void SetMenuOpen(bool settings = false, bool downloads = false)
+    {
+        if (settings && downloads)
+            throw new ArgumentException("Cannot have multiple menus open at once.");
+
+        settingsMenuOpen = settings;
+        downloadsMenuOpen = downloads;
+    }
+
+    private void ToggleSettingsMenu() => SetMenuOpen(settings: !settingsMenuOpen);
+    private void ToggleDownloadsMenu() => SetMenuOpen(downloads: !downloadsMenuOpen);
+}

@@ -1,0 +1,42 @@
+﻿@using NLauncher.Services.Settings
+
+@inherits LayoutComponentBase
+
+@inject SettingsService Settings
+
+<MudThemeProvider Theme="@theme" IsDarkMode="@(Settings.DarkMode)" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+@Body
+
+
+@code {
+    private static readonly MudTheme theme = new MudTheme()
+    {
+        PaletteLight = new()
+        {
+            Primary = Colors.Red.Default,
+
+            // Values provided by: https://m2.material.io/inline-tools/color/
+            Secondary = "#AF4CAC", // Complementary
+            Tertiary = "#4f4caf" // Triadic 2
+        },
+        PaletteDark = new()
+        {
+            Primary = Colors.Red.Lighten1
+        }
+    };
+
+    protected override void OnInitialized()
+    {
+        Settings.SettingsChanged += OnSettingsChanged;
+        Settings.LoadSettings();
+    }
+
+    private void OnSettingsChanged()
+    {
+        StateHasChanged();
+    } 
+}

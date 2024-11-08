@@ -29,6 +29,10 @@ internal static class AsciiNormalizer
     /// </remarks>
     public static string AsLowerCaseAscii(string s)
     {
+        // I tried to make it so that exclamation marks (!), question marks (?), etc. were omitted
+        // but it became too much of a hassle to add all these options so I'll just remove them manually for now
+        // I can make a specialized path normalization function in the future instead.
+
         ReadOnlySpan<char> input = s.AsSpan();
         Span<char> output = stackalloc char[input.Length];
 

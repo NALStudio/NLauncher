@@ -1,0 +1,74 @@
+﻿@using NLauncher.Index.Enums
+@using NLauncher.Index.Models.Applications
+@using NLauncher.Index.Models.Index
+
+<MudItem xs="12" md="6" lg="4" xl="3">
+    <!-- Clip overflow to fix skeleton rendering incorrectly -->
+    <MudCard Outlined Elevation="0" Style="overflow:clip">
+        <!-- Image -->
+        @if (Entry is not null)
+        {
+            IndexAsset? asset = Entry.Assets.Closest(imageHeight, AssetType.Banner, AssetType.Icon);
+
+            if (asset?.Type == AssetType.Banner)
+            {
+                <MudCardMedia Image="@(asset.Url.ToString())" Height="@imageHeight" />
+            }
+            else
+            {
+                <MudStack Style="@imageHeightCss">
+                    @if (asset is not null)
+                    {
+                        <MudImage Src="@(asset.Url.ToString())" />
+                    }
+                    <MudText Typo="Typo.h5">@(Entry.Manifest.DisplayName)</MudText>
+                </MudStack>
+            }
+        }
+        else
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="@($"{imageHeight}px")" />
+        }
+
+        <MudCardContent>
+            <!-- Title -->
+            @if (Entry is not null)
+            {
+                <MudText Typo="Typo.h5">@(Entry.Manifest.DisplayName)</MudText>
+            }
+            else
+            {
+                <MudSkeleton SkeletonType="SkeletonType.Text" Width="80%" Height="42px" />
+            }
+
+            <!-- Developer/Publisher -->
+            @if (Entry is not null)
+            {
+                <MudText Typo="Typo.body2">@(FormatDeveloperPublisher(Entry.Manifest))</MudText>
+            }
+            else
+            {
+                <MudSkeleton SkeletonType="SkeletonType.Text" Width="50%" />
+            }
+        </MudCardContent>
+    </MudCard>
+</MudItem>
+
+@code {
+    private const int imageHeight = 300;
+    private static readonly string imageHeightCss = $"height:{imageHeight}px;";
+
+    /// <summary>
+    /// Use <see langword="null"/> for skeleton.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public IndexEntry? Entry { get; set; }
+
+    private static string FormatDeveloperPublisher(AppManifest manifest)
+    {
+        if (manifest.Developer == manifest.Publisher)
+            return manifest.Developer;
+        else
+            return $"{manifest.Developer} | {manifest.Publisher}";
+    }
+}
