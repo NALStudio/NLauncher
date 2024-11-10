@@ -2,11 +2,12 @@
 using NLauncher.Index.Models.Index;
 using NLauncher.Services.Storage;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 
 namespace NLauncher.Services.Index;
 
-public partial class IndexService
+public partial class IndexService : IDisposable
 {
     private const string cacheFilename = "indexCache.json";
     private const string indexManifestEndpoint = "https://api.github.com/repos/NALStudio/NLauncher-Index/contents/indexmanifest.json";
@@ -21,75 +22,92 @@ public partial class IndexService
         this.storageService = storageService;
     }
 
-    private readonly object getIndexLock = new();
-    private Task<CachedIndex>? getIndex;
+    private readonly object cachedLock = new();
+    private CachedIndex? cached;
 
-    public async Task<IndexManifest> GetIndexAsync()
+    private readonly SemaphoreSlim loadLock = new(1, 1);
+
+    public bool TryGetCachedIndex([MaybeNullWhen(false)] out IndexManifest manifest)
     {
-        Task<CachedIndex> cacheTask;
-        lock (getIndexLock)
+        CachedIndex? cached;
+        lock (cachedLock)
         {
-            getIndex ??= GetIndexThreaded(useCache: true);
-            cacheTask = getIndex;
+            cached = this.cached;
         }
 
-        CachedIndex cached = await cacheTask;
-        if (IsCacheOutdated(cached))
+        if (IsCacheValid(cached))
         {
-            Task<CachedIndex> refreshTask;
-            lock (getIndexLock)
-            {
-                getIndex = GetIndexThreaded(useCache: false);
-                refreshTask = getIndex;
-            }
-
-            CachedIndex refreshed = await refreshTask;
-            Debug.Assert(!IsCacheOutdated(refreshed));
-            return refreshed.Index;
+            manifest = cached.Value.Index;
+            return true;
         }
         else
         {
-            return cached.Index;
+            manifest = null;
+            return false;
         }
     }
 
-    private static bool IsCacheOutdated(CachedIndex cached)
+    public async ValueTask<IndexManifest> GetIndexAsync()
     {
-        return DateTimeOffset.UtcNow.ToUnixTimeSeconds() > cached.ExpiresTimestamp;
-    }
+        // Try to get cached index first
+        if (TryGetCachedIndex(out IndexManifest? cached))
+            return cached;
 
-    private async ValueTask<CachedIndex?> TryGetCachedIndex()
-    {
-        string serialized = await storageService.ReadAll(cacheFilename);
-        if (string.IsNullOrEmpty(serialized))
-            return null;
+        // Wait for our turn to load the index
+        await loadLock.WaitAsync();
 
-        CachedIndex? deserialized = CachedIndex.TryDeserialize(serialized);
-        if (!deserialized.HasValue)
-            logger.LogWarning("Cache value could not be deserialized.");
-        return deserialized;
-    }
-
-    private async Task<CachedIndex> GetIndexThreaded(bool useCache)
-    {
-        return await Task.Run(() => GetIndex(useCache));
-    }
-
-    private async Task<CachedIndex> GetIndex(bool useCache)
-    {
-        if (useCache)
+        CachedIndex loaded;
+        try
         {
-            CachedIndex? cached = await TryGetCachedIndex();
-            if (cached.HasValue)
+            // An earlier load task might've already loaded a valid index to cache.
+            // If a valid index is found, return that instead and don't bother to load a new one.
+            if (TryGetCachedIndex(out IndexManifest? recheckedCache))
+                return recheckedCache;
+
+            loaded = await Task.Run(LoadCacheAsync);
+            lock (cachedLock)
             {
-                logger.LogInformation("Index loaded from cache.");
-                return cached.Value;
+                this.cached = loaded;
             }
         }
+        finally
+        {
+            loadLock.Release();
+        }
 
-        IndexManifest index = await FetchIndex();
-        logger.LogInformation("Index downloaded from repository.");
-        return await SaveIndexToCache(index);
+        return loaded.Index;
+    }
+
+    // Task instead of ValueTask so that we can call it directly in Task.Run instead of using a wrapper function
+    private async Task<CachedIndex> LoadCacheAsync()
+    {
+        // Try to load cached value from storage
+        CachedIndex? cached = await LoadIndexFromCache();
+        if (IsCacheValid(cached))
+        {
+            logger.LogInformation("Loaded index from cache.");
+            return cached.Value;
+        }
+
+        // No caches left, fetch from GitHub
+        IndexManifest fetched = await FetchIndexFromGitHub();
+        CachedIndex cachedFetch = await SaveIndexToCache(fetched);
+
+        logger.LogInformation("Fetched index from GitHub.");
+        Debug.Assert(IsCacheValid(cachedFetch));
+        return cachedFetch;
+    }
+
+    private static bool IsCacheValid([NotNullWhen(true)] CachedIndex? cached)
+    {
+        static bool IsCacheOutdated(CachedIndex cached) => DateTimeOffset.UtcNow.ToUnixTimeSeconds() > cached.ExpiresTimestamp;
+
+        if (!cached.HasValue)
+            return false;
+        if (IsCacheOutdated(cached.Value))
+            return false;
+
+        return true;
     }
 
     private async ValueTask<CachedIndex> SaveIndexToCache(IndexManifest index, long expiresIn = 86400) // 86400 seconds == 1 day
@@ -106,7 +124,19 @@ public partial class IndexService
         return cached;
     }
 
-    private async Task<IndexManifest> FetchIndex()
+    private async ValueTask<CachedIndex?> LoadIndexFromCache()
+    {
+        string serialized = await storageService.ReadAll(cacheFilename);
+        if (string.IsNullOrEmpty(serialized))
+            return null;
+
+        CachedIndex? deserialized = CachedIndex.TryDeserialize(serialized);
+        if (!deserialized.HasValue)
+            logger.LogWarning("Cache value could not be deserialized.");
+        return deserialized;
+    }
+
+    private async Task<IndexManifest> FetchIndexFromGitHub()
     {
         HttpRequestMessage request = new()
         {
@@ -125,5 +155,11 @@ public partial class IndexService
         }
 
         return manifest ?? throw new InvalidOperationException("Could not deserialize index manifest.");
+    }
+
+    public void Dispose()
+    {
+        loadLock.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

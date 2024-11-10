@@ -1,4 +1,6 @@
 ﻿@using NLauncher.Components
+@using NLauncher.Index.Models.Index
+
 @inherits LayoutComponentBase
 
 @layout BaseLayout
@@ -8,11 +10,18 @@
         <MudText Typo="Typo.h5">NLauncher</MudText>
         <MudSpacer />
         <MudStack Row AlignItems="AlignItems.Center">
-            <MudAutocomplete T="string"
+            <!-- Use null value to force autocomplete to clear once an app was selected -->
+            <MudAutocomplete T="IndexEntry"
+                             SearchFunc="SearchIndex"
+                             ToStringFunc="@(static e => e.Manifest.DisplayName)"
+                             MaxItems="5"
+                             Value="null"
+                             ValueChanged="@(async e => await NavigateTo(e.Manifest))"
                              Placeholder="Search"
                              Variant="Variant.Outlined"
                              Adornment="Adornment.Start"
-                             AdornmentIcon="@(Icons.Material.Rounded.Search)" />
+                             AdornmentIcon="@(Icons.Material.Rounded.Search)">
+            </MudAutocomplete>
 
             <MudDivider FlexItem Vertical DividerType="DividerType.Middle" Class="mx-4 my-4" />
 
@@ -53,22 +62,3 @@
         backdrop-filter: blur(12px);
     }
 </style>
-
-@code {
-    private bool settingsMenuOpen = false;
-    private bool downloadsMenuOpen = false;
-
-    private bool AnyMenuOpen => settingsMenuOpen || downloadsMenuOpen;
-
-    private void SetMenuOpen(bool settings = false, bool downloads = false)
-    {
-        if (settings && downloads)
-            throw new ArgumentException("Cannot have multiple menus open at once.");
-
-        settingsMenuOpen = settings;
-        downloadsMenuOpen = downloads;
-    }
-
-    private void ToggleSettingsMenu() => SetMenuOpen(settings: !settingsMenuOpen);
-    private void ToggleDownloadsMenu() => SetMenuOpen(downloads: !downloadsMenuOpen);
-}

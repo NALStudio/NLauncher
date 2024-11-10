@@ -24,7 +24,9 @@ else
 
     private IndexEntry? app;
 
-    protected override async Task OnInitializedAsync()
+    // Use OnParametersSet so that we detect when we change the application, but keep the page
+    // like when searching for a new app for example
+    protected override async Task OnParametersSetAsync()
     {
         IndexManifest index = await IndexService.GetIndexAsync();
 
@@ -56,11 +58,11 @@ else
         return appUuid;
     }
 
-    public static string GetPageRoute(IndexManifest index, AppManifest manifest)
+    public static string GetPageRoute(IndexManifest index, AppManifest app)
     {
         // Prefer to use app name if possible
-        string? id = index.Aliases.GetName(manifest.Uuid);
-        id ??= manifest.Uuid.ToString();
+        string? id = index.Aliases.GetName(app.Uuid);
+        id ??= app.Uuid.ToString();
 
         return "./app/" + id;
     }

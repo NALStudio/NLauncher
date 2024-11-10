@@ -37,7 +37,6 @@ public class AppManifest : IIndexSerializable
     /// <remarks>
     /// Values range from -128 to 127 (inclusive)
     /// </remarks>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public sbyte Priority { get; init; } // defaults to 0
 
     public required ImmutableArray<AppVersion> Versions { get; init; }
