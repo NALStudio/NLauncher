@@ -33,21 +33,23 @@ File layout:
 
 [index.json]
 {
+    "indexmanifest_path": "string" // A relative path from the root of the INDEX to where the indexmanifest.json should be built. Recommended value: "./indexmanifest.json"
     "repository": {
         "owner": "string",
         "repo": "string",
-        "path": "string" // Path from the root of the repository to the root of the index. Use slash '/' for root.
+        "path": "string", // A relative path from the root of the REPOSITORY to the root of the index. Use slash ('/') to point to the root of the repository.
     }
 }
 
 [ aliases.json Spec ]
 // Currently aliases is a dictionary so we can't have duplicated safenames by accident. This can be changed to an object later if necessary. (breaking change)
-// This is also compiled into the index so it's easier to track when we need to refresh the index from GitHub (we can check the release tag before downloading)
+// This is also compiled into the index so that we only need to download one file on startup
 {
     // Values are nested inside "aliases" so that we can easily extend this json document if necessary (add version counter etc.)
     "aliases": {
         // A dictionary which maps all of the reserved app names into their respective apps' UUIDs
         // safename must be URL safe (i.e. "koponen-dating-simulator")
+        // If multiple names are registered to the same application, the longest one will be used by default
         "$safename": "$uuid"
     }
 }
@@ -112,8 +114,8 @@ File layout:
     }
 }
 
-[ Index Spec ]
-// GitHub repository is compiled into an index on every push, this is a (minified?) JSON file with the following data:
+[ indexmanifest.json Spec ]
+// GitHub repository is compiled into an index minified JSON file with the following data:
 {
     "aliases": ..., // copied from aliases.json
     "metadata": ..., // copied from index.json

@@ -98,7 +98,7 @@ internal partial class AliasesAddCommand : AsyncCommand<MainSettings>, IMainComm
         }
 
         AppAliases newAliases = new(oldAliases.Aliases.Add(alias, manifest.Uuid));
-        string newAliasesJson = IndexJsonSerializer.Serialize(newAliases);
+        string newAliasesJson = IndexJsonSerializer.Serialize(newAliases, IndexSerializationOptions.HumanReadable);
         await File.WriteAllTextAsync(paths.AliasesFile, newAliasesJson);
 
         return AliasAddResult.Success();
@@ -151,7 +151,7 @@ internal partial class AliasesAddCommand : AsyncCommand<MainSettings>, IMainComm
         return true;
     }
 
-    private IEnumerable<char> NotUrlEncodableCharacters(string alias)
+    private static IEnumerable<char> NotUrlEncodableCharacters(string alias)
     {
         foreach (char c in alias)
         {

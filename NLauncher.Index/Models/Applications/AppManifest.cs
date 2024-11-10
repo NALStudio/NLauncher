@@ -22,10 +22,10 @@ public class AppManifest : IIndexSerializable
     public required AppRelease Release { get; init; }
 
     // Do not include AgeRating.Unrated in enum so that we can omit it during minified serialization
-    public AgeRating? AgeRating { get; init; } = null;
+    public AgeRating? AgeRating { get; init; }
 
     [JsonConverter(typeof(NullableColor24HexJsonConverter))]
-    public Color24? Color { get; init; } = null;
+    public Color24? Color { get; init; }
 
     /// <summary>
     /// <code>
@@ -38,7 +38,7 @@ public class AppManifest : IIndexSerializable
     /// Values range from -128 to 127 (inclusive)
     /// </remarks>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public sbyte Priority { get; init; } = 0;
+    public sbyte Priority { get; init; } // defaults to 0
 
     public required ImmutableArray<AppVersion> Versions { get; init; }
 }

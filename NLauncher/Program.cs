@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
+using NLauncher.Services.Index;
 using NLauncher.Services.Settings;
 using NLauncher.Services.Storage;
 
@@ -22,6 +23,7 @@ public static class Program
 
         builder.Services.AddSingleton<IStorageService, WebStorageService>();
         builder.Services.AddSingleton<SettingsService>();
+        builder.Services.AddScoped<IndexService>();
 
         await builder.Build().RunAsync();
     }

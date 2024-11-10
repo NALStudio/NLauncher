@@ -23,6 +23,10 @@ public static class IndexJsonSerializer
     {
         return JsonSerializer.Serialize(value, GetOptions(options));
     }
+    public static byte[] SerializeToUtf8Bytes<T>(T value, IndexSerializationOptions options = IndexSerializationOptions.None) where T : IIndexSerializable
+    {
+        return JsonSerializer.SerializeToUtf8Bytes(value, GetOptions(options));
+    }
 
     public static async Task SerializeAsync<T>(Stream utf8json, T value, IndexSerializationOptions options = IndexSerializationOptions.None) where T : IIndexSerializable
     {
@@ -39,10 +43,14 @@ public static class IndexJsonSerializer
     {
         return JsonSerializer.Deserialize<T>(json, defaultOptions);
     }
-
-    public static async Task<T?> DeserializeAsync<T>(Stream utf8json) where T : IIndexSerializable
+    public static T? Deserialize<T>(ReadOnlySpan<byte> utf8Json) where T : IIndexSerializable
     {
-        return await JsonSerializer.DeserializeAsync<T>(utf8json, defaultOptions);
+        return JsonSerializer.Deserialize<T>(utf8Json, defaultOptions);
+    }
+
+    public static async Task<T?> DeserializeAsync<T>(Stream utf8Json) where T : IIndexSerializable
+    {
+        return await JsonSerializer.DeserializeAsync<T>(utf8Json, defaultOptions);
     }
     #endregion
 
@@ -71,6 +79,7 @@ public static class IndexJsonSerializer
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             WriteIndented = false,
+
 
             TypeInfoResolver = IndexJsonSerializerContext.Default
         };

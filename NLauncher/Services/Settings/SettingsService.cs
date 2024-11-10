@@ -5,6 +5,8 @@ namespace NLauncher.Services.Settings;
 
 public partial class SettingsService
 {
+    private const string settingsFilename = "settings.json";
+
     private Settings __settings = Settings.CreateDefault();
 
     /// <summary>
@@ -73,7 +75,7 @@ public partial class SettingsService
     private async ValueTask InternalSaveSettings(Settings settings)
     {
         string json = JsonSerializer.Serialize(settings, SerializerContext.Default.Settings);
-        await storageService.WriteAll(json);
+        await storageService.WriteAll(settingsFilename, json);
     }
 
     public async void LoadSettings()
@@ -84,7 +86,7 @@ public partial class SettingsService
 
     private async Task<Settings?> InternalLoadSettings()
     {
-        string json = await storageService.ReadAll();
+        string json = await storageService.ReadAll(settingsFilename);
         if (string.IsNullOrEmpty(json))
             return null;
 

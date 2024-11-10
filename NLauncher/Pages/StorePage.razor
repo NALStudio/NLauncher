@@ -1,15 +1,30 @@
 ﻿@page "/store"
+
 @using NLauncher.Components.Cards
+@using NLauncher.Index.Models.Index
+@using NLauncher.Services.Index
+
+@inject IndexService IndexService
 
 <PageTitle>NLauncher - Store</PageTitle>
 
-<MudGrid Style="position:relative;top:0;left:0;right:0;bottom:0">
-    @for (int i = 0; i < 20; i++)
-    {
-        <StoreCardItem Entry="null" />
+<MudGrid Style="position:relative;top:0;left:0;right:0;bottom:0;padding-bottom:24px"> <!-- Mud grid default spacing is 6. 6 * 4px => 24px -->
+    @{
+        int storeCardCount = index?.Entries.Length ?? 12;
+        for (int i = 0; i < storeCardCount; i++)
+        {
+            IndexEntry? app = index?.Entries[i];
+            <StoreCardItem Entry="app" />
+        }
     }
 </MudGrid>
 
 @code {
+    private IndexManifest? index;
 
+    protected override async Task OnInitializedAsync()
+    {
+        index = await IndexService.GetIndexAsync();
+        StateHasChanged();
+    }
 }

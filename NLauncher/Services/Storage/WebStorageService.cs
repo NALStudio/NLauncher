@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices.JavaScript;
+﻿using Microsoft.JSInterop;
+using System.Runtime.InteropServices.JavaScript;
 using System.Runtime.Versioning;
 
 namespace NLauncher.Services.Storage;
@@ -6,31 +7,37 @@ namespace NLauncher.Services.Storage;
 [SupportedOSPlatform("browser")]
 public partial class WebStorageService : IStorageService
 {
-    [JSImport("setLocalStorageValue", "WebStorageService")]
-    private static partial void SetLocalStorageValue(string value);
-
-    [JSImport("getLocalStorageValue", "WebStorageService")]
-    private static partial string GetLocalStorageValue();
-
-    private bool imported = false;
-    private async ValueTask TryImportModule()
+    private readonly IJSRuntime js;
+    public WebStorageService(IJSRuntime js)
     {
-        if (!imported)
-        {
-            await JSHost.ImportAsync("WebStorageService", "/js/WebStorageServiceJS.js");
-            imported = true;
-        }
+        this.js = js;
     }
 
-    public async ValueTask WriteAll(string text)
+    private async ValueTask SetLocalStorageValue(string key, string value)
     {
-        await TryImportModule();
-        SetLocalStorageValue(text);
+        await js.InvokeVoidAsync("localStorage.setItem", key, value);
     }
 
-    public async ValueTask<string> ReadAll()
+    private async ValueTask<string?> GetLocalStorageValue(string key)
     {
-        await TryImportModule();
-        return GetLocalStorageValue();
+        return await js.InvokeAsync<string?>("localStorage.getItem", key);
+    }
+
+    private static string GetLocalStorageKey(string filename)
+    {
+        IStorageService.ThrowIfFilenameInvalid(filename);
+        return "NLauncher.Services.Storage.WebStorageService/" + filename;
+    }
+
+    public async ValueTask WriteAll(string filename, string text)
+    {
+        string key = GetLocalStorageKey(filename);
+        await SetLocalStorageValue(key, text);
+    }
+
+    public async ValueTask<string> ReadAll(string filename)
+    {
+        string key = GetLocalStorageKey(filename);
+        return await GetLocalStorageValue(key) ?? string.Empty;
     }
 }

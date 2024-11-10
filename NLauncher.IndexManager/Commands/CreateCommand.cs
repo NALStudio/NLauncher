@@ -39,6 +39,7 @@ internal class CreateCommand : AsyncCommand<MainSettings>, IMainCommand
 
         IndexMeta meta = new()
         {
+            IndexManifestPath = "./indexmanifest.json",
             Repository = new()
             {
                 Owner = owner,
@@ -103,11 +104,11 @@ internal class CreateCommand : AsyncCommand<MainSettings>, IMainCommand
     private static async Task Create(IndexPaths paths, IndexMeta index)
     {
         // Create index.json file
-        string indexJson = IndexJsonSerializer.Serialize(index);
+        string indexJson = IndexJsonSerializer.Serialize(index, IndexSerializationOptions.HumanReadable);
         await File.WriteAllTextAsync(paths.IndexFile, indexJson);
 
         // Create aliases.json file
-        string aliasesJson = IndexJsonSerializer.Serialize(AppAliases.Empty);
+        string aliasesJson = IndexJsonSerializer.Serialize(AppAliases.Empty, IndexSerializationOptions.HumanReadable);
         await File.WriteAllTextAsync(paths.AliasesFile, aliasesJson);
     }
 }

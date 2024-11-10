@@ -35,7 +35,7 @@ public class AppAliases : IIndexSerializable
     public IEnumerable<string> GetNames(Guid id) => idToName[id];
 
     /// <summary>
-    /// Returns the first name that is registered to this id or <see langword="null"/> if none are found.
+    /// Returns the default name that is registered to this id or <see langword="null"/> if none are found.
     /// </summary>
-    public string? GetName(Guid id) => GetNames(id).FirstOrDefault();
+    public string? GetName(Guid id) => GetNames(id).MaxBy(static name => name.Length);
 }

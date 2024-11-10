@@ -1,0 +1,67 @@
+﻿@using NLauncher.Index.Models.Applications
+@using NLauncher.Index.Models.Index
+@using NLauncher.Services.Index
+
+@page "/app/{AppId}"
+
+@inject IndexService IndexService
+@inject NavigationManager navigationManager
+
+@if (app is not null)
+{
+    <PageTitle>NLauncher - @(app.Manifest.DisplayName)</PageTitle>
+}
+else
+{
+    <PageTitle>NLauncher</PageTitle>
+}
+
+<h1>@(app?.Manifest.DisplayName)</h1>
+
+@code {
+    [Parameter]
+    public required string AppId { get; set; }
+
+    private IndexEntry? app;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IndexManifest index = await IndexService.GetIndexAsync();
+
+        Guid? appUuid = TryParseId(index, AppId);
+        app = index.Entries.FirstOrDefault(e => e.Manifest.Uuid == appUuid);
+        if (app is not null)
+            StateHasChanged();
+        else
+            navigationManager.NavigateTo("not-found"); // Dirty solution, but you cannot currently show the 404 page dynamically
+    }
+
+    private static Guid? TryParseId(IndexManifest index, string id)
+    {
+        Guid? appUuid;
+
+        // Try to parse as guid
+        if (Guid.TryParse(id, out Guid parsedGuid))
+            appUuid = parsedGuid;
+        else
+            appUuid = null;
+
+        // Try to parse as alias
+        if (!appUuid.HasValue)
+        {
+            if (index.Aliases.Aliases.TryGetValue(id, out Guid value))
+                appUuid = value;
+        }
+
+        return appUuid;
+    }
+
+    public static string GetPageRoute(IndexManifest index, AppManifest manifest)
+    {
+        // Prefer to use app name if possible
+        string? id = index.Aliases.GetName(manifest.Uuid);
+        id ??= manifest.Uuid.ToString();
+
+        return "./app/" + id;
+    }
+}

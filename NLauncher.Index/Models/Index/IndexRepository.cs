@@ -11,5 +11,5 @@ public class IndexRepository
     public required string Owner { get; init; }
     public required string Repo { get; init; }
     public required string Branch { get; init; }
-    public string Path { get; init; } = "/";
+    public required string Path { get; init; }
 }

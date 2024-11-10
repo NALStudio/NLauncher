@@ -66,24 +66,33 @@ internal class AliasesListCommand : AsyncCommand<MainSettings>, IMainCommand
                 return new($"[grey]{appId}[/]"); // No need to escape markup, Guid doesn't have [ or ] symbols.
         }
 
-        Tree tree = new("Aliases");
-        Dictionary<Guid, TreeNode> nodes = new();
-
-        foreach ((string alias, Guid appId) in aliases.Aliases.OrderBy(static kv => kv.Key))
+        Markup FormatAlias(string alias, int aliasesCount, bool isLongest)
         {
-            Markup name = TryResolveName(appId);
+            alias = alias.EscapeMarkup();
+            if (aliasesCount > 1 && isLongest)
+                alias += " [grey](default)[/]";
 
-            // If no node for app exists, create one
-            if (!nodes.TryGetValue(appId, out TreeNode? node))
-            {
-                node = tree.AddNode(name);
-                nodes.Add(appId, node);
-            }
-
-            // Add alias for app
-            node.AddNode(alias);
+            return new Markup(alias);
         }
 
+        Tree tree = new("Aliases");
+        foreach (IGrouping<Guid, string> group in aliases.Aliases.GroupBy(keySelector: kv => kv.Value, elementSelector: kv => kv.Key))
+        {
+            Guid appId = group.Key;
+
+            string[] appAliases = group.ToArray();
+            Array.Sort(appAliases);
+
+            string? longestAlias = appAliases.MaxBy(static a => a.Length);
+
+            Markup appName = TryResolveName(appId);
+            TreeNode node = tree.AddNode(appName);
+            foreach (string alias in appAliases)
+            {
+                Markup aliasName = FormatAlias(alias, aliasesCount: appAliases.Length, isLongest: alias == longestAlias);
+                node.AddNode(aliasName);
+            }
+        }
         return tree;
     }
 

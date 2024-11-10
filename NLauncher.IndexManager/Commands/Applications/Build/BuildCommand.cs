@@ -30,33 +30,19 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
     #endregion
 
     #region IMainCommand
-    public async Task<int> ExecuteAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, humanReadable: true);
+    public async Task<int> ExecuteAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, humanReadable: false);
     public ValidationResult Validate(MainSettings settings) => ValidationResult.Success();
     #endregion
 
     #region IMainCommandVariant
-    public async Task<int> ExecuteVariantAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, humanReadable: false);
+    public async Task<int> ExecuteVariantAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, humanReadable: true);
     #endregion
 
     public static async Task<int> ExecuteAsync(MainSettings settings, string? outputPath, bool humanReadable)
     {
         // We don't create the directories due to safety reasons (we don't want to accidentally create a bunch of directories in the wrong place)
 
-        string output = outputPath ?? settings.Context.Paths.Directory;
-        if (Path.GetExtension(output.AsSpan()).Length < 1) // AsSpan to save on allocating a new string for extension
-        {
-            string filedate = DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
-            output = Path.Join(output, $"0_build_{filedate}.json");
-        }
-
-        string? outputDirectory = Path.GetDirectoryName(output);
-        if (!Directory.Exists(outputDirectory))
-        {
-            Error($"Output directory does not exist: '{outputDirectory}'");
-            return 1;
-        }
-
-        string? actualOutputPath = await AnsiConsole.Status().StartAsync("Building Index...", ctx => ExecuteWithStatusAsync(ctx, settings, outputPath: output, humanReadable: humanReadable));
+        string? actualOutputPath = await AnsiConsole.Status().StartAsync("Building Index...", ctx => ExecuteWithStatusAsync(ctx, settings, outputPath: outputPath, humanReadable: humanReadable));
         if (actualOutputPath is null)
             return 1;
 
@@ -67,25 +53,34 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         return 0;
     }
 
-    private static async Task<string?> ExecuteWithStatusAsync(StatusContext ctx, MainSettings settings, string outputPath, bool humanReadable)
+    private static async Task<string?> ExecuteWithStatusAsync(StatusContext ctx, MainSettings settings, string? outputPath, bool humanReadable)
     {
-        IndexManifest? manifest = await TryBuild(ctx, settings.Context.Paths);
+        IndexPaths paths = settings.Context.Paths;
+
+        ctx.Status($"Loading {paths.GetRelativePath(paths.IndexFile)}...");
+        IndexMeta? meta = await TryLoadAndDeserialize<IndexMeta>(paths, paths.IndexFile);
+        if (meta is null)
+            return null;
+
+        IndexManifest? manifest = await TryBuild(ctx, meta, paths);
         if (manifest is null)
             return null;
 
         ctx.Status("Serializing output...");
-        IndexSerializationOptions options;
+        IndexSerializationOptions options = IndexSerializationOptions.None;
         if (humanReadable)
-            options = IndexSerializationOptions.HumanReadable;
-        else
-            options = IndexSerializationOptions.None;
+            options |= IndexSerializationOptions.HumanReadable;
 
         string json = IndexJsonSerializer.Serialize(manifest, options);
 
         ctx.Status("Writing output...");
-        if (File.Exists(outputPath))
+        outputPath ??= Path.Join(paths.Directory, meta.IndexManifestPath);
+        outputPath = Path.GetFullPath(outputPath);
+
+        string? outputDirectory = Path.GetDirectoryName(outputPath);
+        if (!Directory.Exists(outputDirectory))
         {
-            Error($"Output file exists already: '{outputPath}'");
+            Error($"Output directory does not exist: '{outputDirectory}'");
             return null;
         }
         await File.WriteAllTextAsync(outputPath, json); // Encoding defaults to UTF-8
@@ -93,13 +88,8 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         return outputPath;
     }
 
-    private static async ValueTask<IndexManifest?> TryBuild(StatusContext ctx, IndexPaths paths)
+    private static async ValueTask<IndexManifest?> TryBuild(StatusContext ctx, IndexMeta meta, IndexPaths paths)
     {
-        ctx.Status($"Loading {paths.GetRelativePath(paths.IndexFile)}...");
-        IndexMeta? meta = await TryLoadAndDeserialize<IndexMeta>(paths, paths.IndexFile);
-        if (meta is null)
-            return null;
-
         ctx.Status($"Loading {paths.GetRelativePath(paths.AliasesFile)}...");
         AppAliases? aliases = await TryLoadAndDeserialize<AppAliases>(paths, paths.AliasesFile);
         if (aliases is null)

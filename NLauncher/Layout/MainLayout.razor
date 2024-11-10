@@ -16,6 +16,8 @@
 
             <MudDivider FlexItem Vertical DividerType="DividerType.Middle" Class="mx-4 my-4" />
 
+            <!-- App bar menus -->
+            <!-- Use MudPopover instead of MudMenu for better UX since MudMenu behaviour was a bit funky -->
             <MudTooltip Text="Downloads" Delay="1000">
                 <MudIconButton Icon="@(Icons.Material.Rounded.Download)" OnClick="ToggleDownloadsMenu" />
             </MudTooltip>
@@ -25,6 +27,7 @@
                 <MudIconButton Icon="@(Icons.Material.Rounded.Settings)" OnClick="ToggleSettingsMenu" />
             </MudTooltip>
             <SettingsMenu Open="@settingsMenuOpen" />
+            <!--/ App bar menus /-->
 
         </MudStack>
     </MudAppBar>
@@ -42,7 +45,7 @@
     </MudMainContent>
 </MudLayout>
 
-<MudOverlay Visible="@AnyMenuOpen" AutoClose OnClosed="() => SetMenuOpen()" />
+<MudOverlay Visible="@AnyMenuOpen" LockScroll="false" AutoClose OnClosed="() => SetMenuOpen()" />
 
 <style>
     .appbar-style {

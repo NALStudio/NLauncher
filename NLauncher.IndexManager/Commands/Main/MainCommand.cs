@@ -83,7 +83,7 @@ internal sealed class MainCommand : AsyncCommand<MainSettings>
                 "Index",
                 [
                     KnownCommand.Command<BuildCommand>("Build Index"),
-                    KnownCommand.CommandVariant<BuildCommand>("Build Index (minified)"),
+                    KnownCommand.CommandVariant<BuildCommand>("Build Index (formatted)"),
                     KnownCommand.Command<DeleteCommand>("Delete Index"),
                 ]
             )
