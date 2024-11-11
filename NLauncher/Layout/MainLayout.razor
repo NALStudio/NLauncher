@@ -54,7 +54,7 @@
     </MudMainContent>
 </MudLayout>
 
-<MudOverlay Visible="@AnyMenuOpen" LockScroll="false" AutoClose OnClosed="() => SetMenuOpen()" />
+<MudOverlay Visible="@AnyMenuOpen" LockScroll="false" AutoClose OnClosed="() => CloseAllMenus()" />
 
 <style>
     .appbar-style {

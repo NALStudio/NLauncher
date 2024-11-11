@@ -1,4 +1,5 @@
-﻿@using NLauncher.Index.Models.Applications
+﻿@using NLauncher.Components
+@using NLauncher.Index.Models.Applications
 @using NLauncher.Index.Models.Index
 @using NLauncher.Services.Index
 
@@ -16,7 +17,61 @@ else
     <PageTitle>NLauncher</PageTitle>
 }
 
-<h1>@(app?.Manifest.DisplayName)</h1>
+<!-- Banner -->
+@if (app is not null)
+{
+    <BannerImage Entry="@app">
+        <ImageContent Context="asset">
+            <MudImage Class="banner_image_style" Src="@(asset.Url.ToString())" />
+        </ImageContent>
+    </BannerImage>
+}
+else
+{
+    <MudSkeleton Class="banner_image_style" Style="aspect-ratio:16/9;height:auto;" SkeletonType="SkeletonType.Rectangle" />
+}
+
+<MudStack Style="padding-top:12px; min-width:256px;">
+    <!-- Title -->
+    @if (app is not null)
+    {
+        <h1>@(app.Manifest.DisplayName)</h1>           
+    }
+    else
+    {
+        <MudSkeleton SkeletonType="SkeletonType.Text" Height="48px" Width="300px" />
+    }
+
+    <MudStack Reverse Row AlignItems="AlignItems.Start">
+        <AppInfoCard Entry="@app" />
+        <!-- Description -->
+        <MudCard Class="pa-3" Outlined Elevation="0">
+            @if (app is not null)
+            {
+                <!-- pre-wrap so that newlines are actually visible, MudBlazor hides newlines by default:  -->
+                <!-- Related SO: https://stackoverflow.com/questions/64157834/how-can-i-have-new-line-in-blazor/75533639#75533639 -->
+                <div style="white-space:pre-wrap;">
+                    @((MarkupString)app.DescriptionHtml)
+                </div>
+            }
+            else
+            {
+                <div>
+                    <MudSkeleton SkeletonType="SkeletonType.Text" />
+                    <MudSkeleton SkeletonType="SkeletonType.Text" />
+                    <MudSkeleton SkeletonType="SkeletonType.Text" />
+                </div>
+            }
+        </MudCard>
+    </MudStack>
+</MudStack>
+
+<style>
+    .banner_image_style {
+        width: 100%;
+        border-radius: 12px;
+    }
+</style>
 
 @code {
     [Parameter]
@@ -36,6 +91,10 @@ else
             StateHasChanged();
         else
             navigationManager.NavigateTo("not-found"); // Dirty solution, but you cannot currently show the 404 page dynamically
+
+        // DEBUG
+        // app = null;
+        // StateHasChanged();
     }
 
     private static Guid? TryParseId(IndexManifest index, string id)

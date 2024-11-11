@@ -7,36 +7,33 @@
 @inject NavigationManager navigationManager
 @inject IndexService IndexService
 
-<MudItem @onclick=StoreCardClicked xs="12" md="6" lg="4" xl="3">
+<MudItem xs="12" md="6" lg="4" xl="3">
     <!-- Clip overflow to fix skeleton rendering incorrectly -->
-    <MudCard Class="@(GetStoreCardClasses())" Outlined Elevation="0" Style="overflow:clip">
+    <!-- onclick on MudCard instead of MudItem so that the click doesn't register inside the grid spacing -->
+    <MudCard @onclick=StoreCardClicked
+             @onmouseover=SetHoverEffectVisible
+             @onmouseout=SetHoverEffectHidden
+             Class="@(GetStoreCardClasses())"
+             Outlined Elevation="0"
+             Style="overflow:clip;cursor:pointer">
         <!-- Image -->
         @if (Entry is not null)
         {
-            IndexAsset? asset = Entry.Assets.Closest(imageHeight, AssetType.Banner, AssetType.Icon);
-
-            if (asset?.Type == AssetType.Banner)
-            {
-                <MudCardMedia Image="@(asset.Url.ToString())" Height="@imageHeight" />
-            }
-            else
-            {
-                <MudStack Style=@imageHeightCss AlignItems="AlignItems.Center" Justify="Justify.Center">
-                    @if (asset is not null)
-                    {
-                        <MudImage Src="@(asset.Url.ToString())"
-                                    Height="@iconImageHeight" />
-                    }
-                    <MudText Typo="Typo.h4">@(Entry.Manifest.DisplayName)</MudText>
-                </MudStack>
-            }
+            <BannerImage Entry="Entry" Height="@imageHeight">
+                <ImageContent Context="asset">
+                    <MudCardMedia Image="@(asset.Url.ToString())" Height="@imageHeight" />
+                </ImageContent>
+            </BannerImage>
         }
         else
         {
             <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="@($"{imageHeight}px")" />
         }
 
-        <MudCardContent>
+        <MudCardContent Style="position:relative; z-index:0">
+            <!-- Background hover effect -->
+            <div class="store_card_background" style=@(GetBackgroundHoverStyle()) />
+
             <!-- Title -->
             @if (Entry is not null)
             {
@@ -65,18 +62,28 @@
     .store_card:hover {
         box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0,0,0,.12);
     }
+
+    .store_card_background {
+        z-index: -1;
+        position: absolute;
+        left:0;right:0;top:0;bottom:0;
+        background-position: bottom;
+        background-size: cover;
+        filter: blur(48px);
+        transition-duration: 250ms;
+    }
 </style>
 
 @code {
     private const int imageHeight = 300;
-    private const int iconImageHeight = imageHeight / 2;
-    private static readonly string imageHeightCss = $"height:{imageHeight}px;";
 
     /// <summary>
     /// Use <see langword="null"/> for skeleton.
     /// </summary>
     [Parameter, EditorRequired]
     public IndexEntry? Entry { get; set; }
+
+    private bool hoverEffectVisible = false;
 
     private static string FormatDeveloperPublisher(AppManifest manifest)
     {
@@ -96,7 +103,33 @@
 
     private async Task StoreCardClicked()
     {
+        if (Entry is null)
+            return;
+
         IndexManifest index = await IndexService.GetIndexAsync();
-        navigationManager.NavigateTo(AppStorePage.GetPageRoute(index, Entry?.Manifest));
+        navigationManager.NavigateTo(AppStorePage.GetPageRoute(index, Entry.Manifest));
+    }
+
+    private void SetHoverEffectVisible()
+    {
+        hoverEffectVisible = true;
+        StateHasChanged();
+    }
+    private void SetHoverEffectHidden()
+    {
+        hoverEffectVisible = false;
+        StateHasChanged();
+    }
+
+    private string GetBackgroundHoverStyle()
+    {
+        IndexAsset? asset = Entry?.Assets.Largest(AssetType.Banner);
+        string opacity = hoverEffectVisible ? "0.35" : "0";
+
+        string css = $"opacity: {opacity};";
+        if (asset is not null)
+            css += $"background-image: url(\"{asset.Url}\");";
+
+        return css;
     }
 }

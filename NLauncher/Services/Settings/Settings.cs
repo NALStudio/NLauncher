@@ -13,7 +13,7 @@ public partial class SettingsService
         {
             return new()
             {
-                DarkMode = false
+                DarkMode = true
             };
         }
 

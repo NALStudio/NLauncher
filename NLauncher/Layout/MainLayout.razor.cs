@@ -31,6 +31,7 @@ public partial class MainLayout
         downloadsMenuOpen = downloads;
     }
 
+    private void CloseAllMenus() => SetMenuOpen();
     private void ToggleSettingsMenu() => SetMenuOpen(settings: !settingsMenuOpen);
     private void ToggleDownloadsMenu() => SetMenuOpen(downloads: !downloadsMenuOpen);
 
