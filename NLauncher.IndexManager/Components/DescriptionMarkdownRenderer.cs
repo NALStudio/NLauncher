@@ -1,4 +1,5 @@
 ﻿using Markdig;
+using Markdig.Extensions.EmphasisExtras;
 
 namespace NLauncher.IndexManager.Components;
 internal static class DescriptionMarkdownRenderer
@@ -15,10 +16,9 @@ internal static class DescriptionMarkdownRenderer
     {
         return new MarkdownPipelineBuilder()
             .DisableHtml()
-            // Add this if strikethrough doesn't work out of the box
             // Strikethrough is supported by VSCode markdown preview so I guess that would be a nice to have
             // I don't care about the other emphasis extras since VSCode doesn't support them.
-            // .UseEmphasisExtras(EmphasisExtraOptions.Strikethrough)
+            .UseEmphasisExtras(EmphasisExtraOptions.Strikethrough)
             .Build();
     }
 }
