@@ -1,7 +1,10 @@
-﻿@using NLauncher.Components
+﻿@using NLauncher.Code.Markdown
+@using NLauncher.Components
+@using NLauncher.Components.Cards.AppInfo
 @using NLauncher.Index.Models.Applications
 @using NLauncher.Index.Models.Index
 @using NLauncher.Services.Index
+@using System.Diagnostics
 
 @page "/app/{AppId}"
 
@@ -17,54 +20,57 @@ else
     <PageTitle>NLauncher</PageTitle>
 }
 
-<!-- Banner -->
-@if (app is not null)
-{
-    <BannerImage Entry="@app">
-        <ImageContent Context="asset">
-            <MudImage Class="banner_image_style" Src="@(asset.Url.ToString())" />
-        </ImageContent>
-    </BannerImage>
-}
-else
-{
-    <MudSkeleton Class="banner_image_style" Style="aspect-ratio:16/9;height:auto;" SkeletonType="SkeletonType.Rectangle" />
-}
-
-<MudStack Style="padding-top:12px; min-width:256px;">
-    <!-- Title -->
+<MudContainer MaxWidth="MaxWidth.Large" Gutters="false">
+    <!-- Banner -->
     @if (app is not null)
     {
-        <h1>@(app.Manifest.DisplayName)</h1>           
+        <BannerImage Entry="@app">
+            <ImageContent Context="asset">
+                <MudImage Style="user-select:none"
+                            Class="banner_image_style"
+                            ObjectFit="ObjectFit.Cover"
+                            Src="@(asset.Url.ToString())" />
+            </ImageContent>
+        </BannerImage>
     }
     else
     {
-        <MudSkeleton SkeletonType="SkeletonType.Text" Height="48px" Width="300px" />
+        <MudSkeleton Class="banner_image_style" Style="aspect-ratio:16/9;height:auto;" SkeletonType="SkeletonType.Rectangle" />
     }
 
-    <MudStack Reverse Row AlignItems="AlignItems.Start">
-        <AppInfoCard Entry="@app" />
-        <!-- Description -->
-        <MudCard Class="pa-3" Outlined Elevation="0">
-            @if (app is not null)
-            {
-                <!-- pre-wrap so that newlines are actually visible, MudBlazor hides newlines by default:  -->
-                <!-- Related SO: https://stackoverflow.com/questions/64157834/how-can-i-have-new-line-in-blazor/75533639#75533639 -->
-                <div style="white-space:pre-wrap;">
-                    @((MarkupString)app.DescriptionHtml)
-                </div>
-            }
-            else
-            {
-                <div>
-                    <MudSkeleton SkeletonType="SkeletonType.Text" />
-                    <MudSkeleton SkeletonType="SkeletonType.Text" />
-                    <MudSkeleton SkeletonType="SkeletonType.Text" />
-                </div>
-            }
-        </MudCard>
+    <MudStack Style="padding-top:12px; min-width:256px;">
+        <!-- Title -->
+        @if (app is not null)
+        {
+            <MudText Typo="Typo.h3">@(app.Manifest.DisplayName)</MudText>           
+        }
+        else
+        {
+            <MudSkeleton SkeletonType="SkeletonType.Text" Height="80px" Width="420px" />
+        }
+
+        <MudStack Row AlignItems="AlignItems.Start">
+            <!-- Description -->
+            <MudCard Class="pa-3" Style="flex:1" Outlined Elevation="0">
+                @if (app is not null)
+                {
+                    <MudMarkdown MarkdownPipeline="@(DefaultMarkdownPipeline.Instance)" OverrideHeaderTypo="@RemapMarkdownTypo" Value="@(app.DescriptionMarkdown)" />
+                }
+                else
+                {
+                    <div>
+                        <MudSkeleton Height="24px" SkeletonType="SkeletonType.Text" />
+                        <MudSkeleton Height="24px" SkeletonType="SkeletonType.Text" />
+                        <MudSkeleton Height="24px" SkeletonType="SkeletonType.Text" />
+                    </div>
+                }
+            </MudCard>
+
+            <!-- App Info -->
+            <AppInfoCard Entry="@app" />
+        </MudStack>
     </MudStack>
-</MudStack>
+</MudContainer>
 
 <style>
     .banner_image_style {
@@ -115,6 +121,22 @@ else
         }
 
         return appUuid;
+    }
+
+    private static Typo RemapMarkdownTypo(Typo typo)
+    {
+        Debug.Assert(typo >= Typo.h1);
+        Debug.Assert(typo <= Typo.h5);
+
+        const int maxTypo = (int)Typo.h5;
+
+        int oldTypo = (int)typo;
+        int newTypo = oldTypo + 2;
+
+        if (newTypo > maxTypo)
+            newTypo = maxTypo;
+
+        return (Typo)newTypo;
     }
 
     public static string GetPageRoute(IndexManifest index, AppManifest app)

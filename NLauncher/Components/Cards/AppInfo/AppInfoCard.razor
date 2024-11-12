@@ -1,0 +1,88 @@
+﻿@using NLauncher.Index.Enums
+@using NLauncher.Index.Models.Applications
+@using NLauncher.Index.Models.Index
+@using System.Diagnostics.CodeAnalysis
+
+<MudCard Class="pa-3" Style="width:300px;" Outlined Elevation="0">
+    <MudStack Spacing="4">
+        <!-- Icon -->
+        @if (!IsLoading)
+        {
+            IndexAsset? icon = Entry.Assets.Closest(iconSize, AssetType.Icon);
+            if (icon is not null)
+            {
+                <MudCardMedia Image="@(icon.Url.ToString())" Height="@iconSize" Style="background-size:contain;" />
+            }
+        }
+        else
+        {
+            <MudSkeleton Style="align-self:center;" SkeletonType="SkeletonType.Rectangle" Width="@iconSizePx" Height="@iconSizePx" />
+        }
+
+        @if (IsGameInstallable || IsGameStreamable)
+        {
+            <MudStack Spacing="2">
+                <MudButtonGroup FullWidth Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" DropShadow="false">
+                    @if (IsGameStreamable)
+                    {
+                        <!-- For some reason has to be set separately even though MudButtonGroup has DropShadow="false" -->
+                        <MudButton Disabled="@IsLoading">Play Now</MudButton>
+                    }
+                    @if (IsGameInstallable)
+                    {
+                        <MudButton Disabled="@IsLoading">Install</MudButton>
+                    }
+                </MudButtonGroup>
+
+                <MudButton FullWidth
+                           Disabled="@IsLoading"
+                           Variant="Variant.Filled"
+                           Size="Size.Large"
+                           DropShadow="false">
+                    Add To Library
+                </MudButton>
+            </MudStack>
+        }
+
+        <div>
+            @if (!IsLoading)
+            {
+                AppManifest app = Entry.Manifest;
+
+                <AppInfoCardData Label="Developer" Value="@(app.Developer)" />
+                <AppInfoCardData Label="Publisher" Value="@(app.Publisher)" />
+                <AppInfoCardData Label="Release Date" Value="@(GetReleaseDateString(app.Release))" />
+                <AppInfoCardData Label="Platforms" BottomDivider="false">
+                    <ValueContent>
+                        not implemented.
+                    </ValueContent>
+                </AppInfoCardData>
+            }
+        </div>
+    </MudStack>
+</MudCard>
+
+@code {
+    private const int iconSize = 64;
+    private static readonly string iconSizePx = $"{iconSize}px";
+
+    [Parameter, EditorRequired]
+    public required IndexEntry? Entry { get; set; }
+
+    [MemberNotNullWhen(false, nameof(Entry))]
+    private bool IsLoading => Entry is null;
+
+    private bool IsGameInstallable => true; // TODO: Determine these from the installation options
+    private bool IsGameStreamable => true;
+
+    private string GetReleaseDateString(AppRelease appRelease)
+    {
+        DateOnly? release = appRelease.ReleaseDate;
+
+        if (release.HasValue)
+            return release.Value.ToShortDateString();
+        else
+            return "TBD";
+    }
+
+}

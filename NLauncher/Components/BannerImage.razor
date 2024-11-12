@@ -45,6 +45,10 @@
             css += $"width:{Width.Value}px;";
         if (Height.HasValue)
             css += $"height:{Height.Value}px;";
+
+        if (!Width.HasValue || !Height.HasValue) // Do not force aspect ratio when width and height are both provided
+            css += "aspect-ratio: 16 / 9;";
+
         return css;
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using MudBlazor;
 using MudBlazor.Services;
 using NLauncher.Services.Index;
 using NLauncher.Services.Settings;
@@ -20,6 +21,7 @@ public static class Program
         builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
         builder.Services.AddMudServices();
+        builder.Services.AddMudMarkdownServices();
 
         builder.Services.AddSingleton<IStorageService, WebStorageService>();
         builder.Services.AddSingleton<SettingsService>();

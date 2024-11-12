@@ -48,7 +48,9 @@
         </MudNavMenu>
     </MudDrawer>
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+        <!-- Add some bottom padding so that you can scroll a bit past the bottom (content is easier to view) -->
+        <!-- Mud grid default spacing is 6 so bottom padding: 6 * 4px => 24px -->
+        <MudContainer Style="margin-bottom: 24px;" MaxWidth="MaxWidth.ExtraLarge">
             @Body
         </MudContainer>
     </MudMainContent>

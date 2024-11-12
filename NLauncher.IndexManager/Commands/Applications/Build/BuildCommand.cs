@@ -142,7 +142,6 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         string? descriptionMarkdown = await TryLoad(manifestPaths, manifestPaths.DescriptionFile);
         if (descriptionMarkdown is null)
             return null;
-        string descriptionHtml = DescriptionMarkdownRenderer.RenderDescription(descriptionMarkdown);
 
         List<IndexAsset> assets = new();
         foreach (string imageFile in manifestPaths.EnumerateImageFiles())
@@ -162,7 +161,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         return new IndexEntry()
         {
             Manifest = manifest,
-            DescriptionHtml = descriptionHtml,
+            DescriptionMarkdown = descriptionMarkdown,
             Assets = new IndexAssetCollection(assets)
         };
     }
