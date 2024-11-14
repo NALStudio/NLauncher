@@ -107,7 +107,7 @@
             return;
 
         IndexManifest index = await IndexService.GetIndexAsync();
-        navigationManager.NavigateTo(AppStorePage.GetPageRoute(index, Entry.Manifest), forceLoad: true);
+        navigationManager.NavigateTo(AppStorePage.GetPageRoute(index, Entry.Manifest));
     }
 
     private void SetHoverEffectVisible()

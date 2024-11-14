@@ -26,6 +26,9 @@ jobs:
 
     - name: Change base-tag in index.html
       run: sed -i 's/<base href="\/" \/>/<base href="\/NLauncher\/" \/>/g' NLauncher/wwwroot/index.html
+    - name: copy index.html to 404.html # copy index.html to 404.html since GitHub returns 404 when opening a subdomain.
+      run: cp release/wwwroot/index.html release/wwwroot/404.html
+
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
