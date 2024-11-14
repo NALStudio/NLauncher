@@ -11,8 +11,9 @@
 	<!-- JSImport/JSExport interop -->
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
+	<!-- DISABLED: This breaks WASM deployment for some reason -->
 	<!-- Consistent serialization behaviour between WASM and MAUI Hybrid -->
-	<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+	<!--<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>-->
   </PropertyGroup>
 
   <ItemGroup>
