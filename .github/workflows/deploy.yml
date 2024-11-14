@@ -1,0 +1,51 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Change base-tag in index.html
+      run: sed -i 's/<base href="\/" \/>/<base href="\/NLauncher\/" \/>/g' NLauncher/wwwroot/index.html
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Restore workloads
+      run: dotnet workload restore
+    - name: Publish project
+      run: dotnet publish NLauncher/NLauncher.csproj --configuration Release --output build --no-restore --nologo
+      
+    - name: Setup GitHub Pages
+      uses: actions/configure-pages@v5
+    - name: Upload artifact (wwwroot)
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: './build/wwwroot'
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+
+      
