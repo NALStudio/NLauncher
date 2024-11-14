@@ -5,11 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-	<!-- Let's test whether navigation works with these turned off
-	NO IT DOESN'T; REMEMBER TO RE-ENABLE
 	<RunAOTCompilation>true</RunAOTCompilation>
 	<WasmStripILAfterAOT>true</WasmStripILAfterAOT>
-	-->
 	  
 	<!-- JSImport/JSExport interop -->
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
