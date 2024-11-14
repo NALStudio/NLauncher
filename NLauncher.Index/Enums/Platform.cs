@@ -7,11 +7,14 @@ using System.Threading.Tasks;
 
 namespace NLauncher.Index.Enums;
 
-// TODO: Use snake_case
-[JsonConverter(typeof(JsonStringEnumConverter<InstallType>))]
-public enum InstallType
+[Flags, JsonConverter(typeof(JsonStringEnumConverter<Platforms>))]
+public enum Platforms
 {
-    Binary,
-    MSIX,
-    Website
+    None = 0,
+
+    Windows = 1 << 0,
+
+    Browser = 1 << 1,
+
+    Android = 1 << 2,
 }

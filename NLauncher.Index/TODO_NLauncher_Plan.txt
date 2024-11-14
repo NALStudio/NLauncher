@@ -1,5 +1,16 @@
-### Blazor WASM/MAUI hybrid? AOT compiled? ###
-Wait for .NET 9 though, since https://github.com/dotnet/runtime/blob/main/src/libraries/System.Text.Json/src/System/Text/Json/Serialization/JsonStringEnumMemberNameAttribute.cs
+###
+Blazor WASM/MAUI hybrid?
++ Same UI, multiple platforms
++ No MVVM (I fucking hate that thing)
++ Already quite familiar for me
+- No WASM multithreading (yet)
+- Not mature, lots of issues (although not as many as MAUI)
+
+AOT compiled
++ Performance
++ Consistent behaviour between desktop and web
+- Difficult to work with
+###
 
 [ Repository Spec ]
 File layout:
@@ -10,9 +21,9 @@ File layout:
     // We can't implement news in the web app since we must access platform features and thus cannot distribute the app as a web app.
     - @news  // yes, the folder is actually called @news so that it sorts at the top and doesn't conflict with the publisher directory name
         - $news_index  // index of the news, they don't need to be sequencial and are only used for sorting (index manager can have news 'slots')
-        - background.png
-        - logo.png
-        - news.json
+            - background.png
+            - logo.png
+            - news.json
 
     - $publisher
         - $app_name
@@ -77,12 +88,12 @@ File layout:
                 // App will pick the best install option during runtime
                 // Empty list means that this app version cannot be installed
                 {
-                    // platforms flag enum can be added later if needed. Currently we only support Windows.
-                    "type": "string", // binary | msix | website (binary_diff type file format not yet determined)
+                    "type": "string", // binary | msix | website | storelink (binary_diff type file format not yet determined)
                 #IF BINARY
-                    "download_url": "string", // URL of the zip
+                    "platform": "string", // windows | browser | android | ..., most commonly windows
+                    "download_url": "string", // URL of the zip (other zipping formats might be supported later?)
                     "download_hash": "string", // SHA256 hash of the download
-                    "executable_path": "string"
+                    "program_path": "string" // Path to the .exe file to run (Windows)
                 #ELIF MSIX
                     "download_url": "string",
                     "download_hash": "string",
@@ -90,6 +101,9 @@ File layout:
                 #ELIF WEBSITE
                     "url": "string",
                     "supports_pwa": "bool?" // Defaults to false if omitted. PWA functionality is in the backlog and has not yet been implemented.
+                #ELIF STORELINK
+                    "platform": "string", // most commonly android
+                    "url": "string"
                 #ENDIF
                 }
             ]

@@ -3,7 +3,7 @@
 @using NLauncher.Index.Models.Index
 @using System.Diagnostics.CodeAnalysis
 
-<MudCard Class="pa-3" Style="width:300px;" Outlined Elevation="0">
+<MudCard Class="pa-3" Style="width:320px;" Outlined Elevation="0">
     <MudStack Spacing="4">
         <!-- Icon -->
         @if (!IsLoading)
@@ -25,8 +25,11 @@
                 <MudButtonGroup FullWidth Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" DropShadow="false">
                     @if (IsGameStreamable)
                     {
-                        <!-- For some reason has to be set separately even though MudButtonGroup has DropShadow="false" -->
-                        <MudButton Disabled="@IsLoading">Play Now</MudButton>
+                        <MudButton EndIcon="@(Icons.Material.Rounded.OpenInNew)"
+                                   IconSize="Size.Small"
+                                   Disabled="@IsLoading">
+                                   Play Now
+                        </MudButton>
                     }
                     @if (IsGameInstallable)
                     {
@@ -54,7 +57,17 @@
                 <AppInfoCardData Label="Release Date" Value="@(GetReleaseDateString(app.Release))" />
                 <AppInfoCardData Label="Platforms" BottomDivider="false">
                     <ValueContent>
-                        not implemented.
+                        <MudStack Row Spacing="2">
+                            <MudTooltip Text="Android" Placement="Placement.Top">
+                                <MudIcon Icon="@(Icons.Material.Rounded.Android)" />
+                            </MudTooltip>
+                            <MudTooltip Text="Windows" Placement="Placement.Top">
+                                <MudIcon Icon="@(Icons.Custom.Brands.MicrosoftWindows)" />
+                            </MudTooltip>
+                            <MudTooltip Text="Browser" Placement="Placement.Top">
+                                <MudIcon Icon="@(Icons.Material.Rounded.Language)" />
+                            </MudTooltip>
+                        </MudStack>
                     </ValueContent>
                 </AppInfoCardData>
             }
