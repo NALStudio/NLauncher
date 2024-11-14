@@ -11,8 +11,13 @@ namespace NLauncher.Index.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter<ReleaseState>))]
 public enum ReleaseState
 {
+    [JsonStringEnumMemberName("released")]
     Released,
+
+    [JsonStringEnumMemberName("early_access")]
     EarlyAccess,
+
+    [JsonStringEnumMemberName("not_released")]
     NotReleased
 }
 

@@ -14,8 +14,13 @@ namespace NLauncher.Index.Enums;
 [JsonConverter(typeof(JsonStringEnumConverter<AssetType>))]
 public enum AssetType
 {
+    [JsonStringEnumMemberName("icon")]
     Icon,
+
+    [JsonStringEnumMemberName("banner")]
     Banner,
+
+    [JsonStringEnumMemberName("panel")]
     Panel
 }
 
