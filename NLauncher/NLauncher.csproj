@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NLauncher.Index\NLauncher.Index.csproj" />
+    <ProjectReference Include="..\NLauncher.Shared\NLauncher.Shared.csproj" />
   </ItemGroup>
 
 </Project>

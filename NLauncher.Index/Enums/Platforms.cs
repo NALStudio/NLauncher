@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -21,4 +22,16 @@ public enum Platforms
 
     [JsonStringEnumMemberName("android")]
     Android = 1 << 2,
+}
+
+public static class PlatformsEnum
+{
+    public static IEnumerable<Platforms> GetIndividualValues(this Platforms platforms)
+    {
+        foreach (Platforms value in Enum.GetValues<Platforms>())
+        {
+            if (platforms.HasFlag(value))
+                yield return value;
+        }
+    }
 }

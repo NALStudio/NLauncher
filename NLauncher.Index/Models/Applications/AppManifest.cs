@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.Applications;
 
-public class AppManifest : IIndexSerializable
+public record class AppManifest : IIndexSerializable
 {
     public required string DisplayName { get; init; }
     public required Guid Uuid { get; init; }
@@ -40,4 +40,15 @@ public class AppManifest : IIndexSerializable
     public sbyte Priority { get; init; } // defaults to 0
 
     public required ImmutableArray<AppVersion> Versions { get; init; }
+
+    /// <summary>
+    /// Returns the version with the largest <see cref="AppVersion.VerNum"/> or <see langword="null"/> if <see cref="Versions"/> array is empty.
+    /// </summary>
+    public AppVersion? GetLatestVersion()
+    {
+        if (Versions.Length < 1)
+            return null;
+
+        return Versions.MaxBy(static v => v.VerNum);
+    }
 }

@@ -1,7 +1,9 @@
 ﻿using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
+using NLauncher.IndexManager.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,7 +14,11 @@ internal static class ManifestHelper
     public static IEnumerable<DirectoryInfo> DiscoverManifestDirectories(IndexPaths paths)
     {
         foreach (FileInfo fi in DiscoverManifestFiles(paths))
-            yield return fi.Directory ?? throw new InvalidOperationException("Manifest must have a parent directory.");
+        {
+            DirectoryInfo? parentDir = fi.Directory;
+            ThrowIfNoParentDirectory(parentDir);
+            yield return parentDir;
+        }
     }
 
     public static IEnumerable<FileInfo> DiscoverManifestFiles(IndexPaths paths)
@@ -23,7 +29,7 @@ internal static class ManifestHelper
             yield return fi;
     }
 
-    public static async IAsyncEnumerable<AppManifest> DiscoverManifestsAsync(IndexPaths paths)
+    public static async IAsyncEnumerable<DiscoveredManifest> DiscoverManifestsAsync(IndexPaths paths)
     {
         foreach (FileInfo file in DiscoverManifestFiles(paths))
         {
@@ -36,7 +42,21 @@ internal static class ManifestHelper
             if (manifest is null)
                 throw new InvalidOperationException($"Manifest could not be deserialized: '{file.FullName}'");
 
-            yield return manifest;
+            yield return BuildDiscovery(file, manifest);
         }
+    }
+
+    private static DiscoveredManifest BuildDiscovery(FileInfo file, AppManifest manifest)
+    {
+        string filepath = file.FullName;
+        string? dirpath = file.DirectoryName;
+        ThrowIfNoParentDirectory(dirpath);
+        return new DiscoveredManifest(filepath, dirpath, manifest);
+    }
+
+    private static void ThrowIfNoParentDirectory<T>([NotNull] T? parentDirectoryOrNull) where T : class
+    {
+        if (parentDirectoryOrNull is null)
+            throw new InvalidOperationException("Manifest must have a parent directory.");
     }
 }

@@ -13,5 +13,5 @@ public class BinaryAppInstall : AppInstall
     public required string DownloadHash { get; init; }
     public required string ExecutablePath { get; init; }
 
-    public override Platforms GetSupportedPlatforms() => Platforms.Windows;
+    public override Platforms GetSupportedPlatforms() => Platform;
 }

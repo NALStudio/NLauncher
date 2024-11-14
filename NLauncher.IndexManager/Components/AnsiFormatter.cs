@@ -24,9 +24,15 @@ internal static class AnsiFormatter
         AnsiConsole.Write(new Rule(text).LeftJustified());
     }
 
-    public static void WriteOperationCancelled()
+    public static void WriteError(string msg)
     {
-        AnsiConsole.MarkupLine("[yellow]Operation was cancelled by the user.[/]");
+        AnsiConsole.MarkupLine($"[red]{msg.EscapeMarkup()}[/]");
+    }
+
+    public static void WriteOperationCancelled() => WriteWarning("Operation was cancelled by the user.");
+    public static void WriteWarning(string msg)
+    {
+        AnsiConsole.MarkupLine($"[yellow]{msg.EscapeMarkup()}[/]");
     }
 
     public static TextPath DeletedFile(string pathToFileOrDirectory) => ColoredPath(pathToFileOrDirectory, Color.Yellow).LeafColor(Color.Red);

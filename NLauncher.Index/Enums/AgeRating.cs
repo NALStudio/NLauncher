@@ -24,8 +24,13 @@ public static class AgeRatingEnum
     public static string GetIdentifier(this AgeRating? rating)
     {
         if (rating.HasValue)
-            return rating.Value.ToString("d");
+            return GetIdentifier(rating.Value);
         else
             return "unrated";
+    }
+
+    public static string GetIdentifier(this AgeRating rating)
+    {
+        return rating.ToString("d");
     }
 }

@@ -1,4 +1,9 @@
-﻿<MudStack Row Justify="Justify.SpaceBetween">
+﻿@if (TopDivider)
+{
+    <MudDivider Class="my-2" />
+}
+
+<MudStack Row Justify="Justify.SpaceBetween">
     <MudText>@Label</MudText>
 
     @if (ValueContent is null)
@@ -11,11 +16,6 @@
     }
 </MudStack>
 
-@if (BottomDivider)
-{
-    <MudDivider Class="my-2" />
-}
-
 @code {
     [Parameter, EditorRequired]
     public required string Label { get; set; }
@@ -27,5 +27,8 @@
     public RenderFragment? ValueContent { get; set; }
 
     [Parameter]
-    public bool BottomDivider { get; set; } = true;
+    public bool TopDivider { get; set; } = true;
+
+    // [Parameter]
+    // public bool BottomDivider { get; set; } = false;
 }

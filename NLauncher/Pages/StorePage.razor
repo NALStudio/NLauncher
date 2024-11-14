@@ -5,6 +5,7 @@
 @using NLauncher.Services.Index
 @using System.Collections.Immutable
 @using System.Runtime.InteropServices
+@using NLauncher.Shared.Helpers
 
 @inject IndexService IndexService
 
@@ -50,22 +51,9 @@
         StateHasChanged();
     }
 
-    private static ImmutableArray<IndexEntry> SortEntries(IndexManifest manifest)
+    private static Task<ImmutableArray<IndexEntry>> SortEntries(IndexManifest manifest)
     {
-        static int CompareFunc(IndexEntry a, IndexEntry b)
-        {
-            // Try to compare priorities first
-            // Compare b to a to sort from largest priority to smallest
-            int comparePriority = b.Manifest.Priority.CompareTo(a.Manifest.Priority);
-            if (comparePriority != 0)
-                return comparePriority;
-
-            // If priorities are equal, sort alphabetically
-            return a.Manifest.DisplayName.CompareTo(b.Manifest.DisplayName);
-        }
-
-        IndexEntry[] entries = manifest.Entries.ToArray();
-        Array.Sort(entries, CompareFunc);
-        return ImmutableCollectionsMarshal.AsImmutableArray(entries);
+        ImmutableArray<IndexEntry> entries = manifest.Entries;
+        return Task.Run(() => AppManifestSorter.Sort(entries));
     }
 }

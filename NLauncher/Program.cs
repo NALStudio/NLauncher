@@ -5,6 +5,8 @@ using MudBlazor.Services;
 using NLauncher.Services.Index;
 using NLauncher.Services.Settings;
 using NLauncher.Services.Storage;
+using NLauncher.Shared.AppHandlers;
+using NLauncher.Shared.AppHandlers.Base;
 
 namespace NLauncher;
 public static class Program
@@ -27,6 +29,15 @@ public static class Program
         builder.Services.AddSingleton<SettingsService>();
         builder.Services.AddScoped<IndexService>();
 
+        builder.Services.AddSingleton(CreateAppHandlerService());
+
         await builder.Build().RunAsync();
+    }
+
+    private static AppHandlerService CreateAppHandlerService()
+    {
+        return new AppHandlerService([
+            ..AppHandler.SharedHandlers
+        ]);
     }
 }

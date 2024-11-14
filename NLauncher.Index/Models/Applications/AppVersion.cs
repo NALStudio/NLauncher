@@ -4,12 +4,15 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.Applications;
-public class AppVersion
+public record class AppVersion
 {
+    [JsonPropertyName("vernum")]
     public required uint VerNum { get; init; }
+
     public required string Identifier { get; init; }
 
     // Use immutable array instead of immutable list as this array will not get mutated ever.

@@ -3,6 +3,8 @@ using NLauncher.Index.Models;
 using NLauncher.Index.Models.Applications;
 using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
+using NLauncher.IndexManager.Models;
+using NLauncher.Shared.Helpers;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
@@ -27,16 +29,19 @@ internal class ListCommand : AsyncCommand<MainSettings>, IMainCommand
 
         await AnsiConsole.Live(table).StartAsync(async ctx =>
         {
-            List<string> names = new();
+            // List to keep track of manifest sort order
+            // this list is binary searched to find the index where to sort new values
+            List<AppManifest> manifests = new();
 
-            await foreach (AppManifest manifest in ManifestHelper.DiscoverManifestsAsync(settings.Context.Paths))
+            await foreach (DiscoveredManifest discoveredManifest in ManifestHelper.DiscoverManifestsAsync(settings.Context.Paths))
             {
+                AppManifest manifest = discoveredManifest.Manifest;
+
                 // Find the index where the given manifest should be sorted
-                string name = manifest.DisplayName;
-                int insertIndex = names.BinarySearch(name);
+                int insertIndex = manifests.BinarySearch(manifest, AppManifestSorter.Comparer.Instance);
                 if (insertIndex < 0)
                     insertIndex = ~insertIndex;
-                names.Insert(insertIndex, name);
+                manifests.Insert(insertIndex, manifest);
 
                 IRenderable[] row = FormatValue(manifest);
 

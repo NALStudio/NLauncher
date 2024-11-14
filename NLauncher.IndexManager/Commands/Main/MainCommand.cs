@@ -2,6 +2,8 @@
 using NLauncher.IndexManager.Commands.Applications.Build;
 using NLauncher.IndexManager.Commands.Commands;
 using NLauncher.IndexManager.Commands.Commands.Aliases;
+using NLauncher.IndexManager.Commands.Installs;
+using NLauncher.IndexManager.Commands.Installs.List;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System;
@@ -70,6 +72,14 @@ internal sealed class MainCommand : AsyncCommand<MainSettings>
                     KnownCommand.Command<AddCommand>("Add Application"),
                     KnownCommand.Command<ListCommand>("List All"),
                     KnownCommand.Command<RebuildCommand>("Rebuild All Manifests")
+                ]
+            ),
+            KnownCommand.Category(
+                "Installs",
+                [
+                    KnownCommand.Command<InstallsAddCommand>("Add Install"),
+                    KnownCommand.Command<InstallsListCommand>("List For Version"),
+                    KnownCommand.CommandVariant<InstallsListCommand>("List All")
                 ]
             ),
             KnownCommand.Category(

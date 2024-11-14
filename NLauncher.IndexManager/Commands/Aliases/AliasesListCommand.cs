@@ -4,6 +4,7 @@ using NLauncher.Index.Models.Index;
 using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
 using NLauncher.IndexManager.Components.FileChangeTree;
+using NLauncher.IndexManager.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System;
@@ -43,8 +44,8 @@ internal class AliasesListCommand : AsyncCommand<MainSettings>, IMainCommand
     {
         Dictionary<Guid, AppManifest> manifests = new();
 
-        await foreach (AppManifest manifest in ManifestHelper.DiscoverManifestsAsync(paths))
-            manifests.Add(manifest.Uuid, manifest);
+        await foreach (DiscoveredManifest manifest in ManifestHelper.DiscoverManifestsAsync(paths))
+            manifests.Add(manifest.Manifest.Uuid, manifest.Manifest);
 
         return manifests.AsReadOnly();
     }

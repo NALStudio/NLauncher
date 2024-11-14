@@ -1,7 +1,12 @@
 ﻿@using NLauncher.Index.Enums
 @using NLauncher.Index.Models.Applications
+@using NLauncher.Index.Models.Applications.Installs
 @using NLauncher.Index.Models.Index
 @using System.Diagnostics.CodeAnalysis
+@using NLauncher.Services
+@using NLauncher.Shared.AppHandlers
+@using NLauncher.Shared.AppHandlers.Base
+@using System.Collections.Immutable
 
 <MudCard Class="pa-3" Style="width:320px;" Outlined Elevation="0">
     <MudStack Spacing="4">
@@ -19,83 +24,76 @@
             <MudSkeleton Style="align-self:center;" SkeletonType="SkeletonType.Rectangle" Width="@iconSizePx" Height="@iconSizePx" />
         }
 
-        @if (IsGameInstallable || IsGameStreamable)
-        {
-            <MudStack Spacing="2">
-                <MudButtonGroup FullWidth Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" DropShadow="false">
-                    @if (IsGameStreamable)
-                    {
-                        <MudButton EndIcon="@(Icons.Material.Rounded.OpenInNew)"
-                                   IconSize="Size.Small"
-                                   Disabled="@IsLoading">
-                                   Play Now
-                        </MudButton>
-                    }
-                    @if (IsGameInstallable)
-                    {
-                        <MudButton Disabled="@IsLoading">Install</MudButton>
-                    }
-                </MudButtonGroup>
+        @{
+            ImmutableArray<AppHandler> appHandlers = GetAppHandlers().ToImmutableArray();
+            @if (appHandlers.Length > 0)
+            {
+                LinkAppHandler? linkAppHandler = (LinkAppHandler?)appHandlers.FirstOrDefault(static ah => ah is LinkAppHandler);
 
-                <MudButton FullWidth
-                           Disabled="@IsLoading"
-                           Variant="Variant.Filled"
-                           Size="Size.Large"
-                           DropShadow="false">
-                    Add To Library
-                </MudButton>
-            </MudStack>
+                <MudStack Spacing="2">
+                    <MudButtonGroup FullWidth Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" DropShadow="false">
+                        @if (linkAppHandler is not null)
+                        {
+                            AppInstall linkAppInstall = Entry!.Manifest.GetLatestVersion()!.Installs.First(linkAppHandler.CanHandle);
+
+                            <MudButton EndIcon="@(Icons.Material.Rounded.OpenInNew)"
+                            IconSize="Size.Small"
+                            Disabled="@IsLoading"
+                            Href="@(linkAppHandler.GetHref(linkAppInstall))"
+                            Target="_blank" >
+                                @(GetLinkText(linkAppHandler))
+                            </MudButton>
+                        }
+
+                        <!-- Only show install button if there are multiple link app handlers or other app handlers --> 
+                        @if (appHandlers.Any(ah => !ReferenceEquals(ah, linkAppHandler)))
+                        {
+                            <MudButton Disabled="@IsLoading">Install</MudButton>
+                        }
+                    </MudButtonGroup>
+
+                    <MudButton FullWidth
+                    Disabled="@IsLoading"
+                    Variant="Variant.Filled"
+                    Size="Size.Large"
+                    DropShadow="false">
+                        Add To Library
+                    </MudButton>
+                </MudStack>
+            }
         }
 
         <div>
             @if (!IsLoading)
             {
                 AppManifest app = Entry.Manifest;
+                Platforms supportedPlatforms = GetSupportedPlatforms();
+                bool showPlatforms = supportedPlatforms != Platforms.None;
 
-                <AppInfoCardData Label="Developer" Value="@(app.Developer)" />
+                <AppInfoCardData Label="Developer" Value="@(app.Developer)" TopDivider="false" />
                 <AppInfoCardData Label="Publisher" Value="@(app.Publisher)" />
                 <AppInfoCardData Label="Release Date" Value="@(GetReleaseDateString(app.Release))" />
-                <AppInfoCardData Label="Platforms" BottomDivider="false">
-                    <ValueContent>
-                        <MudStack Row Spacing="2">
-                            <MudTooltip Text="Android" Placement="Placement.Top">
-                                <MudIcon Icon="@(Icons.Material.Rounded.Android)" />
-                            </MudTooltip>
-                            <MudTooltip Text="Windows" Placement="Placement.Top">
-                                <MudIcon Icon="@(Icons.Custom.Brands.MicrosoftWindows)" />
-                            </MudTooltip>
-                            <MudTooltip Text="Browser" Placement="Placement.Top">
-                                <MudIcon Icon="@(Icons.Material.Rounded.Language)" />
-                            </MudTooltip>
-                        </MudStack>
-                    </ValueContent>
-                </AppInfoCardData>
+
+                @if (showPlatforms)
+                {
+                    <AppInfoCardData Label="Platforms">
+                        <ValueContent>
+                            <MudStack Row Spacing="2">
+                                @foreach (Platforms platform in supportedPlatforms.GetIndividualValues())
+                                {
+                                    string? icon = GetPlatformIcon(platform);
+                                    if (icon is not null)
+                                    {
+                                        <MudTooltip Text="@(platform.ToString())" Placement="Placement.Top">
+                                            <MudIcon Icon="@icon" />
+                                        </MudTooltip>
+                                    }
+                                }
+                            </MudStack>
+                        </ValueContent>
+                    </AppInfoCardData>
+                }
             }
         </div>
     </MudStack>
 </MudCard>
-
-@code {
-    private const int iconSize = 64;
-    private static readonly string iconSizePx = $"{iconSize}px";
-
-    [Parameter, EditorRequired]
-    public required IndexEntry? Entry { get; set; }
-
-    [MemberNotNullWhen(false, nameof(Entry))]
-    private bool IsLoading => Entry is null;
-
-    private bool IsGameInstallable => true; // TODO: Determine these from the installation options
-    private bool IsGameStreamable => true;
-
-    private string GetReleaseDateString(AppRelease appRelease)
-    {
-        DateOnly? release = appRelease.ReleaseDate;
-
-        if (release.HasValue)
-            return release.Value.ToShortDateString();
-        else
-            return "TBD";
-    }
-
-}
