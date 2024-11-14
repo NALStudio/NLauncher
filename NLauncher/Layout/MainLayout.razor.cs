@@ -22,6 +22,8 @@ public partial class MainLayout
 
     private bool AnyMenuOpen => settingsMenuOpen || downloadsMenuOpen;
 
+    private bool drawerOpen = true;
+
     private void SetMenuOpen(bool settings = false, bool downloads = false)
     {
         if (settings && downloads)
@@ -34,6 +36,11 @@ public partial class MainLayout
     private void CloseAllMenus() => SetMenuOpen();
     private void ToggleSettingsMenu() => SetMenuOpen(settings: !settingsMenuOpen);
     private void ToggleDownloadsMenu() => SetMenuOpen(downloads: !downloadsMenuOpen);
+
+    private void SetDrawerOpen(bool open)
+    {
+        drawerOpen = open;
+    }
 
     private async Task<IEnumerable<IndexEntry>> SearchIndex(string search, CancellationToken cancellationToken)
     {

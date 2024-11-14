@@ -6,12 +6,18 @@
 @layout BaseLayout
 
 <MudLayout>
-    <MudAppBar Class="appbar-style" Elevation="0" Color="Color.Transparent">
-        <MudText Typo="Typo.h5">NLauncher</MudText>
+    <MudAppBar Class="appbar-style" Elevation="0">
+        <MudIconButton Class="d-md-none"
+                       Style="margin-right:8px"
+                       Icon="@(Icons.Material.Rounded.Menu)"
+                       OnClick="@(() => SetDrawerOpen(true))" />
+
+        <NLauncherLogo />
         <MudSpacer />
-        <MudStack Row AlignItems="AlignItems.Center">
+        <MudStack Style="margin-left:16px" Row AlignItems="AlignItems.Center">
             <!-- Use null value to force autocomplete to clear once an app was selected -->
-            <MudAutocomplete T="IndexEntry"
+            <MudAutocomplete Class="d-none d-sm-flex"
+                             T="IndexEntry"
                              SearchFunc="SearchIndex"
                              ToStringFunc="@(static e => e.Manifest.DisplayName)"
                              MaxItems="5"
@@ -40,7 +46,8 @@
 
         </MudStack>
     </MudAppBar>
-    <MudDrawer Elevation="0" Open Color="Color.Transparent" Variant="DrawerVariant.Persistent" ClipMode="DrawerClipMode.Always">
+    <MudDrawer Elevation="0" Open="@drawerOpen" OpenChanged="@SetDrawerOpen" ClipMode="DrawerClipMode.Docked">
+        <NLauncherLogo Class="d-md-none ma-4" />
         <MudNavMenu Rounded Margin="Margin.Normal" Color="Color.Primary">
             <MudNavLink Href="./" Match="NavLinkMatch.All" Icon="@(Icons.Material.Rounded.Home)">Home</MudNavLink>
             <MudNavLink Href="./store" Icon="@(Icons.Material.Rounded.Sell)">Store</MudNavLink>
