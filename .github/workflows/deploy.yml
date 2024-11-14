@@ -31,10 +31,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
-    - name: Restore dependencies
-      run: dotnet restore
     - name: Restore workloads
       run: dotnet workload restore
+    - name: Restore dependencies
+      run: dotnet restore
     - name: Publish project
       run: dotnet publish NLauncher/NLauncher.csproj --configuration Release --output build --no-restore --nologo
       
