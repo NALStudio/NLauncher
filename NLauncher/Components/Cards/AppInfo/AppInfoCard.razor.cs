@@ -23,6 +23,9 @@ public partial class AppInfoCard
     [Parameter, EditorRequired]
     public required IndexEntry? Entry { get; set; }
 
+    [Parameter]
+    public string? Style { get; set; }
+
     [MemberNotNullWhen(false, nameof(Entry))]
     private bool IsLoading => Entry is null;
 

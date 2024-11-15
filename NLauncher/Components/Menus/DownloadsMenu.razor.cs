@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
-namespace NLauncher.Components;
+namespace NLauncher.Components.Menus;
 
 public partial class DownloadsMenu
 {

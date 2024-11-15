@@ -37,7 +37,7 @@
             <!-- Title -->
             @if (Entry is not null)
             {
-                <MudText Typo="Typo.h5">@(Entry.Manifest.DisplayName)</MudText>
+                <MudText Class="no_text_wrap" Typo="Typo.h5">@(Entry.Manifest.DisplayName)</MudText>
             }
             else
             {
@@ -47,7 +47,7 @@
             <!-- Developer/Publisher -->
             @if (Entry is not null)
             {
-                <MudText Typo="Typo.body2">@(FormatDeveloperPublisher(Entry.Manifest))</MudText>
+                <MudText Class="no_text_wrap" Typo="Typo.body2">@(FormatDeveloperPublisher(Entry.Manifest))</MudText>
             }
             else
             {
@@ -71,6 +71,11 @@
         background-size: cover;
         filter: blur(48px);
         transition-duration: 250ms;
+    }
+
+    .no_text_wrap {
+        white-space: nowrap;
+        overflow: clip;
     }
 </style>
 

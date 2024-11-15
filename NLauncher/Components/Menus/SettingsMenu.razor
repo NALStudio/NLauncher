@@ -8,7 +8,7 @@
     <div class="ma-3">
         <MudSwitch
             T="bool"
-            Label="Dark Mode"
+            Label="@(GetDarkModeText())"
             Value="@(GetDarkMode())"
             ValueChanged="@SetDarkMode"
             ThumbIcon="@(GetDarkModeIcon())"

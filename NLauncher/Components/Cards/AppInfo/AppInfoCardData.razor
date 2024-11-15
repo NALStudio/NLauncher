@@ -4,11 +4,11 @@
 }
 
 <MudStack Row Justify="Justify.SpaceBetween">
-    <MudText>@Label</MudText>
+    <MudText Align="Align.Left">@Label</MudText>
 
     @if (ValueContent is null)
     {
-        <MudText>@Value</MudText>
+        <MudText Align="Align.Right">@Value</MudText>
     }
     else
     {

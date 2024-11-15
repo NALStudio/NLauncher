@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
-namespace NLauncher.Components;
+namespace NLauncher.Components.Menus;
 
 public partial class SettingsMenu
 {
@@ -17,6 +17,10 @@ public partial class SettingsMenu
         StateHasChanged();
     }
 
+    private string GetDarkModeText()
+    {
+        return GetDarkMode() ? "Dark Mode" : "Light Mode";
+    }
     private string GetDarkModeIcon()
     {
         return GetDarkMode()

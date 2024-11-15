@@ -6,7 +6,7 @@
 @using NLauncher.Services.Index
 @using System.Diagnostics
 
-@page "/app/{AppId}"
+@page "/store/{AppId}"
 
 @inject IndexService IndexService
 @inject NavigationManager navigationManager
@@ -49,9 +49,9 @@ else
             <MudSkeleton SkeletonType="SkeletonType.Text" Height="80px" Width="420px" />
         }
 
-        <MudStack Row AlignItems="AlignItems.Start">
+        <MudStack Row AlignItems="AlignItems.End" Wrap="Wrap.WrapReverse">
             <!-- Description -->
-            <MudCard Class="pa-3" Style="flex:1" Outlined Elevation="0">
+            <MudCard Class="pa-3" Style="flex:2;min-width:320px" Outlined Elevation="0">
                 @if (app is not null)
                 {
                     <MudMarkdown MarkdownPipeline="@(DefaultMarkdownPipeline.Instance)" OverrideHeaderTypo="@RemapMarkdownTypo" Value="@(app.DescriptionMarkdown)" />
@@ -67,7 +67,7 @@ else
             </MudCard>
 
             <!-- App Info -->
-            <AppInfoCard Entry="@app" />
+            <AppInfoCard Style="flex:1;min-width:320px" Entry="@app" />
         </MudStack>
     </MudStack>
 </MudContainer>
@@ -145,6 +145,6 @@ else
         string? id = index.Aliases.GetName(app.Uuid);
         id ??= app.Uuid.ToString();
 
-        return "./app/" + id;
+        return "./store/" + id;
     }
 }

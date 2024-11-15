@@ -13,14 +13,7 @@
 
 <MudGrid Style="position:relative;top:0;left:0;right:0;bottom:0;"> 
     @{
-        int storeCardCount;
-        if (entriesSorted.HasValue)
-            storeCardCount = entriesSorted.Value.Length;
-        else if (showLoadingCards!.Value) // showLoadingCards is the first bool we set on page load so it must have a value at this point
-            storeCardCount = 12;
-        else
-            storeCardCount = 0;
-
+        int storeCardCount = entriesSorted?.Length ?? 12;
         for (int i = 0; i < storeCardCount; i++)
         {
             IndexEntry? app = entriesSorted?[i];
@@ -33,27 +26,26 @@
     private IndexManifest? index;
     private ImmutableArray<IndexEntry>? entriesSorted;
 
-    private bool? showLoadingCards = null;
-
     protected override async Task OnInitializedAsync()
     {
         if (IndexService.TryGetCachedIndex(out index))
         {
-            showLoadingCards = false;
+            // Sort entries synchronously so that the scroll position is retained
+            entriesSorted = SortEntries(index);
         }
         else
         {
-            showLoadingCards = true;
             index = await IndexService.GetIndexAsync();
+            // Sort entries asynchronously to not freeze the UI
+            // we show a skeleton web page in the mean time.
+            entriesSorted = await Task.Run(() => SortEntries(index));
+            StateHasChanged(); // Trigger state change after all this awaiting
         }
-
-        entriesSorted = await Task.Run(() => SortEntries(index));
-        StateHasChanged();
     }
 
-    private static Task<ImmutableArray<IndexEntry>> SortEntries(IndexManifest manifest)
+    private static ImmutableArray<IndexEntry> SortEntries(IndexManifest manifest)
     {
         ImmutableArray<IndexEntry> entries = manifest.Entries;
-        return Task.Run(() => AppManifestSorter.Sort(entries));
+        return AppManifestSorter.Sort(entries);
     }
 }

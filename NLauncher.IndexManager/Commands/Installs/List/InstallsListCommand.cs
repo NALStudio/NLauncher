@@ -72,7 +72,7 @@ internal class InstallsListCommand : AsyncCommand<InstallsListSettings>, IMainCo
     {
         Table t = new Table().AddColumns("", "").HideHeaders();
 
-        t.AddRow("Priority", FormatPriority(index));
+        t.AddRow("Priority", FormatPriority(index + 1));
         t.AddRow("Type", install.GetType().Name.EscapeMarkup());
         t.AddRow("Platforms", install.GetSupportedPlatforms().ToString().EscapeMarkup());
 
