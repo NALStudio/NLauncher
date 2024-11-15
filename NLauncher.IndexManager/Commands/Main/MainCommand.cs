@@ -4,6 +4,7 @@ using NLauncher.IndexManager.Commands.Commands;
 using NLauncher.IndexManager.Commands.Commands.Aliases;
 using NLauncher.IndexManager.Commands.Installs;
 using NLauncher.IndexManager.Commands.Installs.List;
+using NLauncher.IndexManager.Commands.News;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System;
@@ -70,8 +71,7 @@ internal sealed class MainCommand : AsyncCommand<MainSettings>
                 "Applications",
                 [
                     KnownCommand.Command<AddCommand>("Add Application"),
-                    KnownCommand.Command<ListCommand>("List All"),
-                    KnownCommand.Command<RebuildCommand>("Rebuild All Manifests")
+                    KnownCommand.Command<ListCommand>("List All")
                 ]
             ),
             KnownCommand.Category(
@@ -90,10 +90,19 @@ internal sealed class MainCommand : AsyncCommand<MainSettings>
                 ]
             ),
             KnownCommand.Category(
+                "News",
+                [
+                    KnownCommand.Command<NewsAddCommand>("Add News"),
+                    KnownCommand.Command<NewsMoveCommand>("Move News"),
+                    KnownCommand.Command<NewsListCommand>("List All")
+                ]
+            ),
+            KnownCommand.Category(
                 "Index",
                 [
                     KnownCommand.Command<BuildCommand>("Build Index"),
                     KnownCommand.CommandVariant<BuildCommand>("Build Index (formatted)"),
+                    KnownCommand.Command<RebuildCommand>("Rebuild Index Manifests"),
                     KnownCommand.Command<DeleteCommand>("Delete Index"),
                 ]
             )

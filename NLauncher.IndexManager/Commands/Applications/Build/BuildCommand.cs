@@ -3,14 +3,17 @@ using NLauncher.Index.Interfaces;
 using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
+using NLauncher.Index.Models.News;
 using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
+using NLauncher.IndexManager.Components.Paths;
 using SkiaSharp;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -95,6 +98,11 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         if (aliases is null)
             return null;
 
+        ctx.Status("Loading news...");
+        ImmutableArray<NewsEntry>? news = await GetNews(meta, paths);
+        if (!news.HasValue)
+            return null;
+
         ctx.Status($"Loading app manifests...");
         ImmutableArray<IndexEntry>? entries = await GetApps(meta, paths);
         if (!entries.HasValue)
@@ -104,7 +112,57 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         {
             Aliases = aliases,
             Metadata = meta,
+            News = news.Value,
             Entries = entries.Value
+        };
+    }
+
+    private static async ValueTask<ImmutableArray<NewsEntry>?> GetNews(IndexMeta meta, IndexPaths paths)
+    {
+        List<NewsEntry> entries = new();
+
+        foreach ((int index, NewsPaths nPaths) in NewsSlots.EnumeratePathIndexes(paths, existingOnly: true))
+        {
+            Debug.Assert(nPaths.Exists());
+            NewsEntry? news = await TryConstructNews(meta, paths, index, nPaths);
+            if (news is null)
+                return null;
+
+            entries.Add(news);
+        }
+
+        return entries.ToImmutableArray();
+    }
+
+    private static async ValueTask<NewsEntry?> TryConstructNews(IndexMeta meta, IndexPaths indexPaths, int index, NewsPaths newsPaths)
+    {
+        if (!File.Exists(newsPaths.LogoImageFile))
+        {
+            NotFound(newsPaths, newsPaths.LogoImageFile);
+            return null;
+        }
+        Uri logoImageFile = ConstructGitHubAssetPath(meta, newsPaths, newsPaths.LogoImageFile);
+
+        if (!File.Exists(newsPaths.BackgroundImageFile))
+        {
+            NotFound(newsPaths, newsPaths.BackgroundImageFile);
+            return null;
+        }
+        Uri backgroundImageFile = ConstructGitHubAssetPath(meta, newsPaths, newsPaths.BackgroundImageFile);
+
+        NewsManifest? manifest = await TryLoadAndDeserialize<NewsManifest>(newsPaths, newsPaths.NewsFile);
+        if (manifest is null)
+            return null;
+
+        return new NewsEntry()
+        {
+            Index = index,
+            Manifest = manifest,
+            AssetUrls = new NewsEntryAssetUrls()
+            {
+                Background = backgroundImageFile,
+                Logo = logoImageFile
+            }
         };
     }
 
@@ -112,7 +170,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
     {
         Dictionary<Guid, IndexEntry> entries = new();
 
-        foreach (DirectoryInfo dir in ManifestHelper.DiscoverManifestDirectories(paths))
+        foreach (DirectoryInfo dir in ManifestDiscovery.DiscoverManifestDirectories(paths))
         {
             ManifestPaths mPaths = new(dir.FullName);
 
@@ -245,7 +303,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         AnsiConsole.MarkupLine($"[red]{msg.EscapeMarkup()}[/]");
     }
 
-    private static Uri ConstructGitHubAssetPath(IndexMeta meta, IndexPaths paths, string assetPath)
+    private static Uri ConstructGitHubAssetPath(IndexMeta meta, DirectoryPathProvider paths, string assetPath)
     {
         string assetRelativePath = paths.GetRelativePath(assetPath);
         string repoRelativePath = Path.Join(meta.Repository.Path, assetRelativePath);

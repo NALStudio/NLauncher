@@ -21,9 +21,9 @@ File layout:
     // We can't implement news in the web app since we must access platform features and thus cannot distribute the app as a web app.
     - @news  // yes, the folder is actually called @news so that it sorts at the top and doesn't conflict with the publisher directory name
         - $news_index  // index of the news, they don't need to be sequencial and are only used for sorting (index manager can have news 'slots')
-            - background.png
-            - logo.png
-            - news.json
+            - background.png // images can be of any size (will be scaled to cover a rectangular area)
+            - logo.png // images can be of any size (will be scaled to a specific height)
+            - news.json // NOTE: Can't be manifest.json as that name is reserved for applications (or otherwise we will incorrectly discover news as 'applications')
 
     - $publisher
         - $app_name
@@ -117,14 +117,13 @@ File layout:
     "text": "string",
     "interactivity": {
         "type": "string", // explore, play_now
-    #if EXPLORE
+    #IF EXPLORE
         // Route the user to the store page
         // where they can browse all of the applications available
-    #endif
-    #if PLAY_NOW
+    #ELIF PLAY_NOW
         // Route the user to app's store page
         "app_id": "string"  // the UUID of the application
-    #endif
+    #ENDIF
     }
 }
 
@@ -133,10 +132,20 @@ File layout:
 {
     "aliases": ..., // copied from aliases.json
     "metadata": ..., // copied from index.json
+    "news": [
+        {
+            "index": "number",
+            "manifest": ..., // copied from news.json
+            "assets_urls": {
+                "background": "string",
+                "logo": "string"
+            }
+        }
+    ],
     "index": [
         {
             "manifest": ..., // copied from manifest.json
-            "description_html": "string?", // description markdown rendered as HTML. Null if description.md is missing. This could be an attack vector if someone were to make a malicious index release where the HTML contains script tags etc. I'm not that conserned since this is a hobby project, but if this project gets bigger, this should be changed into markdown and compiled into HTML on the user's machine locally instead.
+            "description_markdown": "string",
             "assets": [
                 {
                     "type": "string", // icon | banner | panel

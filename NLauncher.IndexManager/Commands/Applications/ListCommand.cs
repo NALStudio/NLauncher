@@ -33,7 +33,7 @@ internal class ListCommand : AsyncCommand<MainSettings>, IMainCommand
             // this list is binary searched to find the index where to sort new values
             List<AppManifest> manifests = new();
 
-            await foreach (DiscoveredManifest discoveredManifest in ManifestHelper.DiscoverManifestsAsync(settings.Context.Paths))
+            await foreach (DiscoveredManifest discoveredManifest in ManifestDiscovery.DiscoverManifestsAsync(settings.Context.Paths))
             {
                 AppManifest manifest = discoveredManifest.Manifest;
 

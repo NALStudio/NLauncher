@@ -1,4 +1,5 @@
 ﻿using NLauncher.Index.Models.Applications;
+using NLauncher.IndexManager.Components.Paths;
 using NLauncher.IndexManager.Models;
 using Spectre.Console;
 using System;
@@ -33,7 +34,7 @@ internal static class AppManifestPrompt
     {
         List<DiscoveredManifest> manifests = new();
 
-        await foreach (DiscoveredManifest manifest in ManifestHelper.DiscoverManifestsAsync(paths))
+        await foreach (DiscoveredManifest manifest in ManifestDiscovery.DiscoverManifestsAsync(paths))
             manifests.Add(manifest);
 
         return manifests.AsReadOnly();

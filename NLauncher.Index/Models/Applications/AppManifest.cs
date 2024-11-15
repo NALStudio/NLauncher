@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.Applications;
 
+// Record to enable copying using the with statement
 public record class AppManifest : IIndexSerializable
 {
     public required string DisplayName { get; init; }

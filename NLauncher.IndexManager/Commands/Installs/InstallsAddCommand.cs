@@ -6,6 +6,7 @@ using NLauncher.Index.Models.Index;
 using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
 using NLauncher.IndexManager.Components.FileChangeTree;
+using NLauncher.IndexManager.Components.Paths;
 using NLauncher.IndexManager.Components.PromptUtils;
 using NLauncher.IndexManager.Models;
 using Spectre.Console;

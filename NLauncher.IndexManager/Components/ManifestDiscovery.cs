@@ -1,5 +1,6 @@
 ﻿using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
+using NLauncher.IndexManager.Components.Paths;
 using NLauncher.IndexManager.Models;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Components;
-internal static class ManifestHelper
+internal static class ManifestDiscovery
 {
     public static IEnumerable<DirectoryInfo> DiscoverManifestDirectories(IndexPaths paths)
     {

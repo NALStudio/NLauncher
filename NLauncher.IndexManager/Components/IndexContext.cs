@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLauncher.IndexManager.Components.Paths;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -46,62 +47,5 @@ internal sealed class IndexContext
         {
             return null;
         }
-    }
-}
-
-internal abstract class DirectoryPathProvider
-{
-    public string Directory { get; }
-
-    protected DirectoryPathProvider(string directory)
-    {
-        Directory = directory;
-    }
-
-    public string GetRelativePath(string path)
-    {
-        return Path.GetRelativePath(Directory, path);
-    }
-}
-
-internal sealed class IndexPaths : DirectoryPathProvider
-{
-    /// <summary>
-    /// This directory is guaranteed to exist if the index exists.
-    /// </summary>
-    public new string Directory => base.Directory;
-
-    public IndexPaths(string directory) : base(directory)
-    {
-        IndexFile = Path.Join(directory, "index.json");
-        AliasesFile = Path.Join(directory, "aliases.json");
-    }
-
-    /// <summary>
-    /// This file is guaranteed to exist if the index exists.
-    /// </summary>
-    public string IndexFile { get; }
-
-    public string AliasesFile { get; }
-}
-
-internal sealed class ManifestPaths : DirectoryPathProvider
-{
-    public string AssetsDirectory { get; }
-
-    public ManifestPaths(string directory) : base(directory)
-    {
-        AssetsDirectory = Path.Join(directory, "assets");
-
-        ManifestFile = Path.Join(directory, "manifest.json");
-        DescriptionFile = Path.Join(directory, "description.md");
-    }
-
-    public string ManifestFile { get; }
-    public string DescriptionFile { get; }
-
-    public IEnumerable<string> EnumerateImageFiles()
-    {
-        return System.IO.Directory.EnumerateFiles(Directory, "*.png");
     }
 }

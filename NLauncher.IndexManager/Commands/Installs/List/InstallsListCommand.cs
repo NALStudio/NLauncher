@@ -2,6 +2,7 @@
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
+using NLauncher.IndexManager.Components.Paths;
 using NLauncher.IndexManager.Components.PromptUtils;
 using NLauncher.IndexManager.Models;
 using Spectre.Console;
@@ -40,7 +41,7 @@ internal class InstallsListCommand : AsyncCommand<InstallsListSettings>, IMainCo
         IndexPaths paths = settings.Context.Paths;
 
         List<AppManifest> apps = new();
-        await foreach (DiscoveredManifest disc in ManifestHelper.DiscoverManifestsAsync(paths))
+        await foreach (DiscoveredManifest disc in ManifestDiscovery.DiscoverManifestsAsync(paths))
         {
             bool appNotValid = appFilter.HasValue && disc.Manifest.Uuid != appFilter.Value;
             if (!appNotValid)

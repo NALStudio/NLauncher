@@ -27,9 +27,9 @@ else
         <BannerImage Entry="@app">
             <ImageContent Context="asset">
                 <MudImage Style="user-select:none"
-                            Class="banner_image_style"
-                            ObjectFit="ObjectFit.Cover"
-                            Src="@(asset.Url.ToString())" />
+                Class="banner_image_style"
+                ObjectFit="ObjectFit.Cover"
+                Src="@(asset.Url.ToString())" />
             </ImageContent>
         </BannerImage>
     }
@@ -74,8 +74,8 @@ else
 
 <style>
     .banner_image_style {
-        width: 100%;
-        border-radius: 12px;
+    width: 100%;
+    border-radius: 12px;
     }
 </style>
 
@@ -139,11 +139,11 @@ else
         return (Typo)newTypo;
     }
 
-    public static string GetPageRoute(IndexManifest index, AppManifest app)
+    public static string GetPageRoute(IndexManifest index, Guid appUuid)
     {
         // Prefer to use app name if possible
-        string? id = index.Aliases.GetName(app.Uuid);
-        id ??= app.Uuid.ToString();
+        string? id = index.Aliases.GetName(appUuid);
+        id ??= appUuid.ToString();
 
         return "./store/" + id;
     }

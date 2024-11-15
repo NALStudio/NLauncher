@@ -1,6 +1,7 @@
 ﻿using NLauncher.Index.Enums;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
+using NLauncher.Index.Models.News;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -12,9 +13,16 @@ using System.Threading.Tasks;
 
 namespace NLauncher.Index.Json;
 
-[JsonSerializable(typeof(IndexManifest))]
-[JsonSerializable(typeof(AppManifest))]
-[JsonSerializable(typeof(ImmutableArray<IndexAsset>?))] // for IndexAssetCollectionJsonConverter.cs
+// IIndexSerializable
+[JsonSerializable(typeof(IndexManifest))] // Index
+[JsonSerializable(typeof(IndexMeta))]
+[JsonSerializable(typeof(AppManifest))] // Apps
+[JsonSerializable(typeof(AppAliases))]
+[JsonSerializable(typeof(NewsManifest))] // News
+[JsonSerializable(typeof(NewsEntry))]
+
+// for IndexAssetCollectionJsonConverter.cs
+[JsonSerializable(typeof(ImmutableArray<IndexAsset>?))]
 internal partial class IndexJsonSerializerContext : JsonSerializerContext
 {
 }
