@@ -22,23 +22,3 @@ internal class JsonColor24HexConverter : JsonConverter<Color24>
         writer.WriteStringValue(value.ToHex());
     }
 }
-
-internal class NullableColor24HexJsonConverter : JsonConverter<Color24?>
-{
-    public override Color24? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-    {
-        string? value = reader.GetString();
-        if (value is null)
-            return null;
-        else
-            return Color24.FromHex(value);
-    }
-
-    public override void Write(Utf8JsonWriter writer, Color24? value, JsonSerializerOptions options)
-    {
-        if (value.HasValue)
-            writer.WriteStringValue(value.Value.ToHex());
-        else
-            writer.WriteNullValue();
-    }
-}

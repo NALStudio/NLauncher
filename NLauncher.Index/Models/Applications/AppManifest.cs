@@ -23,8 +23,6 @@ public record class AppManifest : IIndexSerializable
 
     // Do not include AgeRating.Unrated in enum so that we can omit it during minified serialization
     public AgeRating? AgeRating { get; init; }
-
-    [JsonConverter(typeof(NullableColor24HexJsonConverter))]
     public Color24? Color { get; init; }
 
     /// <summary>

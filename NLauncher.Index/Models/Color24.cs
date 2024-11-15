@@ -1,12 +1,16 @@
-﻿using System;
+﻿using NLauncher.Index.Json.Converters;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models;
+
+[JsonConverter(typeof(JsonColor24HexConverter))]
 public readonly record struct Color24(byte R, byte G, byte B)
 {
     public string ToHex() => $"#{R:X2}{G:X2}{B:X2}";

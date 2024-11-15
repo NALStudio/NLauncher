@@ -1,4 +1,5 @@
 ﻿using NLauncher.Index.Interfaces;
+using NLauncher.Index.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -10,18 +11,18 @@ using System.Threading.Tasks;
 namespace NLauncher.Index.Models.Index;
 public class AppAliases : IIndexSerializable
 {
-    public static readonly AppAliases Empty = new(ImmutableDictionary<string, Guid>.Empty);
+    public static readonly AppAliases Empty = new(ImmutableSortedDictionary<string, Guid>.Empty);
 
     // Only one safename can exist at a time, so dictionary is a perfect fit
     // Public so that the source generated JSON serializer can access this property
-    public ImmutableDictionary<string, Guid> Aliases { get; }
+    public ImmutableSortedDictionary<string, Guid> Aliases { get; }
 
     // A Guid can have many safenames, use a lookup instead.
     private readonly ILookup<Guid, string> idToName;
 
-    public AppAliases(ImmutableDictionary<string, Guid> aliases)
+    public AppAliases(ImmutableSortedDictionary<string, Guid> aliases)
     {
-        Aliases = aliases.ToImmutableDictionary(key => key.Key, value => value.Value);
+        Aliases = aliases;
         idToName = aliases.ToLookup(key => key.Value, value => value.Key);
     }
 

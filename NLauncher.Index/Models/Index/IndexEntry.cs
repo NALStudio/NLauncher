@@ -12,7 +12,5 @@ public class IndexEntry
 {
     public required AppManifest Manifest { get; init; }
     public required string DescriptionMarkdown { get; init; }
-
-    [JsonConverter(typeof(JsonIndexAssetCollectionConverter))]
     public required IndexAssetCollection Assets { get; init; }
 }

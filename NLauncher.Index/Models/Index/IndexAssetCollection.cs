@@ -1,12 +1,16 @@
 ﻿using NLauncher.Index.Enums;
+using NLauncher.Index.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.Index;
+
+[JsonConverter(typeof(JsonIndexAssetCollectionConverter))]
 public class IndexAssetCollection
 {
     public ImmutableArray<IndexAsset> Assets { get; }

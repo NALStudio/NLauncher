@@ -80,7 +80,6 @@ public static class IndexJsonSerializer
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             WriteIndented = false,
 
-
             TypeInfoResolver = IndexJsonSerializerContext.Default
         };
         opt.MakeReadOnly();
