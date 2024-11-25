@@ -1,0 +1,12 @@
+﻿<MudStack Row Class="@Class" Style="@Style">
+    <NLauncherIcon Margin="false"/>
+    <MudText Typo="Typo.h5" Style="color: var(--mud-palette-text-primary)">NLauncher</MudText>
+</MudStack>
+
+@code {
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; }
+}

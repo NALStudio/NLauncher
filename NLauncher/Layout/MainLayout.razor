@@ -1,4 +1,5 @@
 ﻿@using NLauncher.Components
+@using NLauncher.Components.Logo
 @using NLauncher.Components.Menus
 @using NLauncher.Index.Models.Index
 
@@ -13,7 +14,7 @@
                        Icon="@(Icons.Material.Rounded.Menu)"
                        OnClick="@(() => SetDrawerOpen(true))" />
 
-        <NLauncherLogo />
+        <NLauncherBanner />
         <MudSpacer />
         <MudStack Style="margin-left:16px" Row AlignItems="AlignItems.Center">
             <!-- Use null value to force autocomplete to clear once an app was selected -->
@@ -48,7 +49,7 @@
         </MudStack>
     </MudAppBar>
     <MudDrawer Elevation="0" Open="@drawerOpen" OpenChanged="@SetDrawerOpen" ClipMode="DrawerClipMode.Docked">
-        <NLauncherLogo Class="d-md-none ma-4" />
+        <NLauncherBanner Class="d-md-none ma-4" />
         <MudNavMenu Rounded Margin="Margin.Normal" Color="Color.Primary">
             <MudNavLink Href="./" Match="NavLinkMatch.All" Icon="@(Icons.Material.Rounded.Home)">Home</MudNavLink>
             <MudNavLink Href="./store" Icon="@(Icons.Material.Rounded.Sell)">Store</MudNavLink>
