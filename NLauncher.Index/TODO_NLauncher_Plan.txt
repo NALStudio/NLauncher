@@ -92,7 +92,7 @@ File layout:
                 #IF BINARY
                     "platform": "string", // windows | browser | android | ..., most commonly windows
                     "download_url": "string", // URL of the zip (other zipping formats might be supported later?)
-                    "download_hash": "string", // SHA256 hash of the download
+                    "download_hash": "string", // SHA256 hash of the download encoded in base64
                     "program_path": "string" // Path to the .exe file to run (Windows)
                 #ELIF MSIX
                     "download_url": "string",

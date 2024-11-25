@@ -11,4 +11,7 @@ internal class InstallsListSettings : MainSettings
 {
     [CommandOption("--app <id>")]
     public Guid? AppId { get; set; }
+
+    [CommandOption("-a|--all")]
+    public bool ShowAllVersions { get; set; }
 }

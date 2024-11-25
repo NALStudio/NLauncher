@@ -19,7 +19,7 @@ namespace NLauncher.IndexManager.Commands.Installs.List;
 internal class InstallsListCommand : AsyncCommand<InstallsListSettings>, IMainCommand, IMainCommandVariant
 {
     // TODO: Display installs of a specific version
-    public override async Task<int> ExecuteAsync(CommandContext context, InstallsListSettings settings) => await Execute(settings, settings.AppId);
+    public override async Task<int> ExecuteAsync(CommandContext context, InstallsListSettings settings) => await Execute(settings, appFilter: settings.AppId, showAllVersions: settings.ShowAllVersions);
     public override ValidationResult Validate(CommandContext context, InstallsListSettings settings) => Validate(settings);
     public ValidationResult Validate(MainSettings settings)
     {
@@ -29,14 +29,14 @@ internal class InstallsListCommand : AsyncCommand<InstallsListSettings>, IMainCo
     public async Task<int> ExecuteAsync(MainSettings settings)
     {
         DiscoveredManifest app = await AppManifestPrompt.AskDiscoveredManifest(settings.Context.Paths);
-        return await Execute(settings, appFilter: app.Manifest.Uuid);
+        return await Execute(settings, appFilter: app.Manifest.Uuid, showAllVersions: true);
     }
     public async Task<int> ExecuteVariantAsync(MainSettings settings)
     {
-        return await Execute(settings, appFilter: null);
+        return await Execute(settings, appFilter: null, showAllVersions: false);
     }
 
-    private static async Task<int> Execute(MainSettings settings, Guid? appFilter)
+    private static async Task<int> Execute(MainSettings settings, Guid? appFilter, bool showAllVersions)
     {
         IndexPaths paths = settings.Context.Paths;
 
@@ -53,20 +53,34 @@ internal class InstallsListCommand : AsyncCommand<InstallsListSettings>, IMainCo
         {
             TreeNode node = tree.AddNode(app.DisplayName.EscapeMarkup());
 
-            AppVersion? latest = app.GetLatestVersion();
-            if (latest is not null)
+            if (showAllVersions)
             {
-                for (int i = 0; i < latest.Installs.Length; i++)
+                foreach (AppVersion version in app.Versions)
                 {
-                    AppInstall install = latest.Installs[i];
-                    node.AddNode(RenderInstall(i, install));
+                    TreeNode versionNode = node.AddNode($"{version.VerNum} ({version.Identifier})");
+                    AddInstalls(versionNode, version);
                 }
+            }
+            else
+            {
+                AppVersion? latest = app.GetLatestVersion();
+                if (latest is not null)
+                    AddInstalls(node, latest);
             }
         }
 
         AnsiConsole.Write(tree);
 
         return 0;
+    }
+
+    private static void AddInstalls(TreeNode node, AppVersion version)
+    {
+        for (int i = 0; i < version.Installs.Length; i++)
+        {
+            AppInstall install = version.Installs[i];
+            node.AddNode(RenderInstall(i, install));
+        }
     }
 
     private static Table RenderInstall(int index, AppInstall install)

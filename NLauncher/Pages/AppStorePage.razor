@@ -54,7 +54,10 @@ else
             <MudCard Class="pa-3" Style="flex:2;min-width:320px" Outlined Elevation="0">
                 @if (app is not null)
                 {
-                    <MudMarkdown MarkdownPipeline="@(DefaultMarkdownPipeline.Instance)" OverrideHeaderTypo="@RemapMarkdownTypo" Value="@(app.DescriptionMarkdown)" />
+                    <!-- Subtract bottom margin since MudMarkdown's last line has margin which makes the card bottom too big -->
+                    <div style="margin-bottom:-20px">
+                        <MudMarkdown MarkdownPipeline="@(DefaultMarkdownPipeline.Instance)" OverrideHeaderTypo="@RemapMarkdownTypo" Value="@(app.DescriptionMarkdown)" />
+                    </div>
                 }
                 else
                 {
@@ -74,8 +77,8 @@ else
 
 <style>
     .banner_image_style {
-    width: 100%;
-    border-radius: 12px;
+        width: 100%;
+        border-radius: 12px;
     }
 </style>
 

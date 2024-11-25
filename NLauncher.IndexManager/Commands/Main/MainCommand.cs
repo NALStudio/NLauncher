@@ -2,7 +2,7 @@
 using NLauncher.IndexManager.Commands.Applications.Build;
 using NLauncher.IndexManager.Commands.Commands;
 using NLauncher.IndexManager.Commands.Commands.Aliases;
-using NLauncher.IndexManager.Commands.Installs;
+using NLauncher.IndexManager.Commands.Installs.Add;
 using NLauncher.IndexManager.Commands.Installs.List;
 using NLauncher.IndexManager.Commands.News;
 using Spectre.Console;
@@ -78,7 +78,7 @@ internal sealed class MainCommand : AsyncCommand<MainSettings>
                 "Installs",
                 [
                     KnownCommand.Command<InstallsAddCommand>("Add Install"),
-                    KnownCommand.Command<InstallsListCommand>("List For Version"),
+                    KnownCommand.Command<InstallsListCommand>("List For App"),
                     KnownCommand.CommandVariant<InstallsListCommand>("List All")
                 ]
             ),

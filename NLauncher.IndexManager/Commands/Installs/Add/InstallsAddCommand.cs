@@ -3,6 +3,7 @@ using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Index.Models.Index;
+using NLauncher.IndexManager.Commands.Installs.Add.BinaryProviders;
 using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
 using NLauncher.IndexManager.Components.FileChangeTree;
@@ -15,7 +16,7 @@ using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Diagnostics;
 
-namespace NLauncher.IndexManager.Commands.Installs;
+namespace NLauncher.IndexManager.Commands.Installs.Add;
 internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
 {
     private readonly record struct SelectedVersion(AppVersion? Version);
@@ -26,7 +27,7 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
     public override ValidationResult Validate(CommandContext context, MainSettings settings) => Validate(settings);
     public ValidationResult Validate(MainSettings settings) => ValidationResult.Success();
 
-    private static readonly FrozenDictionary<string, Func<AppInstall?>> InstallBuilders = new Dictionary<string, Func<AppInstall?>>()
+    private static readonly FrozenDictionary<string, Func<Task<AppInstall?>>> InstallBuilders = new Dictionary<string, Func<Task<AppInstall?>>>()
     {
         { "Binary", ConstructBinary },
         { "Store Link", ConstructStoreLink },
@@ -62,24 +63,25 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
 
         AnsiFormatter.WriteSectionTitle("Create Install");
 
-        var typePrompt = new SelectionPrompt<KeyValuePair<string, Func<AppInstall?>>>()
+        var typePrompt = new SelectionPrompt<KeyValuePair<string, Func<Task<AppInstall?>>>>()
             .Title("Select Install Type")
             .AddChoices(InstallBuilders)
             .UseConverter(static kv => kv.Key);
 
-        Func<AppInstall?> constructFunc = AnsiConsole.Prompt(typePrompt).Value;
-        AppInstall? install = constructFunc();
+        Func<Task<AppInstall?>> constructFunc = AnsiConsole.Prompt(typePrompt).Value;
+
+        AppInstall? install = await constructFunc();
         if (install is null)
             return 1;
 
-        AnsiConsole.WriteLine("Adding Install...");
-        AnsiConsole.WriteLine();
+        AnsiFormatter.WriteSectionTitle("Create Log");
 
         OperationResult result;
         using (FileChangeTree.ListenAndWrite(paths.Directory))
         {
             ManifestPaths manifestPaths = new(manifest.DirectoryPath);
             result = await AddInstall(manifestPaths, verNum, createVersion, install);
+            await Task.Delay(100); // Fix race condition (file change is invoked after FileChangeTree is disposed.
         }
 
         if (result.ErrorMessage is string error)
@@ -108,7 +110,7 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
 
         TextPrompt<uint> versionPrompt = new TextPrompt<uint>("Version Number:")
             .DefaultValue(minVersion)
-            .Validate(v => v < minVersion, $"Version number must be at least: {minVersion}");
+            .Validate(v => v >= minVersion, $"Version number must be at least: {minVersion}");
         uint verNum = AnsiConsole.Prompt(versionPrompt);
 
         string verIdentifier = AnsiConsole.Ask("Version Identifier:", defaultValue: "release");
@@ -166,12 +168,54 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
         return OperationResult.Success();
     }
 
-    private static BinaryAppInstall? ConstructBinary()
+    private static async Task<AppInstall?> ConstructBinary()
     {
-        throw new NotImplementedException();
+        AnsiFormatter.WriteWarning("Currently only .zip format is supported.");
+        AnsiFormatter.WriteWarning("No file type nor integrity verification is done by the index manager.");
+        AnsiFormatter.WriteWarning("Thus it is the user's responsibility to ensure that they provide a valid file.");
+        AnsiConsole.Confirm("Is your file a valid .zip file?");
+
+        Platforms platform = AnsiConsole.Prompt(
+            new SelectionPrompt<Platforms>()
+                .Title("Choose Supported Platform")
+                .AddChoices(Enum.GetValues<Platforms>().Where(static p => p != Platforms.None))
+        );
+
+        string exePath = AnsiConsole.Ask<string>("Executable path inside .zip:");
+        if (Path.IsPathRooted(exePath)) // Path is not relative if it's rooted
+        {
+            AnsiFormatter.WriteError("Path must be relative.");
+            return null;
+        }
+        if (Path.GetExtension(exePath) != ".exe")
+        {
+            AnsiFormatter.WriteError("Path must point to a .exe file.");
+            return null;
+        }
+
+        InstallBinaryProvider provider = AnsiConsole.Prompt(
+            new SelectionPrompt<InstallBinaryProvider>()
+                .Title("Choose Binary Source")
+                .AddChoices(new WebFileInstallBinaryProvider())
+                .UseConverter(static p => p.DisplayName)
+        );
+
+        AnsiFormatter.WriteSectionTitle("Compute Hash");
+        InstallBinaryProvider.FileData? fileData = await provider.LoadFileDataAsync();
+        if (fileData is null)
+            return null;
+
+        return new BinaryAppInstall()
+        {
+            Platform = platform,
+            ExecutablePath = exePath,
+
+            DownloadUrl = fileData.DownloadUrl,
+            DownloadHash = Convert.ToBase64String(fileData.Hash.AsSpan())
+        };
     }
 
-    private static StoreLinkAppInstall? ConstructStoreLink()
+    private static Task<AppInstall?> ConstructStoreLink()
     {
         Platforms platform = AnsiConsole.Prompt(
             new SelectionPrompt<Platforms>()
@@ -181,23 +225,27 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
 
         Uri url = AnsiConsole.Ask<Uri>("Store link:");
 
-        return new StoreLinkAppInstall()
+        StoreLinkAppInstall install = new()
         {
             Platform = platform,
             Url = url
         };
+
+        return Task.FromResult<AppInstall?>(install);
     }
 
-    private static WebsiteAppInstall? ConstructWebsite()
+    private static Task<AppInstall?> ConstructWebsite()
     {
         Uri url = AskUri("Website link:");
         bool supportsPwa = AnsiConsole.Confirm("Does your website support PWA?", defaultValue: false);
 
-        return new WebsiteAppInstall()
+        WebsiteAppInstall install = new()
         {
             Url = url,
             SupportsPwa = supportsPwa
         };
+
+        return Task.FromResult<AppInstall?>(install);
     }
 
     private static Uri AskUri(string prompt, Uri? defaultValue = null)
