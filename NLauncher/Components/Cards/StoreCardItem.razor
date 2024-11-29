@@ -11,12 +11,13 @@
 <MudItem xs="12" sm="6" lg="4" xl="3">
     <!-- Clip overflow to fix skeleton rendering incorrectly -->
     <!-- onclick on MudCard instead of MudItem so that the click doesn't register inside the grid spacing -->
+    <!-- ACCESSIBILITY: onclick doesn't register for tab navigation and wrapping <MudCard> inside a <button> makes the layout all wonky. We have disabled tab navigation for now. -->
     <MudCard @onclick=StoreCardClicked
-    @onmouseover=SetHoverEffectVisible
-    @onmouseout=SetHoverEffectHidden
-    Class="@(GetStoreCardClasses())"
-    Outlined Elevation="0"
-    Style="overflow:clip;cursor:pointer">
+             @onmouseover=SetHoverEffectVisible
+             @onmouseout=SetHoverEffectHidden
+             Class="@(GetStoreCardClasses())"
+             Outlined Elevation="0"
+             Style="overflow:clip;cursor:pointer">
         <!-- Image -->
         @if (Entry is not null)
         {

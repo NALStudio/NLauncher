@@ -7,20 +7,20 @@ using NLauncher.Services.Settings;
 using NLauncher.Services.Storage;
 using NLauncher.Shared.AppHandlers;
 using NLauncher.Shared.AppHandlers.Base;
+using System.Runtime.Versioning;
 
-namespace NLauncher;
+namespace NLauncher.Web;
+
+[SupportedOSPlatform("browser")]
 public static class Program
 {
     public static async Task Main(string[] args)
     {
-        if (!OperatingSystem.IsBrowser())
-            throw new PlatformNotSupportedException();
-
         var builder = WebAssemblyHostBuilder.CreateDefault(args);
         builder.RootComponents.Add<App>("#app");
         builder.RootComponents.Add<HeadOutlet>("head::after");
 
-        builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+        builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
         builder.Services.AddMudServices();
         builder.Services.AddMudMarkdownServices();
@@ -29,15 +29,8 @@ public static class Program
         builder.Services.AddSingleton<SettingsService>();
         builder.Services.AddScoped<IndexService>();
 
-        builder.Services.AddSingleton(CreateAppHandlerService());
+        builder.Services.AddSingleton(new AppHandlerService(AppHandler.WebHandlers));
 
         await builder.Build().RunAsync();
-    }
-
-    private static AppHandlerService CreateAppHandlerService()
-    {
-        return new AppHandlerService([
-            ..AppHandler.SharedHandlers
-        ]);
     }
 }

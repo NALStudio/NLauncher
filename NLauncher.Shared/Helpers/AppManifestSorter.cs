@@ -22,11 +22,11 @@ public static class AppManifestSorter
             // Compare null (sort null as last)
             if (a is null && b is null)
                 return 0;
-            if (a is null) // y is not null
+            if (a is null) // b is not null
                 return 1;
-            if (b is null) // x is not null
+            if (b is null) // a is not null
                 return -1;
-            // x is not null && y is not null
+            // a is not null && b is not null
 
             // Compare values
             return CompareFunc(a, b);

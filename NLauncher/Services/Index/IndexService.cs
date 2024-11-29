@@ -1,4 +1,5 @@
-﻿using NLauncher.Index.Json;
+﻿using Microsoft.Extensions.Logging;
+using NLauncher.Index.Json;
 using NLauncher.Index.Models.Index;
 using NLauncher.Services.Storage;
 using System.Diagnostics;
@@ -146,7 +147,11 @@ public partial class IndexService : IDisposable
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.raw+json"));
 
         HttpResponseMessage response = await http.SendAsync(request);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            string errorContent = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"Index fetch failed with result {response.StatusCode}. Response below:\n{errorContent}");
+        }
 
         IndexManifest? manifest;
         await using (Stream s = response.Content.ReadAsStream())

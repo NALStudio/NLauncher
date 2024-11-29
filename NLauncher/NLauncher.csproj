@@ -1,24 +1,19 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-
-	<RunAOTCompilation>true</RunAOTCompilation>
-	<WasmStripILAfterAOT>true</WasmStripILAfterAOT>
 	  
-	<!-- JSImport/JSExport interop -->
-	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-
-	<!-- DISABLED: This breaks WASM deployment for some reason -->
-	<!-- Consistent serialization behaviour between WASM and MAUI Hybrid -->
-	<!--<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>-->
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
+    <ItemGroup>
+	    <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.0" />
     <PackageReference Include="MudBlazor" Version="7.15.0" />
     <PackageReference Include="MudBlazor.Markdown" Version="7.14.0" />
   </ItemGroup>
