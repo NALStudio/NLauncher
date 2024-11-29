@@ -1,4 +1,4 @@
-name: Deploy website to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   release:
@@ -17,32 +17,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy_web:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
-    # Modify files
     - name: Change base-tag in index.html
-      run: sed -i 's/<base href="\/" \/>/<base href="\/NLauncher\/" \/>/g' NLauncher.Web/wwwroot/index.html
+      run: sed -i 's/<base href="\/" \/>/<base href="\/NLauncher\/" \/>/g' NLauncher/wwwroot/index.html
     - name: copy index.html to 404.html # copy index.html to 404.html since GitHub returns 404 when opening a subdomain.
-      run: cp NLauncher.Web/wwwroot/index.html NLauncher.Web/wwwroot/404.html
+      run: cp NLauncher/wwwroot/index.html NLauncher/wwwroot/404.html
 
-    # Compile project
+    
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
     - name: Restore workloads
-      run: dotnet workload restore ./NLauncher.Web/NLauncher.Web.csproj
+      run: dotnet workload restore
     - name: Restore dependencies
-      run: dotnet restore ./NLauncher.Web/NLauncher.Web.csproj
+      run: dotnet restore
     - name: Publish project
-      run: dotnet publish ./NLauncher.Web/NLauncher.Web.csproj --configuration Release --output build --no-restore --nologo
-
-    # Upload to GitHub Pages
+      run: dotnet publish NLauncher/NLauncher.csproj --configuration Release --output build --no-restore --nologo
+      
     - name: Setup GitHub Pages
       uses: actions/configure-pages@v5
     - name: Upload artifact (wwwroot)

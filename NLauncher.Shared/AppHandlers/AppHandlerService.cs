@@ -11,13 +11,13 @@ public class AppHandlerService
     /// <summary>
     /// The handlers are prioritised in the order of <paramref name="handlers"/>.
     /// </summary>
-    public AppHandlerService(params IEnumerable<AppHandler> handlers)
+    public AppHandlerService(params AppHandler[] handlers)
     {
         this.handlers = handlers.ToImmutableArray();
     }
 
     // Convert IEnumerable into ImmutableArray since I cannot guarantee that the IEnumerable can be enumerated multiple times
-    public IEnumerable<AppHandler> GetSupportedHandlers(IEnumerable<AppInstall> installs) => GetSupportedHandlers(installs.ToImmutableArray());
+    public IEnumerable<AppHandler> GetSupportedHandlers(params IEnumerable<AppInstall> installs) => GetSupportedHandlers(installs.ToImmutableArray());
     public IEnumerable<AppHandler> GetSupportedHandlers(params ImmutableArray<AppInstall> installs)
     {
         foreach (AppHandler handler in handlers)

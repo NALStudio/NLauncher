@@ -17,12 +17,4 @@ public abstract class AppHandler
         new WebsiteLinkAppHandler(),
         new BinaryManualInstallAppHandler()
     ];
-
-    public static readonly ImmutableArray<AppHandler> WebHandlers = [
-        ..SharedHandlers
-    ];
-
-    public static readonly ImmutableArray<AppHandler> WindowsHandlers = [
-        ..SharedHandlers
-    ];
 }

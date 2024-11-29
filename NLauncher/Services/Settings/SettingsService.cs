@@ -90,6 +90,6 @@ public partial class SettingsService
         if (string.IsNullOrEmpty(json))
             return null;
 
-        return JsonSerializer.Deserialize(json, SerializerContext.Default.Settings);
+        return JsonSerializer.Deserialize<Settings>(json);
     }
 }
