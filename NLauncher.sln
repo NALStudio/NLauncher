@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLauncher.Web", "NLauncher.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLauncher", "NLauncher\NLauncher.csproj", "{DB1BC50C-CE25-4559-B177-DC785E3D858C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLauncher.Windows", "NLauncher.Windows\NLauncher.Windows.csproj", "{22C65EAC-B6BA-4619-82ED-612CB8BE0D8A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +46,10 @@ Global
 		{DB1BC50C-CE25-4559-B177-DC785E3D858C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB1BC50C-CE25-4559-B177-DC785E3D858C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB1BC50C-CE25-4559-B177-DC785E3D858C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22C65EAC-B6BA-4619-82ED-612CB8BE0D8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22C65EAC-B6BA-4619-82ED-612CB8BE0D8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22C65EAC-B6BA-4619-82ED-612CB8BE0D8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22C65EAC-B6BA-4619-82ED-612CB8BE0D8A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
