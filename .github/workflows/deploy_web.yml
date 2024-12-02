@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy website to GitHub Pages
 
 on:
   release:
@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  deploy_web:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,9 +25,9 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Change base-tag in index.html
-      run: sed -i 's/<base href="\/" \/>/<base href="\/NLauncher\/" \/>/g' NLauncher/wwwroot/index.html
+      run: sed -i 's/<base href="\/" \/>/<base href="\/NLauncher.Web\/" \/>/g' NLauncher.Web/wwwroot/index.html
     - name: copy index.html to 404.html # copy index.html to 404.html since GitHub returns 404 when opening a subdomain.
-      run: cp NLauncher/wwwroot/index.html NLauncher/wwwroot/404.html
+      run: cp NLauncher.Web/wwwroot/index.html NLauncher.Web/wwwroot/404.html
 
     
     - name: Setup .NET
@@ -39,7 +39,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Publish project
-      run: dotnet publish NLauncher/NLauncher.csproj --configuration Release --output build --no-restore --nologo
+      run: dotnet publish NLauncher.Web/NLauncher.Web.csproj --configuration Release --output build --no-restore --nologo
       
     - name: Setup GitHub Pages
       uses: actions/configure-pages@v5
@@ -50,5 +50,3 @@ jobs:
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
-
-      
