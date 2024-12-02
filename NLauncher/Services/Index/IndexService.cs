@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NLauncher.Index.Json;
 using NLauncher.Index.Models.Index;
-using NLauncher.Services.Storage;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;

@@ -1,5 +1,4 @@
-﻿using NLauncher.Services.Storage;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace NLauncher.Services.Settings;
 

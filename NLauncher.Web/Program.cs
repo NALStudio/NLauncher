@@ -1,12 +1,8 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using MudBlazor;
-using MudBlazor.Services;
-using NLauncher.Services.Index;
-using NLauncher.Services.Settings;
-using NLauncher.Services.Storage;
-using NLauncher.Shared.AppHandlers;
+using NLauncher.Services;
 using NLauncher.Shared.AppHandlers.Base;
+using NLauncher.Web.Services;
 using System.Runtime.Versioning;
 
 namespace NLauncher.Web;
@@ -17,19 +13,14 @@ public static class Program
     public static async Task Main(string[] args)
     {
         var builder = WebAssemblyHostBuilder.CreateDefault(args);
-        builder.RootComponents.Add<App>("#app");
+        builder.RootComponents.Add<WebApp>("#app");
         builder.RootComponents.Add<HeadOutlet>("head::after");
 
         builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
-        builder.Services.AddMudServices();
-        builder.Services.AddMudMarkdownServices();
-
-        builder.Services.AddSingleton<IStorageService, WebStorageService>();
-        builder.Services.AddSingleton<SettingsService>();
-        builder.Services.AddScoped<IndexService>();
-
-        builder.Services.AddSingleton(new AppHandlerService(AppHandler.WebHandlers));
+        NLauncherServices.AddDefault(builder.Services);
+        NLauncherServices.AddStorage<WebStorageService>(builder.Services);
+        NLauncherServices.AddAppHandlers(builder.Services, AppHandler.WebHandlers);
 
         await builder.Build().RunAsync();
     }
