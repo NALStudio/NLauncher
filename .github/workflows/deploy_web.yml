@@ -25,7 +25,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Change base-tag in index.html
-      run: sed -i 's/<base href="\/" \/>/<base href="\/NLauncher.Web\/" \/>/g' NLauncher.Web/wwwroot/index.html
+      run: sed -i 's/<base href="\/" \/>/<base href="\/NLauncher\/" \/>/g' NLauncher.Web/wwwroot/index.html
     - name: copy index.html to 404.html # copy index.html to 404.html since GitHub returns 404 when opening a subdomain.
       run: cp NLauncher.Web/wwwroot/index.html NLauncher.Web/wwwroot/404.html
 
