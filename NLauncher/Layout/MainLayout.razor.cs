@@ -3,7 +3,6 @@ using NLauncher.Code.Extensions;
 using NLauncher.Code.IndexSearch;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
-using NLauncher.Pages;
 using NLauncher.Services.Index;
 using System.Collections.Immutable;
 

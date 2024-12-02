@@ -1,6 +1,7 @@
 ﻿using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Shared.AppHandlers.Base;
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 
 namespace NLauncher.Shared.AppHandlers;
 
@@ -11,7 +12,7 @@ public class AppHandlerService
     /// <summary>
     /// The handlers are prioritised in the order of <paramref name="handlers"/>.
     /// </summary>
-    public AppHandlerService(params AppHandler[] handlers)
+    public AppHandlerService(params IEnumerable<AppHandler> handlers)
     {
         this.handlers = handlers.ToImmutableArray();
     }
