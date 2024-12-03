@@ -1,4 +1,4 @@
-﻿namespace NLauncher.Services.Storage;
+﻿namespace NLauncher.Services;
 
 /// <summary>
 /// This is the common storage service shared between web and Windows.

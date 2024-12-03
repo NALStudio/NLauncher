@@ -1,8 +1,8 @@
 ﻿using Microsoft.JSInterop;
-using System.Runtime.InteropServices.JavaScript;
+using NLauncher.Services;
 using System.Runtime.Versioning;
 
-namespace NLauncher.Services.Storage;
+namespace NLauncher.Web.Services;
 
 [SupportedOSPlatform("browser")]
 public partial class WebStorageService : IStorageService
