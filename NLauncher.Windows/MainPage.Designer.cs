@@ -46,6 +46,7 @@ partial class MainPage
         AutoScaleMode = AutoScaleMode.Font;
         ClientSize = new Size(1264, 745);
         Controls.Add(blazorWebView);
+        MinimumSize = new Size(480, 270);
         Name = "MainPage";
         Text = "NLauncher";
         ResumeLayout(false);
