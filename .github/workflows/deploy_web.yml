@@ -35,9 +35,9 @@ jobs:
       with:
         dotnet-version: 9.0.x
     - name: Restore workloads
-      run: dotnet workload restore
+      run: dotnet workload restore NLauncher.Web/NLauncher.Web.csproj
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore NLauncher.Web/NLauncher.Web.csproj
     - name: Publish project
       run: dotnet publish NLauncher.Web/NLauncher.Web.csproj --configuration Release --output build --no-restore --nologo
       
