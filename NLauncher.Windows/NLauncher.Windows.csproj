@@ -9,7 +9,7 @@
 
 	<!-- Not supported by Winforms -->
 	<!--<PublishAot>true</PublishAot>-->
-	<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+	<!--<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>-->
   </PropertyGroup>
 
   <ItemGroup>

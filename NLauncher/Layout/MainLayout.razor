@@ -22,7 +22,7 @@
             <MudAutocomplete Class="d-none d-sm-flex"
                              T="IndexEntry"
                              SearchFunc="SearchIndex"
-                             ToStringFunc="@(static e => e.Manifest.DisplayName)"
+                             ToStringFunc="@(static e => e?.Manifest?.DisplayName)"
                              MaxItems="5"
                              Value="null"
                              ValueChanged="@(async e => await NavigateTo(e.Manifest))"

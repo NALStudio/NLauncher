@@ -14,7 +14,7 @@ public partial class MainPage : Form
         InitializeComponent();
 
         blazorWebView.HostPage = "wwwroot\\index.html";
-        // blazorWebView.Services = BuildServices();
+        blazorWebView.Services = BuildServices();
         blazorWebView.RootComponents.Add<WinApp>("#app");
     }
 
@@ -29,6 +29,10 @@ public partial class MainPage : Form
         NLauncherServices.AddDefault(services);
         NLauncherServices.AddStorage<WindowsStorageService>(services);
         NLauncherServices.AddAppHandlers(services, AppHandler.WindowsHandlers);
+
+#if DEBUG
+        services.AddBlazorWebViewDeveloperTools();
+#endif
 
         return services.BuildServiceProvider();
     }
