@@ -79,6 +79,7 @@ public static class IndexJsonSerializer
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             WriteIndented = false,
+            IndentSize = 4,
 
             TypeInfoResolver = IndexJsonSerializerContext.Default
         };

@@ -56,7 +56,8 @@ else
                 {
                     <!-- Subtract bottom margin since MudMarkdown's last line has margin which makes the card bottom too big -->
                     <div style="margin-bottom:-20px">
-                        <MudMarkdown MarkdownPipeline="@(DefaultMarkdownPipeline.Instance)" OverrideHeaderTypo="@RemapMarkdownTypo" Value="@(app.DescriptionMarkdown)" />
+                        <MudMarkdown MarkdownPipeline="@(DefaultMarkdownPipeline.Instance)"                  OverrideHeaderTypo="@RemapMarkdownTypo"
+                                     Value="@(app.DescriptionMarkdown)" />
                     </div>
                 }
                 else
