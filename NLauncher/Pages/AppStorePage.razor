@@ -26,10 +26,10 @@ else
     {
         <BannerImage Entry="@app">
             <ImageContent Context="asset">
-                <MudImage Style="user-select:none"
-                Class="banner_image_style"
-                ObjectFit="ObjectFit.Cover"
-                Src="@(asset.Url.ToString())" />
+                <MudImage Class="banner_image_style"
+                          ObjectPosition="ObjectPosition.Top"
+                          ObjectFit="ObjectFit.Cover"
+                          Src="@(asset.Url.ToString())" />
             </ImageContent>
         </BannerImage>
     }
@@ -77,7 +77,9 @@ else
 
 <style>
     .banner_image_style {
+        user-select: none;
         width: 100%;
+        max-height: 50vh;
         border-radius: 12px;
     }
 </style>
