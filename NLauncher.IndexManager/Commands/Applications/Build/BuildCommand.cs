@@ -149,6 +149,9 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
             return null;
         }
         Uri backgroundImageFile = ConstructGitHubAssetPath(meta, indexPaths, newsPaths.BackgroundImageFile);
+        ImageSize? backgroundSize = ValidateImageSize(newsPaths, newsPaths.BackgroundImageFile, new AssetTypeEnum.Aspect(16, 9));
+        if (!backgroundSize.HasValue)
+            return null;
 
         NewsManifest? manifest = await TryLoadAndDeserialize<NewsManifest>(newsPaths, newsPaths.NewsFile);
         if (manifest is null)
@@ -258,7 +261,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         int expectedWidth = (int)Math.Round(image.Height * (decimal)aspectRatio, MidpointRounding.AwayFromZero);
         if (image.Width != expectedWidth)
         {
-            Error($"Invalid image width: {image.Width}. Image must be {expectedWidth} pixels wide (aspect ratio: {aspectRatio}).");
+            Error($"Invalid image width: {image.Width}. Image must be {expectedWidth} pixels wide (aspect ratio: {aspectRatio}). ({filepath})");
             return null;
         }
 

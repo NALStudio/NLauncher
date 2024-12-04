@@ -1,7 +1,21 @@
 ﻿@page "/"
 
+@using NLauncher.Components.News
+@using System.Collections.Immutable
+@using NLauncher.Index.Models.News
+@using NLauncher.Services.Index
+
+@inject IndexService Index
+
 <PageTitle>NLauncher - Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<NewsBanner News="@news" />
 
-Welcome to your new app.
+@code {
+    private ImmutableArray<NewsEntry>? news;
+
+    protected override async Task OnInitializedAsync()
+    {
+        news = (await Index.GetIndexAsync()).News;
+    }
+}

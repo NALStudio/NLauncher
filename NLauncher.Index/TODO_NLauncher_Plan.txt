@@ -21,7 +21,7 @@ File layout:
     // We can't implement news in the web app since we must access platform features and thus cannot distribute the app as a web app.
     - @news  // yes, the folder is actually called @news so that it sorts at the top and doesn't conflict with the publisher directory name
         - $news_index  // index of the news, they don't need to be sequencial and are only used for sorting (index manager can have news 'slots')
-            - background.png // images can be of any size (will be scaled to cover a rectangular area)
+            - background.png // 16:9 ratio image (recommended: 1920x1080 px)
             - logo.png // images can be of any size (will be scaled to a specific height)
             - news.json // NOTE: Can't be manifest.json as that name is reserved for applications (or otherwise we will incorrectly discover news as 'applications')
 

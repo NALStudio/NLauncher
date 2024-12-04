@@ -1,0 +1,62 @@
+﻿@using NLauncher.Index.Models.News
+@using System.Collections.Immutable
+
+@implements IDisposable
+
+@{
+    NewsEntry? news = newsSorted?[newsIndex];
+
+    <MudStack Spacing="0" AlignItems="AlignItems.Center">
+        @if (news is not null)
+        {
+            <MudImage Class="banner_image_style" ObjectPosition="ObjectPosition.Center" ObjectFit="ObjectFit.Cover" Src="@(news.AssetUrls.Background.ToString())" />
+        }
+        else
+        {
+            <MudSkeleton Class="banner_image_style" SkeletonType="SkeletonType.Rectangle" />
+        }
+
+        <div style="position:relative;top:-36px">
+            <MudPagination Count="@(newsSorted?.Length ?? 4)" Selected="@(newsIndex + 1)" SelectedChanged="@(s => SetNewsIndex(s - 1))" ShowNextButton="false" ShowPreviousButton="false" Variant="Variant.Outlined" Size="Size.Small" />
+        </div>
+    </MudStack>
+}
+
+<style>
+    .banner_image_style {
+    user-select: none;
+    width: 100%;
+    max-height: 60vh;
+    border-radius: 12px;
+    overflow: clip;
+    }
+</style>
+
+@code {
+    const int defaultNewsIndex = 1;
+    private int newsIndex = defaultNewsIndex;
+    private ImmutableArray<NewsEntry>? newsSorted;
+
+    [Parameter]
+    public required IEnumerable<NewsEntry>? News { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        newsSorted = News?.OrderBy(static n => n.Index).ToImmutableArray();
+        if (newsSorted.HasValue)
+            newsIndex %= newsSorted.Value.Length;
+        else
+            newsIndex = defaultNewsIndex;
+    }
+
+    private void SetNewsIndex(int index)
+    {
+        newsIndex = index;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+
+    }
+}
