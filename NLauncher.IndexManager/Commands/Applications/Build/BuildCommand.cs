@@ -141,14 +141,14 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
             NotFound(newsPaths, newsPaths.LogoImageFile);
             return null;
         }
-        Uri logoImageFile = ConstructGitHubAssetPath(meta, newsPaths, newsPaths.LogoImageFile);
+        Uri logoImageFile = ConstructGitHubAssetPath(meta, indexPaths, newsPaths.LogoImageFile);
 
         if (!File.Exists(newsPaths.BackgroundImageFile))
         {
             NotFound(newsPaths, newsPaths.BackgroundImageFile);
             return null;
         }
-        Uri backgroundImageFile = ConstructGitHubAssetPath(meta, newsPaths, newsPaths.BackgroundImageFile);
+        Uri backgroundImageFile = ConstructGitHubAssetPath(meta, indexPaths, newsPaths.BackgroundImageFile);
 
         NewsManifest? manifest = await TryLoadAndDeserialize<NewsManifest>(newsPaths, newsPaths.NewsFile);
         if (manifest is null)
@@ -303,7 +303,8 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         AnsiConsole.MarkupLine($"[red]{msg.EscapeMarkup()}[/]");
     }
 
-    private static Uri ConstructGitHubAssetPath(IndexMeta meta, DirectoryPathProvider paths, string assetPath)
+    // use IndexPaths so that the relative path is computed correctly.
+    private static Uri ConstructGitHubAssetPath(IndexMeta meta, IndexPaths paths, string assetPath)
     {
         string assetRelativePath = paths.GetRelativePath(assetPath);
         string repoRelativePath = Path.Join(meta.Repository.Path, assetRelativePath);
