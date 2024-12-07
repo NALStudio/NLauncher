@@ -130,7 +130,20 @@ public partial class IndexService : IDisposable
         if (string.IsNullOrEmpty(serialized))
             return null;
 
-        CachedIndex? deserialized = CachedIndex.TryDeserialize(serialized);
+        CachedIndex? deserialized;
+        try
+        {
+            // TODO: Check cache validity before deserializing the entire index
+            // Like CacheIndex could first deserialize into header data and content bytes
+            // and content bytes should be further deserialized into a usable datatype.
+            deserialized = CachedIndex.TryDeserialize(serialized);
+        }
+        catch (Exception e)
+        {
+            deserialized = null;
+            logger.LogError("Index deserialization failed with error:\n{}", e);
+        }
+
         if (!deserialized.HasValue)
             logger.LogWarning("Cache value could not be deserialized.");
         return deserialized;
