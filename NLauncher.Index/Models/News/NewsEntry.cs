@@ -14,5 +14,5 @@ public class NewsEntry : IIndexSerializable
     public required int Index { get; init; }
 
     public required NewsManifest Manifest { get; init; }
-    public required NewsEntryAssetUrls AssetUrls { get; init; }
+    public required NewsEntryAssets Assets { get; init; }
 }

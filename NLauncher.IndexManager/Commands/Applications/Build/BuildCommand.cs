@@ -152,6 +152,9 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         ImageSize? backgroundSize = ValidateImageSize(newsPaths, newsPaths.BackgroundImageFile, new AssetTypeEnum.Aspect(16, 9));
         if (!backgroundSize.HasValue)
             return null;
+        double? backgroundBrightness = ComputeImageBrightness(newsPaths, newsPaths.BackgroundImageFile);
+        if (!backgroundBrightness.HasValue)
+            return null;
 
         NewsManifest? manifest = await TryLoadAndDeserialize<NewsManifest>(newsPaths, newsPaths.NewsFile);
         if (manifest is null)
@@ -161,9 +164,10 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         {
             Index = index,
             Manifest = manifest,
-            AssetUrls = new NewsEntryAssetUrls()
+            Assets = new NewsEntryAssets()
             {
                 Background = backgroundImageFile,
+                BackgroundBrightness = backgroundBrightness.Value,
                 Logo = logoImageFile
             }
         };
@@ -268,6 +272,26 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         return new(image.Width, image.Height);
     }
 
+    private static double? ComputeImageBrightness(DirectoryPathProvider paths, string filepath)
+    {
+        if (!File.Exists(filepath))
+        {
+            NotFound(paths, filepath);
+            return null;
+        }
+
+        SKBitmap bitmap = SKBitmap.Decode(filepath);
+
+        decimal brightnessSum = 0m;
+        SKColor[] pixels = bitmap.Pixels;
+        foreach (SKColor c in pixels)
+            brightnessSum += (decimal)GetBrightness(c);
+
+        double brightness = (double)(brightnessSum / pixels.Length);
+        Debug.Assert(brightness >= 0 && brightness <= 1);
+        return brightness;
+    }
+
     private static async ValueTask<string?> TryLoad(DirectoryPathProvider paths, string filepath)
     {
         if (!File.Exists(filepath))
@@ -337,5 +361,19 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
             throw new ArgumentException($"Invalid URL: '{url}'");
 
         return new Uri(url);
+    }
+
+    // https://www.alienryderflex.com/hsp.html
+    private static double GetBrightness(SKColor color)
+    {
+        double r = color.Red / 255d;
+        double g = color.Green / 255d;
+        double b = color.Blue / 255d;
+
+        return Math.Sqrt(
+            (r * r * 0.299d)
+            + (g * g * 0.587d)
+            + (b * b * 0.114d)
+        );
     }
 }
