@@ -1,40 +1,39 @@
 ﻿@using NLauncher.Index.Models.News
 @using System.Collections.Immutable
+@using System.Diagnostics.CodeAnalysis
 
-@implements IDisposable
 
-@{
-    NewsEntry? news = newsSorted?[newsIndex];
-
-    <MudStack Spacing="0" AlignItems="AlignItems.Center">
-        @if (news is not null)
+<MudStack Spacing="0" AlignItems="AlignItems.Center">
+    <MudCarousel @ref=_carousel TData="NewsEntry" Class="banner_image_style" Style="@bulletsColor" SelectedIndexChanged="@(_ => RefreshBulletsColor())" ShowArrows="false" AutoCycleTime="TimeSpan.FromSeconds(10)">
+        @foreach (NewsEntry? news in newsSorted ?? Enumerable.Repeat<NewsEntry?>(null, 4))
         {
-            <MudImage Class="banner_image_style" ObjectPosition="ObjectPosition.Center" ObjectFit="ObjectFit.Cover" Src="@(news.AssetUrls.Background.ToString())" />
-        }
-        else
-        {
-            <MudSkeleton Class="banner_image_style" SkeletonType="SkeletonType.Rectangle" />
-        }
+            <MudCarouselItem Transition="Transition.Fade" Style="@GetBackgroundImageCss(news)">
+                @if (news is null)
+                {
+                    <MudSkeleton Width="100%" Height="100%" SkeletonType="SkeletonType.Rectangle" />
+                }
+                else
+                {
 
-        <div style="position:relative;top:-36px">
-            <MudPagination Count="@(newsSorted?.Length ?? 4)" Selected="@(newsIndex + 1)" SelectedChanged="@(s => SetNewsIndex(s - 1))" ShowNextButton="false" ShowPreviousButton="false" Variant="Variant.Outlined" Size="Size.Small" />
-        </div>
-    </MudStack>
-}
+                }
+            </MudCarouselItem>
+        }
+    </MudCarousel>
+</MudStack>
 
 <style>
     .banner_image_style {
     user-select: none;
     width: 100%;
-    max-height: 60vh;
+    aspect-ratio: 16 / 9;
     border-radius: 12px;
-    overflow: clip;
     }
 </style>
 
 @code {
-    const int defaultNewsIndex = 1;
-    private int newsIndex = defaultNewsIndex;
+    private MudCarousel<NewsEntry>? _carousel;
+    private string? bulletsColor = null;
+
     private ImmutableArray<NewsEntry>? newsSorted;
 
     [Parameter]
@@ -43,20 +42,36 @@
     protected override void OnParametersSet()
     {
         newsSorted = News?.OrderBy(static n => n.Index).ToImmutableArray();
-        if (newsSorted.HasValue)
-            newsIndex %= newsSorted.Value.Length;
+        if (_carousel is not null)
+            RefreshBulletsColor();
+    }
+
+    private void RefreshBulletsColor()
+    {
+        int? index = _carousel?.SelectedIndex;
+        if (index.HasValue && newsSorted.HasValue)
+        {
+            NewsEntry news = newsSorted.Value[index.Value];
+            bulletsColor = GetBulletsColor(news.Assets.BackgroundBrightness);
+        }
         else
-            newsIndex = defaultNewsIndex;
+        {
+            bulletsColor = null;
+        }
     }
 
-    private void SetNewsIndex(int index)
+    [return: NotNullIfNotNull(nameof(news))]
+    private static string? GetBackgroundImageCss(NewsEntry? news)
     {
-        newsIndex = index;
-        StateHasChanged();
+        if (news is null)
+            return null;
+
+        return $"background-image: url(\"{news.Assets.Background}\"); background-size: cover; background-position: center";
     }
 
-    public void Dispose()
+    private static string GetBulletsColor(double brightness)
     {
-
+        string color = brightness >= 0.5 ? "--mud-palette-black" : "--mud-palette-white";
+        return $"color: var({color})";
     }
 }
