@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebView.WindowsForms;
 using Microsoft.Extensions.DependencyInjection;
 using NLauncher.Services;
@@ -16,6 +17,7 @@ public partial class MainPage : Form
         blazorWebView.HostPage = "wwwroot\\index.html";
         blazorWebView.Services = BuildServices();
         blazorWebView.RootComponents.Add<WinApp>("#app");
+        blazorWebView.RootComponents.Add<HeadOutlet>("head::after");
     }
 
     internal static IServiceProvider BuildServices()

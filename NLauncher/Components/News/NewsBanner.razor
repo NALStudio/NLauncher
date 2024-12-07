@@ -2,6 +2,14 @@
 @using System.Collections.Immutable
 @using System.Diagnostics.CodeAnalysis
 
+<HeadContent>
+<!-- Preload news images -->
+@foreach (NewsEntry news in newsSorted ?? Enumerable.Empty<NewsEntry>())
+{
+    <link rel="preload" href="@(news.Assets.Background)" as="image" />
+    <link rel="preload" href="@(news.Assets.Logo)" as="image" />
+}
+</HeadContent>
 
 <MudStack Spacing="0" AlignItems="AlignItems.Center">
     <MudCarousel @ref=_carousel TData="NewsEntry" Class="banner_image_style" Style="@bulletsColor" SelectedIndexChanged="@(_ => RefreshBulletsColor())" ShowArrows="false" AutoCycleTime="TimeSpan.FromSeconds(10)">
