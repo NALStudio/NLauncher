@@ -3,27 +3,32 @@
 @using System.Diagnostics.CodeAnalysis
 
 <HeadContent>
-<!-- Preload news images -->
-@foreach (NewsEntry news in newsSorted ?? Enumerable.Empty<NewsEntry>())
-{
-    <link rel="preload" href="@(news.Assets.Background.ToString())" as="image" />
-    <link rel="preload" href="@(news.Assets.Logo.ToString())" as="image" />
-}
+    <!-- Preload news images -->
+    @foreach (NewsEntry news in newsSorted ?? Enumerable.Empty<NewsEntry>())
+    {
+        <link rel="preload" href="@(news.Assets.Background.ToString())" as="image" />
+        <link rel="preload" href="@(news.Assets.Logo.ToString())" as="image" />
+    }
 </HeadContent>
 
 <MudStack Spacing="0" AlignItems="AlignItems.Center">
-    <MudCarousel @ref=_carousel TData="NewsEntry" Class="banner_image_style" Style="@bulletsColor" SelectedIndexChanged="@(_ => RefreshBulletsColor())" ShowArrows="false" AutoCycleTime="TimeSpan.FromSeconds(10)">
-        @foreach (NewsEntry? news in newsSorted ?? Enumerable.Repeat<NewsEntry?>(null, 4))
+    <MudCarousel @ref=_carousel TData="NewsEntry" Class="news_banner_carousel" Style="@bulletsColor" SelectedIndexChanged="@CarouselIndexChanged" ShowArrows="false" AutoCycleTime="TimeSpan.FromSeconds(10)">
+        @for (int i = 0; i < (newsSorted?.Length ?? 4); i++)
         {
-            <MudCarouselItem Transition="Transition.Fade" Style="@GetBackgroundImageCss(news)">
+            NewsEntry? news = newsSorted?[i];
+            <MudCarouselItem Transition="Transition.Custom" CustomTransitionEnter="news_banner_carousel_item_in" Style="@GetBackgroundImageCss(news)">
                 @if (news is null)
                 {
                     <MudSkeleton Width="100%" Height="100%" SkeletonType="SkeletonType.Rectangle" />
                 }
                 else
                 {
-                    // max aspect ratio 4:1, so ensure that max-width = 4 * height
-                    <MudImage Style="height:96px;width:100%;max-width:384px" ObjectFit="ObjectFit.Contain" ObjectPosition="ObjectPosition.Left" Src="@(news.Assets.Logo.ToString())" />
+                    <MudImage Class="news_banner_image" ObjectFit="ObjectFit.Contain" ObjectPosition="ObjectPosition.LeftBottom" Src="@(news.Assets.Logo.ToString())" />
+
+                    <div class="px-3 py-2 mt-3 news_banner_text">
+                        <MudText Typo="Typo.caption"><b>@(news.Manifest.Title)</b></MudText>
+                        <MudText>@(news.Manifest.Text)</MudText>
+                    </div>
                 }
             </MudCarouselItem>
         }
@@ -31,11 +36,42 @@
 </MudStack>
 
 <style>
-    .banner_image_style {
-    user-select: none;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    border-radius: 12px;
+    .news_banner_carousel {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 12px;
+    }
+    .news_banner_text {
+        position: absolute;
+        left: 24px;
+        top: 55%;
+        
+        max-width: max(384px, 40%);
+        
+        border-radius: 6px;
+        color: var(--mud-palette-text-primary);
+
+        background: var(--mud-palette-appbar-background);
+        backdrop-filter: blur(12px);
+    }
+    .news_banner_image {      
+        position: absolute;
+        margin-left: 24px;
+        bottom: 45%;
+
+        user-select: none;
+
+        /* max aspect ratio 4:1, so ensure that max-width = 4 * height */
+        height: 96px;
+        max-width: 384px;
+    }
+
+    @@keyframes news_banner_carousel_item_in_animation {
+        from { opacity: 0; padding-left: 72px; }
+        to { opacity: 1; padding-left: 0px; }
+    }
+    .news_banner_carousel_item_in {
+        animation: 0.5s news_banner_carousel_item_in_animation;
     }
 </style>
 
@@ -53,6 +89,11 @@
         newsSorted = News?.OrderBy(static n => n.Index).ToImmutableArray();
         if (_carousel is not null)
             RefreshBulletsColor();
+    }
+
+    private void CarouselIndexChanged(int index)
+    {
+        RefreshBulletsColor();
     }
 
     private void RefreshBulletsColor()
