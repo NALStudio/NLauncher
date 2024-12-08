@@ -6,8 +6,8 @@
 <!-- Preload news images -->
 @foreach (NewsEntry news in newsSorted ?? Enumerable.Empty<NewsEntry>())
 {
-    <link rel="preload" href="@(news.Assets.Background)" as="image" />
-    <link rel="preload" href="@(news.Assets.Logo)" as="image" />
+    <link rel="preload" href="@(news.Assets.Background.ToString())" as="image" />
+    <link rel="preload" href="@(news.Assets.Logo.ToString())" as="image" />
 }
 </HeadContent>
 
@@ -22,7 +22,8 @@
                 }
                 else
                 {
-
+                    // max aspect ratio 4:1, so ensure that max-width = 4 * height
+                    <MudImage Style="height:96px;width:100%;max-width:384px" ObjectFit="ObjectFit.Contain" ObjectPosition="ObjectPosition.Left" Src="@(news.Assets.Logo.ToString())" />
                 }
             </MudCarouselItem>
         }

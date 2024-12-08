@@ -30,7 +30,8 @@
     {
         if (IndexService.TryGetCachedIndex(out index))
         {
-            // Sort entries synchronously so that the scroll position is retained
+            // Try to get index and sort entries synchronously
+            // so that the scroll position is retained when navigating back
             entriesSorted = SortEntries(index);
         }
         else
@@ -41,6 +42,9 @@
             entriesSorted = await Task.Run(() => SortEntries(index));
             StateHasChanged(); // Trigger state change after all this awaiting
         }
+
+        // DEBUG
+        // entriesSorted = null;
     }
 
     private static ImmutableArray<IndexEntry> SortEntries(IndexManifest manifest)
