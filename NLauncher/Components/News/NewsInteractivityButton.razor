@@ -1,0 +1,56 @@
+﻿@using NLauncher.Index.Models.Index
+@using NLauncher.Index.Models.News.Interactivity
+@using NLauncher.Pages
+@using NLauncher.Services.Index
+
+@inject IndexService IndexService
+
+@* We use a custom component in the event that we want to add more buuttons for a specific interactivity *@
+
+<MudButton Disabled="@(indexRequired && index is null)" Href="@GetButtonHref()"
+           DropShadow="false"
+           Color="Color.Primary"
+           Variant="Variant.Filled">
+    @GetButtonText()
+</MudButton>
+
+@code {
+    [Parameter, EditorRequired]
+    public required NewsInteractivity Interactivity { get; set; }
+
+    private bool indexRequired = false;
+    private IndexManifest? index;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Interactivity is PlayNowNewsInteractivity)
+        {
+            indexRequired = true;
+
+            // Index should already be cached at this point since we need them for news
+            // but if it is not, fallback to an async fetch
+            if (!IndexService.TryGetCachedIndex(out index))
+                index = await IndexService.GetIndexAsync();
+        }
+    }
+
+    private string GetButtonText()
+    {
+        return Interactivity switch
+        {
+            ExploreNewsInteractivity => "Explore",
+            PlayNowNewsInteractivity => "Play Now",
+            _ => "<error>"
+        };
+    }
+
+    private string? GetButtonHref()
+    {
+        return Interactivity switch
+        {
+            ExploreNewsInteractivity => "./store",
+            PlayNowNewsInteractivity playNow => index is not null ? AppStorePage.GetPageRoute(index, playNow.AppId) : null,
+            _ => null
+        };
+    }
+}

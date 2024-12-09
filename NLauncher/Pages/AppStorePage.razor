@@ -35,7 +35,7 @@ else
     }
     else
     {
-        <MudSkeleton Class="banner_image_style" Style="aspect-ratio:16/9;height:auto;" SkeletonType="SkeletonType.Rectangle" />
+        <MudSkeleton Class="banner_image_style" Style="height:auto" SkeletonType="SkeletonType.Rectangle" />
     }
 
     <MudStack Style="padding-top:12px">
@@ -81,6 +81,7 @@ else
     .banner_image_style {
         user-select: none;
         width: 100%;
+        aspect-ratio: 16 / 9; /* Set aspect ratio to avoid layout shift during load */
         max-height: 60vh;
         border-radius: 12px;
     }
