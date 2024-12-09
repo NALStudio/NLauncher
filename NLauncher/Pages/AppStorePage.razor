@@ -97,7 +97,8 @@ else
     // like when searching for a new app for example
     protected override async Task OnParametersSetAsync()
     {
-        IndexManifest index = await IndexService.GetIndexAsync();
+        if (!IndexService.TryGetCachedIndex(out IndexManifest? index))
+            index = await IndexService.GetIndexAsync();
 
         Guid? appUuid = TryParseId(index, AppId);
         app = index.Entries.FirstOrDefault(e => e.Manifest.Uuid == appUuid);
