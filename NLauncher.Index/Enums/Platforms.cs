@@ -34,4 +34,16 @@ public static class PlatformsEnum
                 yield return value;
         }
     }
+
+    public static Platforms GetCurrentPlatform()
+    {
+        if (OperatingSystem.IsWindows())
+            return Platforms.Windows;
+        if (OperatingSystem.IsBrowser())
+            return Platforms.Browser;
+        if (OperatingSystem.IsAndroid())
+            return Platforms.Android;
+
+        throw new PlatformNotSupportedException();
+    }
 }

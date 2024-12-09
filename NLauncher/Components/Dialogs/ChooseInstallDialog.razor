@@ -1,0 +1,26 @@
+﻿@using NLauncher.Index.Models.Applications.Installs
+@using NLauncher.Shared.AppHandlers.Base
+@using System.Collections.Immutable
+
+<MudDialog>
+    <DialogContent>
+        @foreach (AppHandler handler in Handlers)
+        {
+            foreach (AppInstall install in Installs.Where(handler.CanHandle))
+            {
+                <ChooseInstallDialogButton Handler="handler" Install="install" IsRecommended="@(ReferenceEquals(handler, PreferredHandler))" />
+            }
+        }
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [Parameter, EditorRequired]
+    public required ImmutableArray<AppHandler> Handlers { get; set; }
+
+    [Parameter, EditorRequired]
+    public required ImmutableArray<AppInstall> Installs { get; set; }
+
+    [Parameter]
+    public AppHandler? PreferredHandler { get; set; }
+}

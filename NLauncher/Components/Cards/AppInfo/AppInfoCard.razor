@@ -26,9 +26,11 @@
 
         @{
             ImmutableArray<AppHandler> appHandlers = GetAppHandlers().ToImmutableArray();
+
             @if (appHandlers.Length > 0)
             {
                 LinkAppHandler? linkAppHandler = (LinkAppHandler?)appHandlers.FirstOrDefault(static ah => ah is LinkAppHandler);
+                InstallAppHandler? installAppHandler = (InstallAppHandler?)appHandlers.FirstOrDefault(static ah => ah is InstallAppHandler);
 
                 <MudStack Spacing="2">
                     <MudButtonGroup FullWidth Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" DropShadow="false">
@@ -37,10 +39,10 @@
                             AppInstall linkAppInstall = Entry!.Manifest.GetLatestVersion()!.Installs.First(linkAppHandler.CanHandle);
 
                             <MudButton EndIcon="@(Icons.Material.Rounded.OpenInNew)"
-                            IconSize="Size.Small"
-                            Disabled="@IsLoading"
-                            Href="@(linkAppHandler.GetHref(linkAppInstall))"
-                            Target="_blank" >
+                                       IconSize="Size.Small"
+                                       Disabled="@IsLoading"
+                                       Href="@(linkAppHandler.GetHref(linkAppInstall))"
+                                       Target="_blank">
                                 @(GetLinkText(linkAppHandler))
                             </MudButton>
                         }
@@ -48,15 +50,19 @@
                         <!-- Only show install button if there are multiple link app handlers or other app handlers --> 
                         @if (appHandlers.Any(ah => !ReferenceEquals(ah, linkAppHandler)))
                         {
-                            <MudButton Disabled="@IsLoading">Install</MudButton>
+                            <MudButton Disabled="@IsLoading"
+                                       OnClick="@(() => StartInstallOrOpenInstallDialog(appHandlers, installAppHandler))"
+                                       @oncontextmenu="@(() => OpenInstallDialog(appHandlers, preferredHandler: installAppHandler))">
+                                       Install
+                            </MudButton>
                         }
                     </MudButtonGroup>
 
                     <MudButton FullWidth
-                    Disabled="@IsLoading"
-                    Variant="Variant.Filled"
-                    Size="Size.Large"
-                    DropShadow="false">
+                               Disabled="@IsLoading"
+                               Variant="Variant.Filled"
+                               Size="Size.Large"
+                               DropShadow="false">
                         Add To Library
                     </MudButton>
                 </MudStack>

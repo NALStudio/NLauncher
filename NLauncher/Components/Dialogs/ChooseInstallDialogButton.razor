@@ -1,0 +1,67 @@
+﻿@using NLauncher.Index.Models.Applications.Installs
+@using NLauncher.Shared.AppHandlers.Base
+@using NLauncher.Shared.AppHandlers.Shared
+
+<MudButton FullWidth Size="Size.Large" Color="Color.Primary" StartIcon="@GetButtonIcon()" Href="@GetButtonHref()" OnClick="@StartInstall">
+    @GetButtonText()
+</MudButton>
+
+@code {
+    [Parameter, EditorRequired]
+    public required AppHandler Handler { get; set; }
+
+    [Parameter, EditorRequired]
+    public required AppInstall Install { get; set; }
+
+    [Parameter]
+    public bool IsRecommended { get; set; } = false;
+
+    private string? GetButtonIcon()
+    {
+        return Handler switch
+        {
+            InstallAppHandler => Icons.Material.Rounded.Download,
+            LinkAppHandler => Icons.Material.Rounded.OpenInNew,
+            ManualInstallAppHandler => Icons.Material.Rounded.InstallDesktop,
+            _ => null
+        };
+    }
+
+    private string GetButtonText()
+    {
+        string text = Handler switch
+        {
+            InstallAppHandler => "Automatic Install",
+            LinkAppHandler lh => $"Open In {lh.GetUrl(Install).Host}",
+            ManualInstallAppHandler mi => "Manual Install",
+            _ => "<error>"
+        };
+
+        if (IsRecommended)
+            text += " (recommended)";
+
+        return text;
+    }
+
+    private string? GetButtonHref()
+    {
+        if (Handler is LinkAppHandler lh)
+            return lh.GetHref(Install);
+
+        return null;
+    }
+
+    private Task StartInstall()
+    {
+        if (Handler is ManualInstallAppHandler mih)
+        {
+            // Show manual install warning and if accepted, download the file by using the browser
+        }
+        else
+        {
+            // Start install and close app handler
+        }
+
+        return Task.CompletedTask;
+    }
+}

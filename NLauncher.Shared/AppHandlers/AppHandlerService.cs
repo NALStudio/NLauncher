@@ -17,8 +17,9 @@ public class AppHandlerService
         this.handlers = handlers.ToImmutableArray();
     }
 
-    // Convert IEnumerable into ImmutableArray since I cannot guarantee that the IEnumerable can be enumerated multiple times
-    public IEnumerable<AppHandler> GetSupportedHandlers(params IEnumerable<AppInstall> installs) => GetSupportedHandlers(installs.ToImmutableArray());
+    /// <summary>
+    /// Handlers are ordered by priority where the first element of the enumerable has the highest priority.
+    /// </summary>
     public IEnumerable<AppHandler> GetSupportedHandlers(params ImmutableArray<AppInstall> installs)
     {
         foreach (AppHandler handler in handlers)

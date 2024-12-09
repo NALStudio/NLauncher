@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 namespace NLauncher.Shared.AppHandlers.Shared;
 public class StoreLinkAppHandler : LinkAppHandler<StoreLinkAppInstall>
 {
-    public override string GetHref(StoreLinkAppInstall install) => install.Url.ToString();
+    protected override Uri GetUrl(StoreLinkAppInstall install) => install.Url;
 }
 
 public class WebsiteLinkAppHandler : LinkAppHandler<WebsiteAppInstall>
 {
-    public override string GetHref(WebsiteAppInstall install) => install.Url.ToString();
+    protected override Uri GetUrl(WebsiteAppInstall install) => install.Url;
 }

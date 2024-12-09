@@ -23,7 +23,7 @@ File layout:
         - $news_index  // index of the news, they don't need to be sequencial and are only used for sorting (index manager can have news 'slots')
             - background.png // 16:9 ratio image (recommended: 1920x1080 px)
             - logo.png // images can be of any size (will be scaled to a specific height)
-            - news.json // NOTE: Can't be manifest.json as that name is reserved for applications (or otherwise we will incorrectly discover news as 'applications')
+            - news.json // NOTE: Can't be manifest.json as that name is reserved for applications (or otherwise we will incorrectly discover news as an application)
 
     - $publisher
         - $app_name
@@ -95,6 +95,7 @@ File layout:
                     "download_hash": "string", // SHA256 hash of the download encoded in base64
                     "program_path": "string" // Path to the .exe file to run (Windows)
                 #ELIF MSIX
+                    // NOT FINISHED
                     "download_url": "string",
                     "download_hash": "string",
                     "app_id": "string" // TODO: Determine the best way to detect that a given MSIX app is installed and how to run it
