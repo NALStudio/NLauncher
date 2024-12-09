@@ -107,7 +107,8 @@
     private void RefreshBulletsColor()
     {
         int? index = _carousel?.SelectedIndex;
-        if (index.HasValue && newsSorted.HasValue)
+        // index is -1 during load
+        if (index.HasValue && index >= 0 && newsSorted.HasValue)
         {
             NewsEntry news = newsSorted.Value[index.Value];
             bulletsColor = GetBulletsColor(news.Assets.BackgroundBrightness);
