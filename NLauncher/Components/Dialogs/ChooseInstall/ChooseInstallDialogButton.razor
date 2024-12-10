@@ -1,8 +1,12 @@
-﻿@using NLauncher.Index.Models.Applications.Installs
+﻿@using NLauncher.Code
+@using NLauncher.Index.Models.Applications.Installs
 @using NLauncher.Shared.AppHandlers.Base
 @using NLauncher.Shared.AppHandlers.Shared
+@using System.Diagnostics
 
-<MudButton FullWidth Size="Size.Large" Color="Color.Primary" StartIcon="@GetButtonIcon()" Href="@GetButtonHref()" OnClick="@StartInstall">
+@inject IDialogService DialogService
+
+<MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="@GetVariant()" StartIcon="@GetButtonIcon()" Href="@GetButtonHref()" Target="_blank" OnClick="@StartInstall">
     @GetButtonText()
 </MudButton>
 
@@ -15,6 +19,11 @@
 
     [Parameter]
     public bool IsRecommended { get; set; } = false;
+
+    [Parameter]
+    public Action? OnClick { get; set; }
+
+    private Variant GetVariant() => IsRecommended ? Variant.Outlined : Variant.Text;
 
     private string? GetButtonIcon()
     {
@@ -29,39 +38,39 @@
 
     private string GetButtonText()
     {
-        string text = Handler switch
+        return Handler switch
         {
             InstallAppHandler => "Automatic Install",
             LinkAppHandler lh => $"Open In {lh.GetUrl(Install).Host}",
-            ManualInstallAppHandler mi => "Manual Install",
+            ManualInstallAppHandler mi => $"Manual Install",
+            RecommendNLauncherAppHandler => "Install Using NLauncher",
             _ => "<error>"
         };
-
-        if (IsRecommended)
-            text += " (recommended)";
-
-        return text;
     }
 
     private string? GetButtonHref()
     {
         if (Handler is LinkAppHandler lh)
             return lh.GetHref(Install);
+        if (Handler is RecommendNLauncherAppHandler)
+            return NLauncherConstants.LatestRelease;
 
         return null;
     }
 
-    private Task StartInstall()
+    private async Task StartInstall()
     {
+        OnClick?.Invoke();
+
         if (Handler is ManualInstallAppHandler mih)
         {
             // Show manual install warning and if accepted, download the file by using the browser
+            await ConfirmManualInstallDialog.ShowAsync(DialogService, mih.GetDownloadLink(Install));
         }
-        else
+        else if (Handler is InstallAppHandler ih)
         {
             // Start install and close app handler
+            Debug.WriteLine("INSTALLING NOT YET IMPLEMENTED");
         }
-
-        return Task.CompletedTask;
     }
 }

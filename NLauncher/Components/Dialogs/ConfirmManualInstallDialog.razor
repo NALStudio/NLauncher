@@ -1,0 +1,42 @@
+﻿<MudDialog>
+    <DialogContent>
+        <h4>Manual installs are for advanced users only.</h4>
+        <br />
+        <p>
+            You will be redirected to a page where you can download the provided binaries. <br />
+            Additional steps might be needed to get the game into a working state, thus it is recommended to let the launcher install the game automatically.
+        </p>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(Dialog!.Cancel)">Cancel</MudButton>
+        <MudButton OnClick="@(() => Dialog!.Close())" Href="@Href" Target="@Target" Variant="Variant.Filled" Color="Color.Error" EndIcon="@(Icons.Material.Rounded.OpenInNew)">
+            I know what I'm doing!
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? Dialog { get; set; }
+
+    [Parameter]
+    public string? Href { get; set; }
+
+    [Parameter]
+    public string Target { get; set; } = "_blank";
+
+    public static async Task<IDialogReference> ShowAsync(IDialogService dialogService, string href)
+    {
+        DialogOptions options = new()
+        {
+            CloseOnEscapeKey = true
+        };
+
+        DialogParameters<ConfirmManualInstallDialog> parameters = new()
+        {
+            { x => x.Href, href }
+        };
+
+        return await dialogService.ShowAsync<ConfirmManualInstallDialog>("Warning!", parameters, options);
+    }
+}

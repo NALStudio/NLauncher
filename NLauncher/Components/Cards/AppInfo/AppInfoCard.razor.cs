@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using NLauncher.Components.Dialogs;
+using NLauncher.Components.Dialogs.ChooseInstall;
 using NLauncher.Index.Enums;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
@@ -42,13 +42,18 @@ public partial class AppInfoCard
     /// <summary>
     /// <inheritdoc cref="AppHandlerService.GetSupportedHandlers"/>
     /// </summary>
-    private IEnumerable<AppHandler> GetAppHandlers()
+    private (ImmutableArray<AppHandler> Handlers, InstallAppHandler? PreferredHandler) GetAppHandlers()
     {
         ImmutableArray<AppInstall> installs = GetInstalls();
         if (installs.IsEmpty)
-            return Enumerable.Empty<AppHandler>();
+        {
+            return (ImmutableArray<AppHandler>.Empty, null);
+        }
         else
-            return AppHandlerService.GetSupportedHandlers(installs);
+        {
+            ImmutableArray<AppHandler> handlers = AppHandlerService.GetSupportedHandlers(installs).ToImmutableArray();
+            return (handlers, (InstallAppHandler?)handlers.FirstOrDefault(static h => h is InstallAppHandler));
+        }
     }
 
     private static string GetReleaseDateString(AppRelease appRelease)
@@ -83,12 +88,14 @@ public partial class AppInfoCard
         return supported;
     }
 
-    private async Task StartInstallOrOpenInstallDialog(ImmutableArray<AppHandler> handlers, InstallAppHandler? installHandler)
+    private async Task StartInstallOrOpenInstallDialog()
     {
-        if (installHandler is not null)
-            await StartInstall(installHandler);
+        var handlerData = GetAppHandlers();
+
+        if (handlerData.PreferredHandler is not null)
+            await StartInstall(handlerData.PreferredHandler);
         else
-            await OpenInstallDialog(handlers, preferredHandler: installHandler);
+            await OpenInstallDialog(handlerData: handlerData);
     }
 
     private Task StartInstall(InstallAppHandler installHandler)
@@ -97,15 +104,17 @@ public partial class AppInfoCard
         return Task.CompletedTask;
     }
 
-    private async Task OpenInstallDialog(ImmutableArray<AppHandler> handlers, AppHandler? preferredHandler)
+    private async Task OpenInstallDialog() => await OpenInstallDialog(handlerData: GetAppHandlers());
+    private async Task OpenInstallDialog((ImmutableArray<AppHandler> Handlers, InstallAppHandler? PreferredHandler) handlerData)
     {
         ImmutableArray<AppInstall> installs = GetInstalls();
+        AppHandler? recommendedAppHandler = handlerData.PreferredHandler ?? handlerData.Handlers.FirstOrDefault(static h => h is RecommendNLauncherAppHandler);
 
         DialogParameters<ChooseInstallDialog> parameters = new()
         {
-            { x => x.Handlers, handlers },
+            { x => x.Handlers, handlerData.Handlers },
             { x => x.Installs, installs },
-            { x => x.PreferredHandler, preferredHandler },
+            { x => x.RecommendedHandler, recommendedAppHandler },
         };
 
         DialogOptions options = new()

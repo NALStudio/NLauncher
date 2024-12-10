@@ -4,7 +4,7 @@
 @using NLauncher.Index.Models.News.Interactivity
 
 <HeadContent>
-    <!-- Preload news images -->
+    <!-- Preload news images to avoid pop-in -->
     @foreach (NewsEntry news in newsSorted ?? Enumerable.Empty<NewsEntry>())
     {
         <link rel="preload" href="@(news.Assets.Background.ToString())" as="image" />

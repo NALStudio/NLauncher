@@ -16,6 +16,9 @@ public abstract class AppHandler
     /// </summary>
     [SupportedOSPlatform("browser")]
     public static readonly ImmutableArray<AppHandler> WebHandlers = [
+        // Custom
+        new RecommendNLauncherAppHandler(),
+
         // Links
         new StoreLinkAppHandler(),
         new WebsiteLinkAppHandler(),
@@ -29,6 +32,8 @@ public abstract class AppHandler
     /// </summary>
     [SupportedOSPlatform("windows")]
     public static readonly ImmutableArray<AppHandler> WindowsHandlers = [
+        // Custom
+
         // Links
         new StoreLinkAppHandler(),
         new WebsiteLinkAppHandler(),

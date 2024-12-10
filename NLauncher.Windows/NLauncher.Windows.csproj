@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+	  
+    <AssemblyName>NLauncher Client</AssemblyName>
 
 	<!-- Not supported by Winforms -->
 	<!--<PublishAot>true</PublishAot>-->

@@ -1,0 +1,39 @@
+﻿@using NLauncher.Index.Models.Applications.Installs
+@using NLauncher.Shared.AppHandlers.Base
+@using System.Collections.Immutable
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Class="mb-2">
+            @foreach (AppHandler handler in Handlers)
+            {
+                foreach (AppInstall install in Installs.Where(handler.CanHandle))
+                {
+                    <ChooseInstallDialogButton Handler="handler"
+                                               Install="install"
+                                               IsRecommended="@(ReferenceEquals(handler, RecommendedHandler))"
+                                               OnClick="Close" />
+                }
+            }
+        </MudStack>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? Dialog { get; set; }
+
+    [Parameter, EditorRequired]
+    public required ImmutableArray<AppHandler> Handlers { get; set; }
+
+    [Parameter, EditorRequired]
+    public required ImmutableArray<AppInstall> Installs { get; set; }
+
+    [Parameter]
+    public AppHandler? RecommendedHandler { get; set; }
+
+    private void Close()
+    {
+        Dialog!.Close();
+    }
+}
