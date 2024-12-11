@@ -14,15 +14,18 @@ internal class JsonIndexAssetCollectionConverter : JsonConverter<IndexAssetColle
 {
     public override IndexAssetCollection? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        ImmutableArray<IndexAsset>? assets = JsonSerializer.Deserialize(ref reader, IndexJsonSerializerContext.Default.NullableImmutableArrayIndexAsset);
-        if (assets.HasValue)
-            return new IndexAssetCollection(assets.Value);
-        else
-            return null;
+        // 
+#pragma warning disable IL2026, IL3050 // Disable AOT warnings. We can't use JsonContext as otherwise we lose JsonSerializerOptions settings metadata
+        ImmutableArray<IndexAsset> assets = JsonSerializer.Deserialize<ImmutableArray<IndexAsset>>(ref reader, options);
+#pragma warning restore IL2026, IL3050 
+
+        return new IndexAssetCollection(assets);
     }
 
     public override void Write(Utf8JsonWriter writer, IndexAssetCollection value, JsonSerializerOptions options)
     {
-        JsonSerializer.Serialize(writer, value.Assets, IndexJsonSerializerContext.Default.ImmutableArrayIndexAsset);
+#pragma warning disable IL2026, IL3050 // Disable AOT warnings. We can't use JsonContext as otherwise we lose JsonSerializerOptions settings metadata
+        JsonSerializer.Serialize(writer, value.Assets, options);
+#pragma warning restore IL2026, IL3050
     }
 }
