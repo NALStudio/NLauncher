@@ -11,6 +11,7 @@ namespace NLauncher.Services.Index;
 
 public partial class IndexService
 {
+    // Can't serialize to JSON since NLauncherJsonContext can't seem to discover the Color24 struct.
     private readonly struct CachedIndex
     {
         // Format spec, names with the '64' suffix are Base64 encoded.
