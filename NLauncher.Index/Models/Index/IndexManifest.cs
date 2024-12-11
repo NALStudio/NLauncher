@@ -1,5 +1,4 @@
-﻿using NLauncher.Index.Interfaces;
-using NLauncher.Index.Models.News;
+﻿using NLauncher.Index.Models.News;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -9,7 +8,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.Index;
-public class IndexManifest : IIndexSerializable
+public class IndexManifest
 {
     public required AppAliases Aliases { get; init; }
     public required IndexMeta Metadata { get; init; }

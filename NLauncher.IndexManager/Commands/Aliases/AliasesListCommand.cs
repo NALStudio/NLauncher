@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Commands.Commands.Aliases;
@@ -54,7 +55,7 @@ internal class AliasesListCommand : AsyncCommand<MainSettings>, IMainCommand
     private static async Task<AppAliases> LoadAliases(IndexPaths paths)
     {
         string aliasesJson = await File.ReadAllTextAsync(paths.AliasesFile);
-        return IndexJsonSerializer.Deserialize<AppAliases>(aliasesJson) ?? throw new Exception("Could not deserialize app aliases.");
+        return JsonSerializer.Deserialize(aliasesJson, IndexJsonContext.Default.AppAliases) ?? throw new Exception("Could not deserialize app aliases.");
     }
 
     private static Tree BuildTree(AppAliases aliases, IReadOnlyDictionary<Guid, AppManifest> manifests)

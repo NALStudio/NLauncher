@@ -18,6 +18,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Commands.News;
@@ -104,7 +105,7 @@ internal class NewsAddCommand : AsyncCommand<MainSettings>, IMainCommand
         Directory.CreateDirectory(paths.Directory);
 
         // Write json
-        string manifestJson = IndexJsonSerializer.Serialize(manifest, IndexSerializationOptions.HumanReadable);
+        string manifestJson = JsonSerializer.Serialize(manifest, IndexJsonContext.HumanReadable.NewsManifest);
         File.WriteAllText(paths.NewsFile, manifestJson); // use synchronous method since SkiaSharp is also synchronous
 
         // Write images

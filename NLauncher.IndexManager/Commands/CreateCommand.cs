@@ -105,11 +105,11 @@ internal class CreateCommand : AsyncCommand<MainSettings>, IMainCommand
     private static async Task Create(IndexPaths paths, IndexMeta index)
     {
         // Create index.json file
-        string indexJson = IndexJsonSerializer.Serialize(index, IndexSerializationOptions.HumanReadable);
+        string indexJson = JsonSerializer.Serialize(index, IndexJsonContext.HumanReadable.IndexMeta);
         await File.WriteAllTextAsync(paths.IndexFile, indexJson);
 
         // Create aliases.json file
-        string aliasesJson = IndexJsonSerializer.Serialize(AppAliases.Empty, IndexSerializationOptions.HumanReadable);
+        string aliasesJson = JsonSerializer.Serialize(AppAliases.Empty, IndexJsonContext.HumanReadable.AppAliases);
         await File.WriteAllTextAsync(paths.AliasesFile, aliasesJson);
     }
 }

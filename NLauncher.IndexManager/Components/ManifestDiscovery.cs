@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Components;
@@ -37,7 +38,7 @@ internal static class ManifestDiscovery
             AppManifest? manifest;
             await using (FileStream stream = file.OpenRead())
             {
-                manifest = await IndexJsonSerializer.DeserializeAsync<AppManifest>(stream);
+                manifest = await JsonSerializer.DeserializeAsync<AppManifest>(stream, IndexJsonContext.Default.AppManifest);
             }
 
             if (manifest is null)

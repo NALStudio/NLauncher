@@ -65,7 +65,7 @@ public partial class IndexService
 
         public static string Serialize(CachedIndex value)
         {
-            byte[] serializedIndex = IndexJsonSerializer.SerializeToUtf8Bytes(value.Index);
+            byte[] serializedIndex = JsonSerializer.SerializeToUtf8Bytes(value.Index, IndexJsonContext.Default.IndexManifest);
             (string hash, string content) = ComputeHash(utf8Bytes: serializedIndex);
 
             string[] headerValues = new string[]
@@ -118,7 +118,7 @@ public partial class IndexService
             if (contentUtf8 is null)
                 return null;
 
-            IndexManifest? index = IndexJsonSerializer.Deserialize<IndexManifest>(contentUtf8);
+            IndexManifest? index = JsonSerializer.Deserialize(contentUtf8, IndexJsonContext.Default.IndexManifest);
             if (index is null)
                 return null;
 

@@ -1,12 +1,11 @@
-﻿using NLauncher.Index.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.News;
-public class NewsEntry : IIndexSerializable
+public class NewsEntry
 {
     /// <summary>
     /// Index might not be sequencial and it should only be used to sort the entries into the correct order.

@@ -12,6 +12,7 @@ using Spectre.Console.Cli;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Net;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace NLauncher.IndexManager.Commands;
@@ -61,7 +62,7 @@ internal partial class AliasesAddCommand : AsyncCommand<MainSettings>, IMainComm
     private static async Task<OperationResult> AddAlias(IndexPaths paths, AppManifest manifest, string alias)
     {
         string oldAliasesJson = await File.ReadAllTextAsync(paths.AliasesFile);
-        AppAliases? oldAliases = IndexJsonSerializer.Deserialize<AppAliases>(oldAliasesJson);
+        AppAliases? oldAliases = JsonSerializer.Deserialize(oldAliasesJson, IndexJsonContext.Default.AppAliases);
         if (oldAliases is null)
             return OperationResult.Error("Could not deserialize app aliases.");
 
@@ -74,7 +75,7 @@ internal partial class AliasesAddCommand : AsyncCommand<MainSettings>, IMainComm
         }
 
         AppAliases newAliases = new(oldAliases.Aliases.Add(alias, manifest.Uuid));
-        string newAliasesJson = IndexJsonSerializer.Serialize(newAliases, IndexSerializationOptions.HumanReadable);
+        string newAliasesJson = JsonSerializer.Serialize(newAliases, IndexJsonContext.HumanReadable.AppAliases);
         await File.WriteAllTextAsync(paths.AliasesFile, newAliasesJson);
 
         return OperationResult.Success();

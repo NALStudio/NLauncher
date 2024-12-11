@@ -1,5 +1,4 @@
-﻿using NLauncher.Index.Interfaces;
-using NLauncher.Index.Json;
+﻿using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.News;
 using NLauncher.IndexManager.Commands.Main;
@@ -9,6 +8,8 @@ using NLauncher.IndexManager.Components.Paths;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace NLauncher.IndexManager.Commands.Applications;
 internal class RebuildCommand : AsyncCommand<MainSettings>, IMainCommand
@@ -43,21 +44,21 @@ internal class RebuildCommand : AsyncCommand<MainSettings>, IMainCommand
         foreach (NewsPaths newsPaths in NewsSlots.EnumeratePaths(paths, existingOnly: true))
         {
             Debug.Assert(newsPaths.Exists());
-            await RebuildManifest<NewsManifest>(newsPaths.NewsFile);
+            await RebuildManifest(newsPaths.NewsFile, humanReadableJsonTypeInfo: IndexJsonContext.HumanReadable.NewsManifest);
         }
 
         ctx.Status("Rebuilding apps...");
         foreach (FileInfo f in ManifestDiscovery.DiscoverManifestFiles(paths))
-            await RebuildManifest<AppManifest>(f.FullName);
+            await RebuildManifest(f.FullName, humanReadableJsonTypeInfo: IndexJsonContext.HumanReadable.AppManifest);
     }
 
-    private static async Task RebuildManifest<T>(string filepath) where T : IIndexSerializable
+    private static async Task RebuildManifest<T>(string filepath, JsonTypeInfo<T> humanReadableJsonTypeInfo)
     {
         string oldJson = await File.ReadAllTextAsync(filepath);
-        T manifest = IndexJsonSerializer.Deserialize<T>(oldJson)
+        T manifest = JsonSerializer.Deserialize(oldJson, humanReadableJsonTypeInfo)
             ?? throw new InvalidOperationException($"Could not deserialize file: '{filepath}'");
 
-        string newJson = IndexJsonSerializer.Serialize(manifest, IndexSerializationOptions.HumanReadable);
+        string newJson = JsonSerializer.Serialize(manifest, humanReadableJsonTypeInfo);
         await File.WriteAllTextAsync(filepath, newJson);
     }
 

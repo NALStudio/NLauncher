@@ -105,7 +105,7 @@ internal class AddCommand : AsyncCommand<MainSettings>, IMainCommand
         Directory.CreateDirectory(paths.Directory);
 
         // Create manifest.json
-        string manifestJson = IndexJsonSerializer.Serialize(manifest, IndexSerializationOptions.HumanReadable); // write nulls so that user can explicitly see which settings they can change
+        string manifestJson = JsonSerializer.Serialize(manifest, IndexJsonContext.HumanReadable.AppManifest); // write nulls so that user can explicitly see which settings they can change
         await File.WriteAllTextAsync(paths.ManifestFile, manifestJson);
 
         // Create description.md

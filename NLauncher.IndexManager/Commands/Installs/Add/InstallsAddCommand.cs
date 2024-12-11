@@ -15,6 +15,7 @@ using Spectre.Console.Cli;
 using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace NLauncher.IndexManager.Commands.Installs.Add;
 internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
@@ -126,7 +127,7 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
     private static async Task<OperationResult> AddInstall(ManifestPaths paths, uint vernum, AppVersion? addVersion, AppInstall install)
     {
         string oldManifestJson = await File.ReadAllTextAsync(paths.ManifestFile);
-        AppManifest? manifest = IndexJsonSerializer.Deserialize<AppManifest>(oldManifestJson);
+        AppManifest? manifest = JsonSerializer.Deserialize<AppManifest>(oldManifestJson, IndexJsonContext.Default.AppManifest);
         if (manifest is null)
             return OperationResult.Error("Could not deserialize app manifest.");
 
@@ -162,7 +163,7 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
             Versions = versions.ToImmutableArray()
         };
 
-        string newManifestJson = IndexJsonSerializer.Serialize(manifest, IndexSerializationOptions.HumanReadable);
+        string newManifestJson = JsonSerializer.Serialize(manifest, IndexJsonContext.HumanReadable.AppManifest);
         await File.WriteAllTextAsync(paths.ManifestFile, newManifestJson);
 
         return OperationResult.Success();

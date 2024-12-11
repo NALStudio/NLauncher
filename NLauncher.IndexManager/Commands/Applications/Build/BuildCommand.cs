@@ -1,5 +1,4 @@
 ﻿using NLauncher.Index.Enums;
-using NLauncher.Index.Interfaces;
 using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
@@ -18,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -61,7 +61,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         IndexPaths paths = settings.Context.Paths;
 
         ctx.Status($"Loading {paths.GetRelativePath(paths.IndexFile)}...");
-        IndexMeta? meta = await TryLoadAndDeserialize<IndexMeta>(paths, paths.IndexFile);
+        IndexMeta? meta = await TryLoadAndDeserialize(paths, paths.IndexFile, IndexJsonContext.Default.IndexMeta);
         if (meta is null)
             return null;
 
@@ -70,11 +70,8 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
             return null;
 
         ctx.Status("Serializing output...");
-        IndexSerializationOptions options = IndexSerializationOptions.None;
-        if (humanReadable)
-            options |= IndexSerializationOptions.HumanReadable;
-
-        string json = IndexJsonSerializer.Serialize(manifest, options);
+        IndexJsonContext jsonContext = humanReadable ? IndexJsonContext.HumanReadable : IndexJsonContext.Default;
+        string json = JsonSerializer.Serialize(manifest, jsonContext.IndexManifest);
 
         ctx.Status("Writing output...");
         outputPath ??= Path.Join(paths.Directory, meta.IndexManifestPath);
@@ -94,7 +91,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
     private static async ValueTask<IndexManifest?> TryBuild(StatusContext ctx, IndexMeta meta, IndexPaths paths)
     {
         ctx.Status($"Loading {paths.GetRelativePath(paths.AliasesFile)}...");
-        AppAliases? aliases = await TryLoadAndDeserialize<AppAliases>(paths, paths.AliasesFile);
+        AppAliases? aliases = await TryLoadAndDeserialize(paths, paths.AliasesFile, IndexJsonContext.Default.AppAliases);
         if (aliases is null)
             return null;
 
@@ -156,7 +153,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         if (!backgroundBrightness.HasValue)
             return null;
 
-        NewsManifest? manifest = await TryLoadAndDeserialize<NewsManifest>(newsPaths, newsPaths.NewsFile);
+        NewsManifest? manifest = await TryLoadAndDeserialize(newsPaths, newsPaths.NewsFile, IndexJsonContext.Default.NewsManifest);
         if (manifest is null)
             return null;
 
@@ -200,7 +197,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
 
     private static async ValueTask<IndexEntry?> TryConstructEntry(IndexMeta meta, IndexPaths indexPaths, ManifestPaths manifestPaths)
     {
-        AppManifest? manifest = await TryLoadAndDeserialize<AppManifest>(manifestPaths, manifestPaths.ManifestFile);
+        AppManifest? manifest = await TryLoadAndDeserialize(manifestPaths, manifestPaths.ManifestFile, IndexJsonContext.Default.AppManifest);
         if (manifest is null)
             return null;
 
@@ -303,13 +300,13 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         return await File.ReadAllTextAsync(filepath);
     }
 
-    private static async ValueTask<T?> TryLoadAndDeserialize<T>(DirectoryPathProvider paths, string filepath) where T : class, IIndexSerializable
+    private static async ValueTask<T?> TryLoadAndDeserialize<T>(DirectoryPathProvider paths, string filepath, JsonTypeInfo<T> jsonTypeInfo) where T : class
     {
         string? json = await TryLoad(paths, filepath);
         if (json is null)
             return null;
 
-        T? deserialized = IndexJsonSerializer.Deserialize<T>(json);
+        T? deserialized = JsonSerializer.Deserialize(json, jsonTypeInfo);
         if (deserialized is null)
         {
             Error($"{paths.GetRelativePath(filepath)} could not be deserialized.");

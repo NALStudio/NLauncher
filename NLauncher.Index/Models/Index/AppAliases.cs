@@ -1,5 +1,4 @@
-﻿using NLauncher.Index.Interfaces;
-using NLauncher.Index.Json.Converters;
+﻿using NLauncher.Index.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -9,7 +8,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.Index;
-public class AppAliases : IIndexSerializable
+public class AppAliases
 {
     public static readonly AppAliases Empty = new(ImmutableSortedDictionary<string, Guid>.Empty);
 

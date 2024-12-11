@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Commands.News;
@@ -44,7 +45,7 @@ internal class NewsListCommand : AsyncCommand<MainSettings>, IMainCommand
     private static async IAsyncEnumerable<IRenderable> CreateRenderables(NewsPaths paths)
     {
         string newsJson = await File.ReadAllTextAsync(paths.NewsFile);
-        NewsManifest news = IndexJsonSerializer.Deserialize<NewsManifest>(newsJson) ?? throw new Exception("Could not deserialize.");
+        NewsManifest news = JsonSerializer.Deserialize(newsJson, IndexJsonContext.Default.NewsManifest) ?? throw new Exception("Could not deserialize.");
 
         yield return new CanvasImage(paths.BackgroundImageFile);
         yield return new Text(news.Title);

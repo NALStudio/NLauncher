@@ -1,5 +1,4 @@
 ﻿using NLauncher.Index.Enums;
-using NLauncher.Index.Interfaces;
 using NLauncher.Index.Json.Converters;
 using System;
 using System.Collections.Generic;
@@ -12,7 +11,7 @@ using System.Threading.Tasks;
 namespace NLauncher.Index.Models.Applications;
 
 // Record to enable copying using the with statement
-public record class AppManifest : IIndexSerializable
+public record class AppManifest
 {
     public required string DisplayName { get; init; }
     public required Guid Uuid { get; init; }

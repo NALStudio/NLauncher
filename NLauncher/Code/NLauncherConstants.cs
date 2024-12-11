@@ -12,7 +12,7 @@ internal static class NLauncherConstants
 
     public static class FileNames
     {
-        public const string IndexCache = "cache.dat";
+        public const string IndexCache = "cache.json";
         public const string Settings = "settings.json";
         public const string Library = "library.json";
     }

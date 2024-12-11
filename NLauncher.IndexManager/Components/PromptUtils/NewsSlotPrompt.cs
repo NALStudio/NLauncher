@@ -87,7 +87,7 @@ internal static class NewsSlotPrompt
             if (!isEmpty)
             {
                 string manifestJson = await File.ReadAllTextAsync(paths.NewsFile);
-                manifest = IndexJsonSerializer.Deserialize<NewsManifest>(manifestJson);
+                manifest = JsonSerializer.Deserialize(manifestJson, IndexJsonContext.Default.NewsManifest);
             }
 
             yield return new NewsSlot()

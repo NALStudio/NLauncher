@@ -5,6 +5,7 @@ using NLauncher.Index.Models.Index;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace NLauncher.Services.Index;
 
@@ -162,7 +163,7 @@ public partial class IndexService : IDisposable
         IndexManifest? manifest;
         await using (Stream s = response.Content.ReadAsStream())
         {
-            manifest = await IndexJsonSerializer.DeserializeAsync<IndexManifest>(s);
+            manifest = await JsonSerializer.DeserializeAsync(s, IndexJsonContext.Default.IndexManifest);
         }
 
         return manifest ?? throw new InvalidOperationException("Could not deserialize index manifest.");
