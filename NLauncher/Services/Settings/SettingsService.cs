@@ -1,11 +1,12 @@
-﻿using System.Text.Json;
+﻿using Microsoft.Extensions.Logging;
+using NLauncher.Code;
+using NLauncher.Code.Json;
+using System.Text.Json;
 
 namespace NLauncher.Services.Settings;
 
 public partial class SettingsService
 {
-    private const string settingsFilename = "settings.json";
-
     private Settings __settings = Settings.CreateDefault();
 
     /// <summary>
@@ -26,9 +27,11 @@ public partial class SettingsService
         }
     }
 
+    private ILogger<SettingsService> logger;
     private readonly IStorageService storageService;
-    public SettingsService(IStorageService storageService)
+    public SettingsService(ILogger<SettingsService> logger, IStorageService storageService)
     {
+        this.logger = logger;
         this.storageService = storageService;
     }
 
@@ -73,22 +76,33 @@ public partial class SettingsService
 
     private async ValueTask InternalSaveSettings(Settings settings)
     {
-        string json = JsonSerializer.Serialize(settings, SerializerContext.Default.Settings);
-        await storageService.WriteAll(settingsFilename, json);
+        string json = JsonSerializer.Serialize(settings, NLauncherJsonContext.Default.Settings);
+        await storageService.WriteAll(NLauncherConstants.FileNames.Settings, json);
     }
 
     public async void LoadSettings()
     {
-        Settings settings = await InternalLoadSettings() ?? Settings.CreateDefault();
+        Settings? settings;
+        try
+        {
+            settings = await InternalLoadSettings();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Settings could not be deserialized.");
+            settings = null;
+        }
+
+        settings ??= Settings.CreateDefault();
         InternalUpdateSettings(settings);
     }
 
     private async Task<Settings?> InternalLoadSettings()
     {
-        string json = await storageService.ReadAll(settingsFilename);
+        string json = await storageService.ReadAll(NLauncherConstants.FileNames.Settings);
         if (string.IsNullOrEmpty(json))
             return null;
 
-        return JsonSerializer.Deserialize<Settings>(json);
+        return JsonSerializer.Deserialize(json, NLauncherJsonContext.Default.Settings);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using NLauncher.Code;
 using NLauncher.Index.Json;
 using NLauncher.Index.Models.Index;
 using System.Diagnostics;
@@ -9,9 +10,6 @@ namespace NLauncher.Services.Index;
 
 public partial class IndexService : IDisposable
 {
-    private const string cacheFilename = "indexCache.json";
-    private const string indexManifestEndpoint = "https://api.github.com/repos/NALStudio/NLauncher-Index/contents/indexmanifest.json";
-
     private readonly ILogger<IndexService> logger;
     private readonly HttpClient http;
     private readonly IStorageService storageService;
@@ -119,14 +117,14 @@ public partial class IndexService : IDisposable
         };
 
         string serialized = CachedIndex.Serialize(cached);
-        await storageService.WriteAll(cacheFilename, serialized);
+        await storageService.WriteAll(NLauncherConstants.FileNames.IndexCache, serialized);
 
         return cached;
     }
 
     private async ValueTask<CachedIndex?> LoadIndexFromCache()
     {
-        string serialized = await storageService.ReadAll(cacheFilename);
+        string serialized = await storageService.ReadAll(NLauncherConstants.FileNames.IndexCache);
         if (string.IsNullOrEmpty(serialized))
             return null;
 
@@ -153,7 +151,7 @@ public partial class IndexService : IDisposable
     {
         HttpRequestMessage request = new()
         {
-            RequestUri = new Uri(indexManifestEndpoint),
+            RequestUri = new Uri(NLauncherConstants.IndexManifestUrl),
             Method = HttpMethod.Get
         };
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.raw+json"));

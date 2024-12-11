@@ -53,7 +53,7 @@
         if (Handler is LinkAppHandler lh)
             return lh.GetHref(Install);
         if (Handler is RecommendNLauncherAppHandler)
-            return NLauncherConstants.LatestRelease;
+            return NLauncherConstants.LatestReleaseUrl;
 
         return null;
     }

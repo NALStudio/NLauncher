@@ -40,20 +40,20 @@ public partial class IndexService
         public required long ExpiresTimestamp { get; init; }
         public required IndexManifest Index { get; init; }
 
-        private static (string Hash, string Content) ToBase64(byte[] bytes)
+        private static (string Hash, string Content) ComputeHash(byte[] utf8Bytes)
         {
-            byte[] hash = SHA256.HashData(bytes);
+            byte[] hash = SHA256.HashData(utf8Bytes);
 
             string hash64 = Convert.ToBase64String(hash);
-            string content64 = Convert.ToBase64String(bytes);
+            string content = Encoding.UTF8.GetString(utf8Bytes);
 
-            return (hash64, content64);
+            return (hash64, content);
         }
 
-        private static byte[]? FromBase64(string hash, string content)
+        private static byte[]? VerifyHash(string hash, string content)
         {
             byte[] hashBytes = Convert.FromBase64String(hash);
-            byte[] contentBytes = Convert.FromBase64String(content);
+            byte[] contentBytes = Encoding.UTF8.GetBytes(content);
 
             byte[] newHash = SHA256.HashData(contentBytes);
 
@@ -66,20 +66,19 @@ public partial class IndexService
         public static string Serialize(CachedIndex value)
         {
             byte[] serializedIndex = IndexJsonSerializer.SerializeToUtf8Bytes(value.Index);
-            (string hash64, string content64) = ToBase64(serializedIndex);
+            (string hash, string content) = ComputeHash(utf8Bytes: serializedIndex);
 
             string[] headerValues = new string[]
             {
                 value.ExpiresTimestamp.ToString(CultureInfo.InvariantCulture),
-                hash64
+                hash
             };
 
             Debug.Assert(!headerValues.Any(static hv => hv.Contains(HeaderValuesDelimiter)));
             string header = string.Join(HeaderValuesDelimiter, headerValues);
 
             Debug.Assert(!header.Contains(ContentDelimiter));
-            Debug.Assert(!content64.Contains(ContentDelimiter));
-            return header + ContentDelimiter + content64;
+            return header + ContentDelimiter + content;
         }
 
         public static bool TryDeserialize(string serialized, [MaybeNullWhen(false)] out CachedIndex value)
@@ -115,11 +114,11 @@ public partial class IndexService
             if (!long.TryParse(expiresTimestampValue, out long expiresTimestamp))
                 return null;
 
-            byte[]? contentBytes = FromBase64(hash64, content64);
-            if (contentBytes is null)
+            byte[]? contentUtf8 = VerifyHash(hash64, content64);
+            if (contentUtf8 is null)
                 return null;
 
-            IndexManifest? index = IndexJsonSerializer.Deserialize<IndexManifest>(contentBytes);
+            IndexManifest? index = IndexJsonSerializer.Deserialize<IndexManifest>(contentUtf8);
             if (index is null)
                 return null;
 

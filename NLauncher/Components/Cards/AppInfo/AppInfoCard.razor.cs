@@ -5,6 +5,7 @@ using NLauncher.Index.Enums;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Index.Models.Index;
+using NLauncher.Services.Library;
 using NLauncher.Shared.AppHandlers;
 using NLauncher.Shared.AppHandlers.Base;
 using NLauncher.Shared.AppHandlers.Shared;
@@ -20,6 +21,9 @@ public partial class AppInfoCard
     public AppHandlerService AppHandlerService { get; init; } = default!;
 
     [Inject]
+    public LibraryService LibraryService { get; init; } = default!;
+
+    [Inject]
     public IDialogService DialogService { get; init; } = default!;
 
     private const int iconSize = 64;
@@ -33,6 +37,33 @@ public partial class AppInfoCard
 
     [MemberNotNullWhen(false, nameof(Entry))]
     private bool IsLoading => Entry is null;
+
+    private bool canAddToLibrary = false;
+    private bool isAddingToLibrary = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        canAddToLibrary = false;
+
+        if (Entry is not null)
+        {
+            bool hasEntry = await LibraryService.HasEntryForApp(Entry.Manifest.Uuid);
+            canAddToLibrary = !hasEntry;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AddToLibrary()
+    {
+        if (Entry is not null && canAddToLibrary)
+        {
+            isAddingToLibrary = true;
+            await LibraryService.AddEntryAsync(Entry.Manifest.Uuid);
+            canAddToLibrary = false;
+            isAddingToLibrary = false;
+            StateHasChanged();
+        }
+    }
 
     private ImmutableArray<AppInstall> GetInstalls()
     {

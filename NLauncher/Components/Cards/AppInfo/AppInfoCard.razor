@@ -51,19 +51,20 @@
                         {
                             <!-- Do not wrap this button in a parent element as it's a part of MudButtonGroup -->
                             <MudButton Disabled="@IsLoading"
-                                        OnClick="@StartInstallOrOpenInstallDialog"
-                                        @oncontextmenu="@OpenInstallDialog"> <!-- oncontextmenu:preventDefault produces an error for some reason --> 
-                                        Install
+                                       OnClick="@StartInstallOrOpenInstallDialog"
+                                       @oncontextmenu="@OpenInstallDialog"> <!-- oncontextmenu:preventDefault produces an error for some reason --> 
+                                Install
                             </MudButton>
                         }
                     </MudButtonGroup>
 
-                    <MudButton FullWidth
-                               Disabled="@IsLoading"
-                               Variant="Variant.Filled"
-                               Size="Size.Large"
-                               DropShadow="false">
-                        Add To Library
+                    <MudButton OnClick="@AddToLibrary"
+                                FullWidth
+                                Disabled="@(IsLoading || !canAddToLibrary || isAddingToLibrary)"
+                                Variant="Variant.Filled"
+                                Size="Size.Large"
+                                DropShadow="false">
+                        @(canAddToLibrary ? "Add To Library" : "Application In Library")
                     </MudButton>
                 </MudStack>
             }
