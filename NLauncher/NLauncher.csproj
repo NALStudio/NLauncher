@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-	<!-- Try to fix published build crash -->
+	<!-- Blazor WASM crashes if this flag is set -->
 	<!--<IsAotCompatible>true</IsAotCompatible>-->
   </PropertyGroup>
 
