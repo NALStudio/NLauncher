@@ -6,8 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
 
 	<RunAOTCompilation>true</RunAOTCompilation>
-	<!-- Try to fix publish error by removing this flag -->
-	<!--<WasmStripILAfterAOT>true</WasmStripILAfterAOT>-->
+	<WasmStripILAfterAOT>true</WasmStripILAfterAOT>
   </PropertyGroup>
 
   <ItemGroup>
