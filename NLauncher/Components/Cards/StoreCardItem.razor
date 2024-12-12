@@ -12,19 +12,19 @@
     <!-- Clip overflow to fix skeleton rendering incorrectly -->
     <!-- onclick on MudCard instead of MudItem so that the click doesn't register inside the grid spacing -->
     <MudCard @onclick=StoreCardClicked
-              @onmouseover=SetHoverEffectVisible
-              @onmouseout=SetHoverEffectHidden
-              Class="@(GetStoreCardClasses())"
-              Style="overflow:clip;cursor:pointer"
-              Outlined Elevation="0">
+             @onmouseover=SetHoverEffectVisible
+             @onmouseout=SetHoverEffectHidden
+             Class="card_hover_effect"
+             Style="overflow:clip;cursor:pointer"
+             Outlined Elevation="0">
         <!-- Image -->
         @if (Entry is not null)
         {
-            <BannerImage Entry="Entry" Height="@imageHeight">
+            <AppImage Entry="Entry" Height="@imageHeight">
                 <ImageContent Context="asset">
                     <MudCardMedia Image="@(asset.Url.ToString())" Height="@imageHeight" />
                 </ImageContent>
-            </BannerImage>
+            </AppImage>
         }
         else
         {
@@ -59,24 +59,21 @@
 </MudItem>
 
 <style>
-    /* Stolen from: https://github.com/MudBlazor/MudBlazor/blob/6da538936a57cf08ad818c0fa86114518a4e60db/src/MudBlazor/Styles/components/_button.scss#L154C7-L154C126 */
-    .store_card:hover {
-    box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0,0,0,.12);
-    }
-
+    /* TODO: Use :hover instead of C# to display the hover color effect */
+    /* and also change transition-duration: 250ms; to transition: opacity 250ms; */
     .store_card_background {
-    z-index: -1;
-    position: absolute;
-    left:0;right:0;top:0;bottom:0;
-    background-position: bottom;
-    background-size: cover;
-    filter: blur(48px);
-    transition-duration: 250ms;
+        z-index: -1;
+        position: absolute;
+        left:0;right:0;top:0;bottom:0;
+        background-position: bottom;
+        background-size: cover;
+        filter: blur(48px);
+        transition-duration: 250ms;
     }
 
     .no_text_wrap {
-    white-space: nowrap;
-    overflow: clip;
+        white-space: nowrap;
+        overflow: clip;
     }
 </style>
 
@@ -97,14 +94,6 @@
             return manifest.Developer;
         else
             return $"{manifest.Developer} | {manifest.Publisher}";
-    }
-
-    private string GetStoreCardClasses()
-    {
-        if (Entry is null)
-            return string.Empty;
-
-        return "store_card";
     }
 
     private async Task StoreCardClicked()

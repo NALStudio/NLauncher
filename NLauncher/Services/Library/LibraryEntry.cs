@@ -9,7 +9,7 @@ namespace NLauncher.Services.Library;
 
 // Last updated timestamp should be compared with the last played timestamp of an installed game
 // as we don't have access to LibraryService in our 
-public record struct LibraryEntry(long LastUpdatedTimestamp, LibraryData Data);
+public readonly record struct LibraryEntry(Guid AppId, long LastUpdatedTimestamp, LibraryData Data);
 
 // Use record to allow for with {} statement usage
 // if we ever plan on adding any data to this object

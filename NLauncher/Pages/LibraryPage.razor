@@ -1,9 +1,52 @@
 ﻿@page "/library"
+@using NLauncher.Components.Cards
+@using NLauncher.Index.Models.Index
+@using NLauncher.Services.Index
+@using NLauncher.Services.Library
+@using System.Collections.Immutable
+
+@inject IndexService IndexService
+@inject LibraryService LibraryService
 
 <PageTitle>NLauncher - Library</PageTitle>
 
-<h3>LibraryPage</h3>
+<MudGrid> 
+    @{
+        int storeCardCount = librarySorted?.Length ?? 12;
+        for (int i = 0; i < storeCardCount; i++)
+        {
+            LibraryEntry? entry = librarySorted?[i];
+
+            IndexEntry? app = null;
+            if (entry.HasValue && index?.TryGetEntry(entry.Value.AppId, out IndexEntry? foundEntry) == true)
+                app = foundEntry;
+
+            <LibraryCardItem LibraryData="@(entry?.Data)" Entry="app" />
+        }
+    }
+</MudGrid>
 
 @code {
+    private IndexManifest? index;
+    private LibraryEntry[]? librarySorted;
 
+    protected override async Task OnInitializedAsync()
+    {
+        LibraryService.EntriesChanged += async () => await LoadAppsAsync();
+        await LoadAppsAsync();
+
+        index = await IndexService.GetIndexAsync();
+        StateHasChanged(); // Refresh state after index service has been discovered (we can now render the app cards)
+    }
+
+    private async Task LoadAppsAsync()
+    {
+        LibraryEntry[] library = await LibraryService.GetEntriesAsync();
+
+        // Sort in reverse order so that latest updates are storted first (b timestamp is larger than a timestamp)
+        Array.Sort<LibraryEntry>(library, static (a, b) => b.LastUpdatedTimestamp.CompareTo(a.LastUpdatedTimestamp));
+
+        librarySorted = library;
+        StateHasChanged();
+    }
 }

@@ -5,6 +5,7 @@
 @using NLauncher.Index.Models.Index
 @using NLauncher.Services.Index
 @using System.Diagnostics
+@using System.Diagnostics.CodeAnalysis
 
 @page "/store/{AppId}"
 
@@ -24,14 +25,14 @@ else
     <!-- Banner -->
     @if (app is not null)
     {
-        <BannerImage Entry="@app">
+        <AppImage Entry="@app">
             <ImageContent Context="asset">
                 <MudImage Class="banner_image_style"
-                          ObjectPosition="ObjectPosition.Center"
-                          ObjectFit="ObjectFit.Cover"
-                          Src="@(asset.Url.ToString())" />
+                ObjectPosition="ObjectPosition.Center"
+                ObjectFit="ObjectFit.Cover"
+                Src="@(asset.Url.ToString())" />
             </ImageContent>
-        </BannerImage>
+        </AppImage>
     }
     else
     {
@@ -57,8 +58,8 @@ else
                     <!-- Subtract bottom margin since MudMarkdown's last line has margin which makes the card bottom too big -->
                     <div style="margin-bottom:-20px">
                         <MudMarkdown MarkdownPipeline="@(DefaultMarkdownPipeline.Instance)"
-                                     OverrideHeaderTypo="@RemapMarkdownTypo"
-                                     Value="@(app.DescriptionMarkdown)" />
+                        OverrideHeaderTypo="@RemapMarkdownTypo"
+                        Value="@(app.DescriptionMarkdown)" />
                     </div>
                 }
                 else
@@ -79,11 +80,11 @@ else
 
 <style>
     .banner_image_style {
-        user-select: none;
-        width: 100%;
-        aspect-ratio: 16 / 9; /* Set aspect ratio to avoid layout shift during load */
-        max-height: 60vh;
-        border-radius: 12px;
+    user-select: none;
+    width: 100%;
+    aspect-ratio: 16 / 9; /* Set aspect ratio to avoid layout shift during load */
+    max-height: 60vh;
+    border-radius: 12px;
     }
 </style>
 
@@ -100,36 +101,47 @@ else
         if (!IndexService.TryGetCachedIndex(out IndexManifest? index))
             index = await IndexService.GetIndexAsync();
 
-        Guid? appUuid = TryParseId(index, AppId);
-        app = index.Entries.FirstOrDefault(e => e.Manifest.Uuid == appUuid);
-        if (app is not null)
+        IndexEntry? appEntry = null;
+        if(TryParseId(index, AppId, out Guid appIdGuid))
+        {
+            if (index.TryGetEntry(appIdGuid, out IndexEntry? foundEntry))
+                appEntry = foundEntry;
+        }
+
+        if (appEntry is not null)
+        {
+            app = appEntry;
             StateHasChanged();
+        }
         else
+        {
             navigationManager.NavigateTo("not-found"); // Dirty solution, but you cannot currently show the 404 page dynamically
+        }
 
         // DEBUG
         // app = null;
         // StateHasChanged();
     }
 
-    private static Guid? TryParseId(IndexManifest index, string id)
+    private static bool TryParseId(IndexManifest index, string id, [MaybeNullWhen(false)] out Guid appId)
     {
-        Guid? appUuid;
-
         // Try to parse as guid
         if (Guid.TryParse(id, out Guid parsedGuid))
-            appUuid = parsedGuid;
-        else
-            appUuid = null;
-
-        // Try to parse as alias
-        if (!appUuid.HasValue)
         {
-            if (index.Aliases.Aliases.TryGetValue(id, out Guid value))
-                appUuid = value;
+            appId = parsedGuid;
+            return true;
         }
 
-        return appUuid;
+        // Try to parse as alias
+        Guid? guidFromAliases = index.Aliases.GetGuid(id);
+        if (guidFromAliases.HasValue)
+        {
+            appId = guidFromAliases.Value;
+            return true;
+        }
+
+        appId = default;
+        return false;
     }
 
     private static Typo RemapMarkdownTypo(Typo typo)

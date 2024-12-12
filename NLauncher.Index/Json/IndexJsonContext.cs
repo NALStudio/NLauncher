@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace NLauncher.Index.Json;
 
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = false, IndentSize = 4)]
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, RespectNullableAnnotations = true, WriteIndented = false, IndentSize = 4)]
 
 // IIndexSerializable
 [JsonSerializable(typeof(IndexManifest))] // Index

@@ -1,0 +1,91 @@
+﻿@using NLauncher.Code.Extensions
+@using NLauncher.Index.Enums
+@using NLauncher.Index.Models.Applications
+@using NLauncher.Index.Models.Index
+@using NLauncher.Pages
+@using NLauncher.Services.Index
+@using NLauncher.Services.Library
+
+@inject NavigationManager navigationManager
+@inject IndexService IndexService
+
+<MudItem xs="6" sm="4" lg="3" xl="2">
+    @{
+        IndexAsset? backgroundImage = Entry?.Assets.Largest(AssetType.Panel);
+
+        <!-- onclick on MudCard instead of MudItem so that the click doesn't register inside the grid spacing -->
+        <MudPaper Class="card_hover_effect library_card_container" Style="@GetBackgroundImageCss(backgroundImage)" Outlined Elevation="0">
+            <!-- Image -->
+            @if (Entry is not null)
+            {
+                // Only show the alternate image if panel image is not found.
+                if (backgroundImage is null)
+                {
+                    <AppImage Panel Entry="Entry">
+                        <ImageContent>
+                            <!-- ImageContent is handled in MudPaper -->
+                        </ImageContent>
+                    </AppImage>
+                }
+            }
+            else
+            {
+                <MudSkeleton Width="100%" Height="100%" SkeletonType="SkeletonType.Rectangle" />
+            }
+
+            <div class="library_card_overlay" style="align-content:center">
+                <MudText Align="Align.Center" Typo="Typo.h3">PLAY</MudText>
+            </div>
+        </MudPaper>
+    }
+</MudItem>
+
+<style>
+    .library_card_container {
+        position: relative;
+
+        aspect-ratio: 2 / 3;
+        overflow: clip; /* Clip overflow to fix skeleton rendering incorrectly */
+        cursor: pointer;
+
+        background-position: center;
+        background-size: cover;
+        background-clip: padding-box;
+    }
+
+    .library_card_overlay {
+        position: absolute;
+        left: 0; right: 0; top: 0; bottom: 0;
+        z-index: 5;
+
+        opacity: 0;
+        transition: opacity 250ms;
+
+        user-select: none;
+
+        border-color: var(--mud-palette-overlay-dark);
+        background-color: var(--mud-palette-overlay-dark);
+    }
+    .library_card_overlay:hover {
+        opacity: 1;
+    }
+</style>
+
+@code {
+    /// <summary>
+    /// Use <see langword="null"/> for skeleton.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public IndexEntry? Entry { get; set; }
+
+    [Parameter, EditorRequired]
+    public LibraryData? LibraryData { get; set; }
+
+    private static string GetBackgroundImageCss(IndexAsset? asset)
+    {
+        if (asset is null)
+            return string.Empty;
+
+        return $"background-image: url(\"{asset.Url}\")";
+    }
+}

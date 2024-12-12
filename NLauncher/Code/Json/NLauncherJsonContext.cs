@@ -15,7 +15,6 @@ namespace NLauncher.Code.Json;
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
 
 [JsonSerializable(typeof(SettingsService.Settings))]
-[JsonSerializable(typeof(Dictionary<Guid, LibraryEntry>))]
-internal partial class NLauncherJsonContext : JsonSerializerContext
-{
-}
+[JsonSerializable(typeof(IEnumerable<LibraryEntry>))]
+[JsonSerializable(typeof(LibraryEntry[]))]
+internal partial class NLauncherJsonContext : JsonSerializerContext;

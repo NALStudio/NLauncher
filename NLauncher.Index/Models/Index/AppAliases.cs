@@ -25,6 +25,9 @@ public class AppAliases
         idToName = aliases.ToLookup(key => key.Value, value => value.Key);
     }
 
+    /// <summary>
+    /// Returns the UUID associated with the provided alias name or <see langword="null"/> if not found.
+    /// </summary>
     public Guid? GetGuid(string name)
     {
         if (Aliases.TryGetValue(name, out Guid guid))

@@ -14,7 +14,6 @@ internal class JsonIndexAssetCollectionConverter : JsonConverter<IndexAssetColle
 {
     public override IndexAssetCollection? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        // 
 #pragma warning disable IL2026, IL3050 // Disable AOT warnings. We can't use JsonContext as otherwise we lose JsonSerializerOptions settings metadata
         ImmutableArray<IndexAsset> assets = JsonSerializer.Deserialize<ImmutableArray<IndexAsset>>(ref reader, options);
 #pragma warning restore IL2026, IL3050 

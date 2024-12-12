@@ -1,0 +1,74 @@
+﻿@using NLauncher.Index.Enums
+@using NLauncher.Index.Models.Index
+@using System.Collections.Immutable
+@using System.Text
+
+@{
+    IndexAsset? asset;
+    ImmutableArray<AssetType> findAssetTypes = GetFindAssetTypes();
+    if (Height.HasValue)
+        asset = Entry.Assets.Closest(Height.Value, findAssetTypes);
+    else
+        asset = Entry.Assets.Largest(findAssetTypes);
+
+    if (asset?.Type == findAssetTypes[0])
+    {
+        // If first asset type preference found, render it at full resolution
+        @(ImageContent(asset))
+    }
+    else
+    {
+        <MudStack Style=@(GetWidthHeightCss()) AlignItems="AlignItems.Center" Justify="Justify.Center">
+            @if (asset is not null)
+            {
+                <MudImage Src="@(asset.Url.ToString())" ObjectFit="ObjectFit.Contain" Style="width:50%;height:50%;user-select:none" />
+            }
+            <MudText Class="px-4" Typo="@NoAssetFoundTypo" Style="text-align:center;user-select:none">@(Entry.Manifest.DisplayName)</MudText>
+        </MudStack>
+    }
+}
+
+@code {
+    private Typo NoAssetFoundTypo => Panel ? Typo.h5 : Typo.h4;
+
+    private ImmutableArray<AssetType> GetFindAssetTypes() => Panel ? findPanel : findBanner;
+    private static readonly ImmutableArray<AssetType> findPanel = [AssetType.Panel, AssetType.Icon];
+    private static readonly ImmutableArray<AssetType> findBanner = [AssetType.Banner, AssetType.Icon];
+
+    [Parameter, EditorRequired]
+    public required IndexEntry Entry { get; set; }
+
+    [Parameter, EditorRequired]
+    public required RenderFragment<IndexAsset> ImageContent { get; set; }
+
+    [Parameter]
+    public int? Width { get; set; } = null;
+    [Parameter]
+    public int? Height { get; set; } = null;
+
+    /// <summary>
+    /// <p>Render asset as a panel (aspect: 2/3).</p>
+    /// <p>asset is rendered as a banner (aspect: 16/9) by default.</p>
+    /// </summary>
+    [Parameter]
+    public bool Panel { get; set; }
+
+    private string GetWidthHeightCss()
+    {
+        string css = string.Empty;
+        if (Width.HasValue)
+            css += $"width:{Width.Value}px;";
+        if (Height.HasValue)
+            css += $"height:{Height.Value}px;";
+
+        if (!Width.HasValue || !Height.HasValue) // Do not force aspect ratio when width and height are both provided
+        {
+            if (Panel)
+                css += "aspect-ratio: 2 / 3;";
+            else
+                css += "aspect-ratio: 16 / 9;";
+        }
+
+        return css;
+    }
+}

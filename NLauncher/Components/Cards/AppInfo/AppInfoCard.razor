@@ -38,10 +38,10 @@
 
                             <!-- Do not wrap this button in a parent element as it's a part of MudButtonGroup -->
                             <MudButton EndIcon="@(Icons.Material.Rounded.OpenInNew)"
-                                       IconSize="Size.Small"
-                                       Disabled="@IsLoading"
-                                       Href="@(linkAppHandler.GetHref(linkAppInstall))"
-                                       Target="_blank">
+                            IconSize="Size.Small"
+                            Disabled="@IsLoading"
+                            Href="@(linkAppHandler.GetHref(linkAppInstall))"
+                            Target="_blank">
                                 @(GetLinkText(linkAppHandler))
                             </MudButton>
                         }
@@ -51,19 +51,19 @@
                         {
                             <!-- Do not wrap this button in a parent element as it's a part of MudButtonGroup -->
                             <MudButton Disabled="@IsLoading"
-                                       OnClick="@StartInstallOrOpenInstallDialog"
-                                       @oncontextmenu="@OpenInstallDialog"> <!-- oncontextmenu:preventDefault produces an error for some reason --> 
+                            OnClick="@StartInstallOrOpenInstallDialog"
+                            @oncontextmenu="@OpenInstallDialog"> <!-- oncontextmenu:preventDefault produces an error for some reason --> 
                                 Install
                             </MudButton>
                         }
                     </MudButtonGroup>
 
                     <MudButton OnClick="@AddToLibrary"
-                                FullWidth
-                                Disabled="@(IsLoading || !canAddToLibrary || isAddingToLibrary)"
-                                Variant="Variant.Filled"
-                                Size="Size.Large"
-                                DropShadow="false">
+                    FullWidth
+                    Disabled="@(IsLoading || !canAddToLibrary || isAddingToLibrary)"
+                    Variant="Variant.Filled"
+                    Size="Size.Large"
+                    DropShadow="false">
                         @(canAddToLibrary ? "Add To Library" : "Application In Library")
                     </MudButton>
                 </MudStack>
@@ -76,10 +76,25 @@
                 AppManifest app = Entry.Manifest;
                 Platforms supportedPlatforms = GetSupportedPlatforms();
                 bool showPlatforms = supportedPlatforms != Platforms.None;
+                bool earlyAccess = app.Release.State == ReleaseState.EarlyAccess;
 
                 <AppInfoCardData Label="Developer" Value="@(app.Developer)" TopDivider="false" />
                 <AppInfoCardData Label="Publisher" Value="@(app.Publisher)" />
-                <AppInfoCardData Label="Release Date" Value="@(GetReleaseDateString(app.Release))" />
+
+                @if (earlyAccess)
+                {
+                    <AppInfoCardData Label="Early Access">
+                        <ValueContent>
+                            <!-- MudTooltip is taller than the icon for some reason so let's force it to be the same height -->
+                            <MudTooltip RootStyle="height:20px" Placement="Placement.Left" Arrow Text="Games in Early Access are not complete and may or may not change further.">
+                                <MudIcon Size="Size.Small" Icon="@(Icons.Material.Rounded.Help)" />
+                            </MudTooltip>
+                        </ValueContent>
+                    </AppInfoCardData>
+                }
+
+                <AppInfoCardData Label=@(app.Release.State.IsReleased() ? "Release Date" : "Available")
+                                 Value="@(GetReleaseDateString(app.Release))" />
 
                 @if (showPlatforms)
                 {

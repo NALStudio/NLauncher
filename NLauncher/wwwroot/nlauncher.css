@@ -1,0 +1,4 @@
+﻿.card_hover_effect:hover {
+    /* Stolen from: https://github.com/MudBlazor/MudBlazor/blob/6da538936a57cf08ad818c0fa86114518a4e60db/src/MudBlazor/Styles/components/_button.scss#L154C7-L154C126 */
+    box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0,0,0,.12);
+}
