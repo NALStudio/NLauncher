@@ -20,7 +20,7 @@ public static class Program
 
         NLauncherServices.AddDefault(builder.Services);
         NLauncherServices.AddStorage<WebStorageService>(builder.Services);
-        NLauncherServices.AddAppHandlers(builder.Services, AppHandler.WebHandlers);
+        NLauncherServices.AddAppHandling(builder.Services, AppHandler.WebHandlers);
 
         await builder.Build().RunAsync();
     }

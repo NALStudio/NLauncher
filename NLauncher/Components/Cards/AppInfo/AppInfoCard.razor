@@ -24,51 +24,49 @@
             <MudSkeleton Style="align-self:center;" SkeletonType="SkeletonType.Rectangle" Width="@iconSizePx" Height="@iconSizePx" />
         }
 
-        @{
-            (ImmutableArray<AppHandler> appHandlers, InstallAppHandler? installAppHandler) = GetAppHandlers();
-            LinkAppHandler? linkAppHandler = (LinkAppHandler?)appHandlers.FirstOrDefault(static ah => ah is LinkAppHandler);
+        <MudStack Spacing="2">
+            <MudButtonGroup FullWidth Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" DropShadow="false">
+                @if (canLinkPlay)
+                {
+                    string? href = GetLinkPlayHref();
 
-            @if (appHandlers.Length > 0)
-            {
-                <MudStack Spacing="2">
-                    <MudButtonGroup FullWidth Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" DropShadow="false">
-                        @if (linkAppHandler is not null)
-                        {
-                            AppInstall linkAppInstall = Entry!.Manifest.GetLatestVersion()!.Installs.First(linkAppHandler.CanHandle);
-
-                            <!-- Do not wrap this button in a parent element as it's a part of MudButtonGroup -->
-                            <MudButton EndIcon="@(Icons.Material.Rounded.OpenInNew)"
-                            IconSize="Size.Small"
-                            Disabled="@IsLoading"
-                            Href="@(linkAppHandler.GetHref(linkAppInstall))"
-                            Target="_blank">
-                                @(GetLinkText(linkAppHandler))
-                            </MudButton>
-                        }
-
-                        <!-- Only show install button if there are multiple link app handlers or other app handlers --> 
-                        @if (appHandlers.Any(ah => !ReferenceEquals(ah, linkAppHandler)))
-                        {
-                            <!-- Do not wrap this button in a parent element as it's a part of MudButtonGroup -->
-                            <MudButton Disabled="@IsLoading"
-                            OnClick="@StartInstallOrOpenInstallDialog"
-                            @oncontextmenu="@OpenInstallDialog"> <!-- oncontextmenu:preventDefault produces an error for some reason --> 
-                                Install
-                            </MudButton>
-                        }
-                    </MudButtonGroup>
-
-                    <MudButton OnClick="@AddToLibrary"
-                    FullWidth
-                    Disabled="@(IsLoading || !canAddToLibrary || isAddingToLibrary)"
-                    Variant="Variant.Filled"
-                    Size="Size.Large"
-                    DropShadow="false">
-                        @(canAddToLibrary ? "Add To Library" : "Application In Library")
+                    <!-- Do not wrap this button in a parent element as it's a part of MudButtonGroup -->
+                    <MudButton EndIcon="@(href is not null ? Icons.Material.Rounded.OpenInNew : null)"
+                               IconSize="Size.Small"
+                               Disabled="@IsLoading"
+                               Href="@href"
+                               OnClick="@(() => Play())"
+                               @oncontextmenu="@(() => Play(alwaysChoose: true))"
+                               Target="_blank">
+                        @GetLinkPlayText()
                     </MudButton>
-                </MudStack>
+                }
+
+                <!-- Only show install button if there are multiple link app handlers or other app handlers --> 
+                @if (canInstall)
+                {
+                    <!-- Do not wrap this button in a parent element as it's a part of MudButtonGroup -->
+                    <!-- oncontextmenu:preventDefault produces an error for some reason -->
+                    <MudButton Disabled="@IsLoading"
+                               OnClick="@(() => Install())"
+                               @oncontextmenu="@(() => Install(alwaysChoose: true))">
+                        Install
+                    </MudButton>
+                }
+            </MudButtonGroup>
+
+            @if (Entry?.Manifest.Release.State.IsReleased() == true)
+            {
+                <MudButton OnClick="@AddToLibrary"
+                           FullWidth
+                           Disabled="@(IsLoading || !canAddToLibrary || isAddingToLibrary)"
+                           Variant="Variant.Filled"
+                           Size="Size.Large"
+                           DropShadow="false">
+                    @(canAddToLibrary ? "Add To Library" : "Application In Library")
+                </MudButton>
             }
-        }
+        </MudStack>
 
         <div>
             @if (!IsLoading)

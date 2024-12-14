@@ -1,9 +1,4 @@
 ﻿using NLauncher.Index.Models.Applications.Installs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NLauncher.Services.Library;
 
@@ -15,5 +10,16 @@ public readonly record struct LibraryEntry(Guid AppId, long LastUpdatedTimestamp
 // if we ever plan on adding any data to this object
 public record class LibraryData
 {
-    public AppInstall? Install { get; }
+    /// <summary>
+    /// The install of the application or <see langword="null"/> if the application has not yet been installed.
+    /// </summary>
+    /// <remarks>
+    /// If the app is not installed, it can still be in the library as a website link for example.
+    /// </remarks>
+    public AppInstall? Install { get; init; }
+
+    /// <summary>
+    /// The chosen version's version number or <see langword="null"/> if no version is chosen (use latest version).
+    /// </summary>
+    public uint? VerNum { get; init; }
 }

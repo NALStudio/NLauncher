@@ -1,0 +1,41 @@
+﻿@using NLauncher.Code.Models
+
+<MudDialog>
+    <DialogContent>
+        You have selected an older version of the app than what is available to download. <br />
+        Do you want to install the latest available version or the one you've already selected?
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(Dialog.Cancel)">Cancel</MudButton>
+        <MudButton OnClick="@(() => Close(useLatest: false))" Variant="Variant.Filled" Color="Color.Warning">
+            Use Selected Version
+        </MudButton>
+        <MudButton OnClick="@(() => Close(useLatest: true))" Variant="Variant.Filled" Color="Color.Success">
+            Use Latest Version
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance Dialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required uint SelectedVersion { get; set; }
+
+    private void Close(bool useLatest)
+    {
+        uint? version = useLatest ? null : SelectedVersion;
+        Dialog.Close(version);
+    }
+
+    public static async Task<CancellableResult<uint?>> ShowAsync(IDialogService dialogService)
+    {
+        IDialogReference dialog = await dialogService.ShowAsync<ConfirmInstallOlderVersionDialog>("Version override set");
+        DialogResult? result = await dialog.Result;
+        if (result is null || result.Canceled)
+            return CancellableResult<uint?>.Cancelled();
+        else
+            return CancellableResult<uint?>.Success((uint?)result.Data);
+    }
+}

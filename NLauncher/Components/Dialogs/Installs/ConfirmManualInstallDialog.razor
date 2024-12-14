@@ -25,7 +25,7 @@
     [Parameter]
     public string Target { get; set; } = "_blank";
 
-    public static async Task<IDialogReference> ShowAsync(IDialogService dialogService, string href)
+    public static async Task ShowAsync(IDialogService dialogService, string href)
     {
         DialogOptions options = new()
         {
@@ -37,6 +37,6 @@
             { x => x.Href, href }
         };
 
-        return await dialogService.ShowAsync<ConfirmManualInstallDialog>("Warning!", parameters, options);
+        await dialogService.ShowAsync<ConfirmManualInstallDialog>("Warning!", parameters, options);
     }
 }

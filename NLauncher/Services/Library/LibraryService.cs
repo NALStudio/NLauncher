@@ -1,10 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NLauncher.Code;
 using NLauncher.Code.Json;
-using System.Collections.Immutable;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace NLauncher.Services.Library;
@@ -34,6 +30,23 @@ public class LibraryService
             await TryLoadEntries();
 
             return entries!.Values.ToArray(); // Must make it into an array so that the enumerable doesn't escape the semaphore's scope
+        }
+        finally
+        {
+            entriesSemaphore.Release();
+        }
+    }
+
+    public async Task<LibraryEntry> GetEntry(Guid appId)
+    {
+        await entriesSemaphore.WaitAsync();
+        try
+        {
+            await TryLoadEntries();
+            if (entries!.TryGetValue(appId, out LibraryEntry entry))
+                return entry;
+            else
+                throw new ArgumentException($"No entry for app '{appId}' found.");
         }
         finally
         {

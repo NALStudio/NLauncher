@@ -1,22 +1,31 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
-using NLauncher.Components.Dialogs.ChooseInstall;
+using NLauncher.Code.Models;
 using NLauncher.Index.Enums;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Index.Models.Index;
+using NLauncher.Services.Apps;
 using NLauncher.Services.Library;
-using NLauncher.Shared.AppHandlers;
 using NLauncher.Shared.AppHandlers.Base;
 using NLauncher.Shared.AppHandlers.Shared;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NLauncher.Components.Cards.AppInfo;
 
 public partial class AppInfoCard
 {
+    [Inject]
+    public ILogger<AppInfoCard> Logger { get; set; } = default!;
+
+    [Inject]
+    public AppLinkPlayService AppLinkPlayService { get; init; } = default!;
+
+    [Inject]
+    public AppInstallService AppInstallService { get; init; } = default!;
+
     [Inject]
     public AppHandlerService AppHandlerService { get; init; } = default!;
 
@@ -41,16 +50,46 @@ public partial class AppInfoCard
     private bool canAddToLibrary = false;
     private bool isAddingToLibrary = false;
 
+    private AppVersion? resolvedVersion;
+    private bool canLinkPlay = false;
+    private InstallOption? linkPlayPrimary = null;
+    private bool canInstall = false;
+
     protected override async Task OnParametersSetAsync()
     {
         canAddToLibrary = false;
+        canLinkPlay = false;
+        linkPlayPrimary = null;
+        canInstall = false;
 
-        if (Entry is not null)
+        if (Entry is null)
+            return;
+
+        Guid appId = Entry.Manifest.Uuid;
+
+        bool hasEntry = await LibraryService.HasEntryForApp(appId);
+        canAddToLibrary = !hasEntry;
+
+        if (resolvedVersion is not null)
         {
-            bool hasEntry = await LibraryService.HasEntryForApp(Entry.Manifest.Uuid);
-            canAddToLibrary = !hasEntry;
-            StateHasChanged();
+            canLinkPlay = AppLinkPlayService.CanPlay(Entry.Manifest);
+            linkPlayPrimary = AppLinkPlayService.GetPrimaryOption();
+
+            canInstall = await AppInstallService.CanInstall(Entry.Manifest);
         }
+
+        StateHasChanged();
+    }
+
+    private Platforms GetSupportedPlatforms()
+    {
+        ImmutableArray<AppInstall>? appInstalls = Entry?.Manifest.GetLatestVersion()?.Installs;
+
+        Platforms supported = Platforms.None;
+        foreach (AppInstall install in appInstalls ?? Enumerable.Empty<AppInstall>())
+            supported |= install.GetSupportedPlatforms();
+
+        return supported;
     }
 
     private async Task AddToLibrary()
@@ -65,26 +104,50 @@ public partial class AppInfoCard
         }
     }
 
-    private ImmutableArray<AppInstall> GetInstalls()
+    private string? GetLinkPlayHref()
     {
-        return Entry?.Manifest.GetLatestVersion()?.Installs ?? ImmutableArray<AppInstall>.Empty;
+        if (linkPlayPrimary is InstallOption opt)
+            return ((LinkAppHandler)opt.Handler).GetHref(opt.Install);
+        else
+            return null;
     }
 
-    /// <summary>
-    /// <inheritdoc cref="AppHandlerService.GetSupportedHandlers"/>
-    /// </summary>
-    private (ImmutableArray<AppHandler> Handlers, InstallAppHandler? PreferredHandler) GetAppHandlers()
+    private string GetLinkPlayText()
     {
-        ImmutableArray<AppInstall> installs = GetInstalls();
-        if (installs.IsEmpty)
+        const string playNow = "Play Now";
+
+        if (!linkPlayPrimary.HasValue)
+            return playNow;
+
+        return linkPlayPrimary.Value.Handler switch
         {
-            return (ImmutableArray<AppHandler>.Empty, null);
-        }
-        else
+            WebsiteLinkAppHandler => playNow,
+            StoreLinkAppHandler => "Open Store Page",
+            _ => "Open External Link"
+        };
+    }
+
+    private async Task Play(bool alwaysChoose = false)
+    {
+        if (Entry is null)
+            return;
+        if (linkPlayPrimary.HasValue && !alwaysChoose)
+            return;
+
+        await AppLinkPlayService.Play(Entry.Manifest);
+    }
+
+    private async Task Install(bool alwaysChoose = false)
+    {
+        if (Entry is null)
+            return;
+
+        AppInstallService.AppInstallConfig settings = new(DialogService)
         {
-            ImmutableArray<AppHandler> handlers = AppHandlerService.GetSupportedHandlers(installs).ToImmutableArray();
-            return (handlers, (InstallAppHandler?)handlers.FirstOrDefault(static h => h is InstallAppHandler));
-        }
+            AlwaysAskInstallMethod = alwaysChoose
+        };
+
+        _ = await AppInstallService.InstallAsync(Entry.Manifest, settings);
     }
 
     private static string GetReleaseDateString(AppRelease appRelease)
@@ -95,69 +158,6 @@ public partial class AppInfoCard
             return release.Value.ToShortDateString();
         else
             return "TBD";
-    }
-
-    private static string GetLinkText(LinkAppHandler handler)
-    {
-        if (handler is WebsiteLinkAppHandler)
-            return "Play Now";
-        if (handler is StoreLinkAppHandler)
-            return "Open Store Page";
-
-        // Fallback if we add a new handler and forget to add its text
-        return "Open External Link";
-    }
-
-    private Platforms GetSupportedPlatforms()
-    {
-        ImmutableArray<AppInstall>? appInstalls = Entry?.Manifest.GetLatestVersion()?.Installs;
-
-        Platforms supported = Platforms.None;
-        foreach (AppInstall install in appInstalls ?? Enumerable.Empty<AppInstall>())
-            supported |= install.GetSupportedPlatforms();
-
-        return supported;
-    }
-
-    private async Task StartInstallOrOpenInstallDialog()
-    {
-        var handlerData = GetAppHandlers();
-
-        if (handlerData.PreferredHandler is not null)
-            await StartInstall(handlerData.PreferredHandler);
-        else
-            await OpenInstallDialog(handlerData: handlerData);
-    }
-
-    private Task StartInstall(InstallAppHandler installHandler)
-    {
-        Debug.WriteLine("INSTALLING NOT YET IMPLEMENTED");
-        return Task.CompletedTask;
-    }
-
-    private async Task OpenInstallDialog() => await OpenInstallDialog(handlerData: GetAppHandlers());
-    private async Task OpenInstallDialog((ImmutableArray<AppHandler> Handlers, InstallAppHandler? PreferredHandler) handlerData)
-    {
-        ImmutableArray<AppInstall> installs = GetInstalls();
-        AppHandler? recommendedAppHandler = handlerData.PreferredHandler ?? handlerData.Handlers.FirstOrDefault(static h => h is RecommendNLauncherAppHandler);
-
-        DialogParameters<ChooseInstallDialog> parameters = new()
-        {
-            { x => x.Handlers, handlerData.Handlers },
-            { x => x.Installs, installs },
-            { x => x.RecommendedHandler, recommendedAppHandler },
-        };
-
-        DialogOptions options = new()
-        {
-            CloseOnEscapeKey = true,
-            CloseButton = true,
-
-            MaxWidth = MaxWidth.ExtraSmall,
-            FullWidth = true,
-        };
-
-        await DialogService.ShowAsync<ChooseInstallDialog>("Choose Install Option", parameters, options);
     }
 
     private static string? GetPlatformIcon(Platforms platform)

@@ -6,7 +6,7 @@
 
 @inject IDialogService DialogService
 
-<MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="@GetVariant()" StartIcon="@GetButtonIcon()" Href="@GetButtonHref()" Target="_blank" OnClick="@StartInstall">
+<MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="@GetVariant()" StartIcon="@GetButtonIcon()" Href="@href" Target="_blank" OnClick="@(() => OnClick?.Invoke())">
     @GetButtonText()
 </MudButton>
 
@@ -24,6 +24,13 @@
     public Action? OnClick { get; set; }
 
     private Variant GetVariant() => IsRecommended ? Variant.Outlined : Variant.Text;
+
+    private string? href;
+
+    protected override void OnParametersSet()
+    {
+        href = GetHref(Handler, Install);
+    }
 
     private string? GetButtonIcon()
     {
@@ -48,29 +55,16 @@
         };
     }
 
-    private string? GetButtonHref()
+    private static string? GetHref(AppHandler handler, AppInstall install)
     {
-        if (Handler is LinkAppHandler lh)
-            return lh.GetHref(Install);
-        if (Handler is RecommendNLauncherAppHandler)
+        if (handler is LinkAppHandler lh)
+            return lh.GetHref(install);
+        if (handler is RecommendNLauncherAppHandler)
             return NLauncherConstants.LatestReleaseUrl;
 
+        if (handler is ManualInstallAppHandler mih)
+            return mih.GetDownloadLink(install);
+
         return null;
-    }
-
-    private async Task StartInstall()
-    {
-        OnClick?.Invoke();
-
-        if (Handler is ManualInstallAppHandler mih)
-        {
-            // Show manual install warning and if accepted, download the file by using the browser
-            await ConfirmManualInstallDialog.ShowAsync(DialogService, mih.GetDownloadLink(Install));
-        }
-        else if (Handler is InstallAppHandler ih)
-        {
-            // Start install and close app handler
-            Debug.WriteLine("INSTALLING NOT YET IMPLEMENTED");
-        }
     }
 }

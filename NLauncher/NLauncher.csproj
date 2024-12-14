@@ -9,8 +9,8 @@
 	<!--<IsAotCompatible>true</IsAotCompatible>-->
 	  
 	<!--
-	My theory is that IsTrimmable is the source of the IsAotCompatible error  although I haven't tested this hypothesis...
-	Manually setting all analyzer flags (except IsTrimmable) seems to work...
+	My theory is that IsTrimmable is the source of the IsAotCompatible error although I haven't tested this hypothesis...
+	Manually setting all analyzer flags (except IsTrimmable) seems to work
 	-->	
 	<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
 	<EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>

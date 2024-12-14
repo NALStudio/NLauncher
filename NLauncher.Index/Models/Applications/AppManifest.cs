@@ -1,12 +1,5 @@
 ﻿using NLauncher.Index.Enums;
-using NLauncher.Index.Json.Converters;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.Applications;
 
@@ -44,9 +37,20 @@ public record class AppManifest
     /// </summary>
     public AppVersion? GetLatestVersion()
     {
-        if (Versions.Length < 1)
-            return null;
-
         return Versions.MaxBy(static v => v.VerNum);
+    }
+
+    /// <summary>
+    /// Returns the version with the specified <paramref name="vernum"/> or <see langword="null"/> if no such version is found.
+    /// </summary>
+    /// <remarks>
+    /// If <paramref name="vernum"/> is null, the latest version is returned instead.
+    /// </remarks>
+    public AppVersion? GetVersion(uint? vernum)
+    {
+        if (vernum.HasValue)
+            return Versions.SingleOrDefault(v => v.VerNum == vernum.Value);
+        else
+            return GetLatestVersion();
     }
 }

@@ -30,7 +30,7 @@ public partial class MainPage : Form
 
         NLauncherServices.AddDefault(services);
         NLauncherServices.AddStorage<WindowsStorageService>(services);
-        NLauncherServices.AddAppHandlers(services, AppHandler.WindowsHandlers);
+        NLauncherServices.AddAppHandling(services, AppHandler.WindowsHandlers);
 
 #if DEBUG
         services.AddBlazorWebViewDeveloperTools();

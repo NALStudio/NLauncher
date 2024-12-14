@@ -146,18 +146,20 @@ else
 
     private static Typo RemapMarkdownTypo(Typo typo)
     {
-        Debug.Assert(typo >= Typo.h1);
-        Debug.Assert(typo <= Typo.h5);
+        const Typo minHeading = Typo.h1;
+        const Typo maxHeading = Typo.h6;
 
-        const int maxTypo = (int)Typo.h5;
+        // Do not change typo if it isn't a heading.
+        // Currently MudBlazor Markdown doesn't call this method with anything other than headers,
+        // but I have this check just in case this behaviour changes in the future.
+        if (typo < minHeading || typo > maxHeading)
+            return typo;
 
-        int oldTypo = (int)typo;
-        int newTypo = oldTypo + 2;
+        typo += 2;
+        if (typo > maxHeading)
+            typo = maxHeading;
 
-        if (newTypo > maxTypo)
-            newTypo = maxTypo;
-
-        return (Typo)newTypo;
+        return typo;
     }
 
     public static string GetPageRoute(IndexManifest index, Guid appUuid)
