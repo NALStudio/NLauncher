@@ -24,7 +24,7 @@ public readonly struct InstallResult
     public static InstallResult Failed<T>(InstallResult<T> innerFailure)
     {
         if (innerFailure.IsSuccess)
-            throw new ArgumentException("Cannot error on a successful result.");
+            throw new ArgumentException("Cannot fail on a successful result.");
 
         return new(success: false, innerFailure.ErrorMessage);
     }
@@ -68,7 +68,7 @@ public readonly struct InstallResult<T>
     public static InstallResult<T> Failed<TInner>(InstallResult<TInner> innerFailure)
     {
         if (innerFailure.IsSuccess)
-            throw new ArgumentException("Cannot error on a successful result.");
+            throw new ArgumentException("Cannot fail on a successful result.");
 
         return new(success: false, value: default, errorMsg: innerFailure.ErrorMessage);
     }

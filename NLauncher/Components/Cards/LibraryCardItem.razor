@@ -14,7 +14,9 @@
         IndexAsset? backgroundImage = Entry?.Assets.Largest(AssetType.Panel);
 
         <!-- onclick on MudCard instead of MudItem so that the click doesn't register inside the grid spacing -->
-        <MudPaper Class="card_hover_effect library_card_container" Style="@GetBackgroundImageCss(backgroundImage)" Outlined Elevation="0">
+        <MudPaper Outlined Elevation="0"
+                  Class="card_hover_effect library_card_container"
+                  Style="@GetBackgroundImageCss(backgroundImage)">
             <!-- Image -->
             @if (Entry is not null)
             {
@@ -33,59 +35,53 @@
                 <MudSkeleton Width="100%" Height="100%" SkeletonType="SkeletonType.Rectangle" />
             }
 
-            <div class="library_card_overlay" style="align-content:center">
-                <MudText Align="Align.Center" Typo="Typo.h3">PLAY</MudText>
-            </div>
+            <a class="library_card_overlay" style="align-content:center"
+               href="@linkPlayHref" target="_blank"
+               @onclick="@OnCardPressed">
+               @if (CanPlay)
+               {
+                    <MudText Align="Align.Center" Typo="Typo.h4">PLAY</MudText>
+               }
+               else if (canInstall)
+               {
+                   <MudText Align="Align.Center" Typo="Typo.h4">INSTALL</MudText>
+               }
+               else
+               {
+                    <MudText Align="Align.Center" Typo="Typo.h4">NOT AVAILABLE</MudText>
+               }
+            </a>
         </MudPaper>
     }
 </MudItem>
 
 <style>
-    .library_card_container {
-        position: relative;
+.library_card_container {
+    position: relative;
 
-        aspect-ratio: 2 / 3;
-        overflow: clip; /* Clip overflow to fix skeleton rendering incorrectly */
-        cursor: pointer;
+    aspect-ratio: 2 / 3;
+    overflow: clip; /* Clip overflow to fix skeleton rendering incorrectly */
+    cursor: pointer;
 
-        background-position: center;
-        background-size: cover;
-        background-clip: padding-box;
-    }
-
-    .library_card_overlay {
-        position: absolute;
-        left: 0; right: 0; top: 0; bottom: 0;
-        z-index: 5;
-
-        opacity: 0;
-        transition: opacity 250ms;
-
-        user-select: none;
-
-        border-color: var(--mud-palette-overlay-dark);
-        background-color: var(--mud-palette-overlay-dark);
-    }
-    .library_card_overlay:hover {
-        opacity: 1;
-    }
-</style>
-
-@code {
-    /// <summary>
-    /// Use <see langword="null"/> for skeleton.
-    /// </summary>
-    [Parameter, EditorRequired]
-    public IndexEntry? Entry { get; set; }
-
-    [Parameter, EditorRequired]
-    public LibraryData? LibraryData { get; set; }
-
-    private static string GetBackgroundImageCss(IndexAsset? asset)
-    {
-        if (asset is null)
-            return string.Empty;
-
-        return $"background-image: url(\"{asset.Url}\")";
-    }
+    background-position: center;
+    background-size: cover;
+    background-clip: padding-box;
 }
+
+.library_card_overlay {
+    position: absolute;
+    left: 0; right: 0; top: 0; bottom: 0;
+    z-index: 5;
+
+    opacity: 0;
+    transition: opacity 250ms;
+
+    user-select: none;
+
+    border-color: var(--mud-palette-overlay-dark);
+    background-color: var(--mud-palette-overlay-dark);
+}
+.library_card_overlay:hover {
+    opacity: 1;
+}
+</style>

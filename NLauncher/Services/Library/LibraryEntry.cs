@@ -1,4 +1,5 @@
 ﻿using NLauncher.Index.Models.Applications.Installs;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NLauncher.Services.Library;
 
@@ -17,6 +18,9 @@ public record class LibraryData
     /// If the app is not installed, it can still be in the library as a website link for example.
     /// </remarks>
     public AppInstall? Install { get; init; }
+
+    [MemberNotNullWhen(true, nameof(Install))]
+    public bool IsInstalled => Install is not null;
 
     /// <summary>
     /// The chosen version's version number or <see langword="null"/> if no version is chosen (use latest version).

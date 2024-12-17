@@ -7,35 +7,44 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(Dialog.Cancel)">Cancel</MudButton>
-        <MudButton OnClick="@(() => Close(useLatest: false))" Variant="Variant.Filled" Color="Color.Warning">
+        <MudButton OnClick="@(() => Close(UseVersion.Selected))" Variant="Variant.Filled" Color="Color.Warning">
             Use Selected Version
         </MudButton>
-        <MudButton OnClick="@(() => Close(useLatest: true))" Variant="Variant.Filled" Color="Color.Success">
+        <MudButton OnClick="@(() => Close(UseVersion.Latest))" Variant="Variant.Filled" Color="Color.Success">
             Use Latest Version
         </MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
+    enum UseVersion { Latest, Selected }
+
     [CascadingParameter]
     private MudDialogInstance Dialog { get; set; } = default!;
 
-    [Parameter, EditorRequired]
-    public required uint SelectedVersion { get; set; }
-
-    private void Close(bool useLatest)
+    private void Close(UseVersion version)
     {
-        uint? version = useLatest ? null : SelectedVersion;
         Dialog.Close(version);
     }
 
-    public static async Task<CancellableResult<uint?>> ShowAsync(IDialogService dialogService)
+    /// <summary>
+    /// Returns <paramref name="versionNumber"/> if user wants to use the selected version or <see langword="null" /> if user wants to use the latest version.
+    /// </summary>
+    public static async Task<CancellableResult<uint?>> ShowAsync(IDialogService dialogService, uint versionNumber)
     {
         IDialogReference dialog = await dialogService.ShowAsync<ConfirmInstallOlderVersionDialog>("Version override set");
         DialogResult? result = await dialog.Result;
         if (result is null || result.Canceled)
             return CancellableResult<uint?>.Cancelled();
-        else
-            return CancellableResult<uint?>.Success((uint?)result.Data);
+
+        UseVersion ver = (UseVersion)result.Data!;
+        uint? vernum = ver switch
+        {
+            UseVersion.Selected => versionNumber,
+            UseVersion.Latest => null,
+            _ => throw new InvalidOperationException("INTERNAL ERROR: Invalid version returned by dialog.")
+        };
+
+        return CancellableResult<uint?>.Success(vernum);
     }
 }

@@ -1,13 +1,12 @@
 ﻿using MudBlazor;
 using NLauncher.Code.Models;
 using NLauncher.Components.Dialogs.Installs;
-using NLauncher.Components.Dialogs.Installs.ChooseInstall;
+using NLauncher.Components.Dialogs.Installs.Choose;
 using NLauncher.Index.Enums;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Library;
 using NLauncher.Shared.AppHandlers.Base;
-using System.Diagnostics;
 
 namespace NLauncher.Services.Apps;
 public class AppInstallService
@@ -44,6 +43,14 @@ public class AppInstallService
         return result.IsSuccess;
     }
 
+    /// <summary>
+    /// Returns <see langword="true"/> if the application can be installed.
+    /// </summary>
+    /// <remarks>
+    /// Application cannot be installed if:
+    ///     - no installable version can be found
+    ///     - or the app has already been installed.
+    /// </remarks>
     public async Task<bool> CanInstall(AppManifest app)
     {
         InstallResult<AppVersion> version = await ResolveVersion(app, null, verifyIfNotLatestVersion: false);
@@ -84,7 +91,7 @@ public class AppInstallService
         // Multiple autoinstallers and any amount of manual installers
         // or zero autoinstallers and one or more manual installer.
         // Ask user to choose.
-        CancellableResult<InstallOption> chosenOption = await ChooseInstallDialog.ShowAsync(dialogService, validInstalls);
+        CancellableResult<InstallOption> chosenOption = await ChooseInstallDialog.ShowInstallAsync(dialogService, validInstalls);
         if (chosenOption.WasCancelled)
             return InstallResult.Cancelled<InstallOption>();
 
@@ -93,16 +100,21 @@ public class AppInstallService
 
     private async Task<InstallResult<AppVersion>> ResolveVersion(AppManifest app, IDialogService? dialogService, bool verifyIfNotLatestVersion)
     {
-        uint? vernum = null;
-        if (await library.HasEntryForApp(app.Uuid))
-            vernum = (await library.GetEntry(app.Uuid)).Data.VerNum;
+        LibraryEntry? libraryEntry = await library.TryGetEntry(app.Uuid);
+        if (libraryEntry?.Data.IsInstalled == true)
+            return InstallResult.Errored<AppVersion>("App has already been installed.");
 
-        if (vernum is not null && verifyIfNotLatestVersion)
+        uint? vernum = libraryEntry?.Data.VerNum;
+
+        // Ask user to confirm that they want to install an older version
+        if (vernum.HasValue && verifyIfNotLatestVersion)
         {
-            Debug.Assert(dialogService is not null);
-            CancellableResult<uint?> result = await ConfirmInstallOlderVersionDialog.ShowAsync(dialogService);
+            ArgumentNullException.ThrowIfNull(dialogService);
+            CancellableResult<uint?> result = await ConfirmInstallOlderVersionDialog.ShowAsync(dialogService, vernum.Value);
             if (result.WasCancelled)
                 return InstallResult<AppVersion>.Cancelled();
+
+            // Install the version the user chose (uint for old version, null for latest)
             vernum = result.Value;
         }
 

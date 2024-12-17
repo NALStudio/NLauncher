@@ -50,7 +50,6 @@ public partial class AppInfoCard
     private bool canAddToLibrary = false;
     private bool isAddingToLibrary = false;
 
-    private AppVersion? resolvedVersion;
     private bool canLinkPlay = false;
     private InstallOption? linkPlayPrimary = null;
     private bool canInstall = false;
@@ -70,13 +69,10 @@ public partial class AppInfoCard
         bool hasEntry = await LibraryService.HasEntryForApp(appId);
         canAddToLibrary = !hasEntry;
 
-        if (resolvedVersion is not null)
-        {
-            canLinkPlay = AppLinkPlayService.CanPlay(Entry.Manifest);
-            linkPlayPrimary = AppLinkPlayService.GetPrimaryOption();
+        canLinkPlay = AppLinkPlayService.CanPlay(Entry.Manifest);
+        linkPlayPrimary = AppLinkPlayService.GetPrimaryOption(Entry.Manifest);
 
-            canInstall = await AppInstallService.CanInstall(Entry.Manifest);
-        }
+        canInstall = await AppInstallService.CanInstall(Entry.Manifest);
 
         StateHasChanged();
     }
@@ -127,14 +123,14 @@ public partial class AppInfoCard
         };
     }
 
-    private async Task Play(bool alwaysChoose = false)
+    private async Task LinkPlay(bool alwaysChoose = false)
     {
         if (Entry is null)
             return;
         if (linkPlayPrimary.HasValue && !alwaysChoose)
             return;
 
-        await AppLinkPlayService.Play(Entry.Manifest);
+        await AppLinkPlayService.Play(Entry.Manifest, DialogService);
     }
 
     private async Task Install(bool alwaysChoose = false)

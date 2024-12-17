@@ -24,8 +24,11 @@
             <MudSkeleton Style="align-self:center;" SkeletonType="SkeletonType.Rectangle" Width="@iconSizePx" Height="@iconSizePx" />
         }
 
+        <!-- TODO: Extract this into its own component -->
         <MudStack Spacing="2">
             <MudButtonGroup FullWidth Variant="Variant.Filled" Size="Size.Large" Color="Color.Primary" DropShadow="false">
+                <!-- TODO: If game is installed, show play button instead of these two buttons -->
+
                 @if (canLinkPlay)
                 {
                     string? href = GetLinkPlayHref();
@@ -35,8 +38,8 @@
                                IconSize="Size.Small"
                                Disabled="@IsLoading"
                                Href="@href"
-                               OnClick="@(() => Play())"
-                               @oncontextmenu="@(() => Play(alwaysChoose: true))"
+                               OnClick="@(() => LinkPlay())"
+                               @oncontextmenu="@(() => LinkPlay(alwaysChoose: true))"
                                Target="_blank">
                         @GetLinkPlayText()
                     </MudButton>
@@ -104,7 +107,7 @@
                                     string? icon = GetPlatformIcon(platform);
                                     if (icon is not null)
                                     {
-                                        <MudTooltip Text="@(platform.ToString())" Placement="Placement.Top">
+                                        <MudTooltip RootStyle="height:24px" Text="@(platform.ToString())" Placement="Placement.Top">
                                             <MudIcon Icon="@icon" />
                                         </MudTooltip>
                                     }

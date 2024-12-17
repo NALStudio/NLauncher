@@ -39,14 +39,23 @@ public class LibraryService
 
     public async Task<LibraryEntry> GetEntry(Guid appId)
     {
+        LibraryEntry? entry = await TryGetEntry(appId);
+        if (!entry.HasValue)
+            throw new ArgumentException($"No entry for app '{appId}' found.");
+        return entry.Value;
+    }
+
+    public async Task<LibraryEntry?> TryGetEntry(Guid appId)
+    {
         await entriesSemaphore.WaitAsync();
         try
         {
             await TryLoadEntries();
+
             if (entries!.TryGetValue(appId, out LibraryEntry entry))
                 return entry;
             else
-                throw new ArgumentException($"No entry for app '{appId}' found.");
+                return null;
         }
         finally
         {

@@ -10,8 +10,8 @@
             @foreach (InstallOption opt in Options)
             {
                 <ChooseInstallDialogButton Handler="@(opt.Handler)"
-                                           Install="@(opt.Install)"
-                                           OnClick="@(() => Close(opt))"/>
+                Install="@(opt.Install)"
+                OnClick="@(() => Close(opt))"/>
             }
         </MudStack>
     </DialogContent>
@@ -29,7 +29,19 @@
         Dialog!.Close(chosenOption);
     }
 
-    public static async Task<CancellableResult<InstallOption>> ShowAsync(IDialogService dialogService, IEnumerable<InstallOption> options)
+    /// <summary>
+    /// Run <see cref="ShowAsync" /> with default "Choose Install" title.
+    /// </summary>
+    public static async Task<CancellableResult<InstallOption>> ShowInstallAsync(IDialogService dialogService, IEnumerable<InstallOption> options)
+        => await ShowAsync(dialogService, "Choose Install", options);
+
+    /// <summary>
+    /// Run <see cref="ShowAsync" /> with default "Choose Website" title.
+    /// </summary>
+    public static async Task<CancellableResult<InstallOption>> ShowLinkAsync(IDialogService dialogService, IEnumerable<InstallOption> options)
+        => await ShowAsync(dialogService, "Choose Website", options);
+
+    public static async Task<CancellableResult<InstallOption>> ShowAsync(IDialogService dialogService, string title, IEnumerable<InstallOption> options)
     {
         DialogOptions dialogOptions = new()
         {
@@ -42,7 +54,7 @@
             { x => x.Options, optionsArray }
         };
 
-        IDialogReference dialog = await dialogService.ShowAsync<ChooseInstallDialog>("Choose Install", dialogParameters, dialogOptions);
+        IDialogReference dialog = await dialogService.ShowAsync<ChooseInstallDialog>(title, dialogParameters, dialogOptions);
         DialogResult? result = await dialog.Result;
         if (result is null || result.Canceled)
             return CancellableResult<InstallOption>.Cancelled();
