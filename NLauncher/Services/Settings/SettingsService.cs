@@ -27,7 +27,7 @@ public partial class SettingsService
         }
     }
 
-    private ILogger<SettingsService> logger;
+    private readonly ILogger<SettingsService> logger;
     private readonly IStorageService storageService;
     public SettingsService(ILogger<SettingsService> logger, IStorageService storageService)
     {
