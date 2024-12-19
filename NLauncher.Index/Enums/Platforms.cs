@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace NLauncher.Index.Enums;
 
@@ -35,6 +29,16 @@ public static class PlatformsEnum
         }
     }
 
+    /// <summary>
+    /// Gets the current platform that the application is running in.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The current platform doesn't dictate what games can be played on this specific platform
+    /// as we can play <see cref="Platforms.Browser"/> games on <see cref="Platforms.Windows"/> for example.
+    /// </para>
+    /// <para>The AUTOMATIC installing of an application is limited to the current platform though.</para>
+    /// </remarks>
     public static Platforms GetCurrentPlatform()
     {
         if (OperatingSystem.IsWindows())

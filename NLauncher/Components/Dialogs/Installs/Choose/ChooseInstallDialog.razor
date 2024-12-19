@@ -1,17 +1,28 @@
-﻿@using NLauncher.Code.Models
+﻿@using NLauncher.Code
+@using NLauncher.Code.Models
+@using NLauncher.Index.Enums
 @using NLauncher.Index.Models.Applications
 @using NLauncher.Index.Models.Applications.Installs
-@using NLauncher.Shared.AppHandlers.Base
 @using System.Collections.Immutable
 
 <MudDialog>
     <DialogContent>
         <MudStack Class="mb-2">
-            @foreach (InstallOption opt in Options)
+            @if (ShowInstallNLauncher)
             {
-                <ChooseInstallDialogButton Handler="@(opt.Handler)"
-                Install="@(opt.Install)"
-                OnClick="@(() => Close(opt))"/>
+                <MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="Variant.Outlined" EndIcon="@(Icons.Material.Rounded.OpenInNew)" Href="@(NLauncherConstants.LatestReleaseUrl)" Target="_blank">
+                    Install Using NLauncher
+                </MudButton>
+            }
+
+            @{
+                Platforms currentPlatform = PlatformsEnum.GetCurrentPlatform();
+                foreach (AppInstall install in Options)
+                {
+                    <ChooseInstallDialogButton Install="@(install)" 
+                                               IsAutomatic="@(install.SupportsAutomaticInstall(currentPlatform))"
+                                               OnClick="@(() => Close(install))"/>
+                }
             }
         </MudStack>
     </DialogContent>
@@ -22,9 +33,12 @@
     private MudDialogInstance? Dialog { get; set; }
 
     [Parameter, EditorRequired]
-    public required ImmutableArray<InstallOption> Options { get; set; }
+    public required ImmutableArray<AppInstall> Options { get; set; }
 
-    private void Close(InstallOption chosenOption)
+    [Parameter]
+    public bool ShowInstallNLauncher { get; set; } = false;
+
+    private void Close(AppInstall chosenOption)
     {
         Dialog!.Close(chosenOption);
     }
@@ -32,23 +46,26 @@
     /// <summary>
     /// Run <see cref="ShowAsync" /> with default "Choose Install" title.
     /// </summary>
-    public static async Task<CancellableResult<InstallOption>> ShowInstallAsync(IDialogService dialogService, IEnumerable<InstallOption> options)
-        => await ShowAsync(dialogService, "Choose Install", options);
+    public static async Task<CancellableResult<AppInstall>> ShowInstallAsync(IDialogService dialogService, IEnumerable<AppInstall> options)
+    {
+        bool showInstallNLauncher = OperatingSystem.IsBrowser();
+        return await ShowAsync(dialogService, "Choose Install", options, showInstallNLauncher: showInstallNLauncher);
+    }
 
     /// <summary>
     /// Run <see cref="ShowAsync" /> with default "Choose Website" title.
     /// </summary>
-    public static async Task<CancellableResult<InstallOption>> ShowLinkAsync(IDialogService dialogService, IEnumerable<InstallOption> options)
+    public static async Task<CancellableResult<AppInstall>> ShowLinkAsync(IDialogService dialogService, IEnumerable<AppInstall> options)
         => await ShowAsync(dialogService, "Choose Website", options);
 
-    public static async Task<CancellableResult<InstallOption>> ShowAsync(IDialogService dialogService, string title, IEnumerable<InstallOption> options)
+    public static async Task<CancellableResult<AppInstall>> ShowAsync(IDialogService dialogService, string title, IEnumerable<AppInstall> options, bool showInstallNLauncher = false)
     {
         DialogOptions dialogOptions = new()
         {
             CloseButton = true
         };
 
-        ImmutableArray<InstallOption> optionsArray = options.ToImmutableArray();
+        ImmutableArray<AppInstall> optionsArray = options.ToImmutableArray();
         DialogParameters<ChooseInstallDialog> dialogParameters = new()
         {
             { x => x.Options, optionsArray }
@@ -57,8 +74,8 @@
         IDialogReference dialog = await dialogService.ShowAsync<ChooseInstallDialog>(title, dialogParameters, dialogOptions);
         DialogResult? result = await dialog.Result;
         if (result is null || result.Canceled)
-            return CancellableResult<InstallOption>.Cancelled();
+            return CancellableResult<AppInstall>.Cancelled();
         else
-            return CancellableResult<InstallOption>.Success((InstallOption)result.Data!);
+            return CancellableResult<AppInstall>.Success((AppInstall)result.Data!);
     }
 }

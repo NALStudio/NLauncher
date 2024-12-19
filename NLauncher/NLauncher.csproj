@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NLauncher.Shared\NLauncher.Shared.csproj" />
+    <ProjectReference Include="..\NLauncher.Index\NLauncher.Index.csproj" />
   </ItemGroup>
 
 </Project>

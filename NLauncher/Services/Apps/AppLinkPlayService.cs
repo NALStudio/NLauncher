@@ -1,44 +1,60 @@
 ﻿using MudBlazor;
-using NLauncher.Code.Models;
 using NLauncher.Components.Dialogs.Installs.Choose;
 using NLauncher.Index.Models.Applications;
+using NLauncher.Index.Models.Applications.Installs;
 
 namespace NLauncher.Services.Apps;
 public class AppLinkPlayService
 {
-    private readonly AppHandlerService appHandlers;
-
-    public AppLinkPlayService(AppHandlerService appHandlers)
-    {
-        this.appHandlers = appHandlers;
-    }
-
     /// <summary>
     /// Returns an href to the primary website if one can be determined from the link handler options.
     /// </summary>
-    public InstallOption? GetPrimaryOption(AppManifest app)
+    public AppInstall? TryGetPrimaryOption(AppManifest app)
     {
-        // Take first option or return null if no options available
-        // I wrote this manually since LINQ FirstOrDefault returns default instead of null.
-        foreach (InstallOption option in GetOptions(app))
-            return option;
+        AppInstall[] installs = GetLinkPlayInstalls(app).ToArray();
+
+        WebsiteAppInstall? webApp = GetSingleOrNull<WebsiteAppInstall>(installs);
+        if (webApp is not null)
+            return webApp;
+
+        StoreLinkAppInstall? storeLink = GetSingleOrNull<StoreLinkAppInstall>(installs);
+        if (storeLink is not null)
+            return storeLink;
+
         return null;
+    }
+
+    private static T? GetSingleOrNull<T>(ICollection<AppInstall> installs) where T : AppInstall
+    {
+        T? value = null;
+        foreach (AppInstall install in installs)
+        {
+            if (install is T ins)
+            {
+                if (value is null)
+                    value = ins;
+                else
+                    return null;
+            }
+        }
+
+        return value;
     }
 
     public async Task Play(AppManifest app, IDialogService dialogService)
     {
-        _ = await ChooseInstallDialog.ShowLinkAsync(dialogService, GetOptions(app));
+        _ = await ChooseInstallDialog.ShowLinkAsync(dialogService, GetLinkPlayInstalls(app));
     }
 
-    public bool CanPlay(AppManifest app) => GetOptions(app).Any();
+    public bool CanPlay(AppManifest app) => GetLinkPlayInstalls(app).Any();
 
-    private IEnumerable<InstallOption> GetOptions(AppManifest app)
+    private static IEnumerable<AppInstall> GetLinkPlayInstalls(AppManifest app)
     {
         // Link play always uses the latest version
         AppVersion? version = app.GetLatestVersion();
         if (version is null)
-            return Enumerable.Empty<InstallOption>();
+            return Enumerable.Empty<AppInstall>();
 
-        return InstallOption.EnumerateFromVersion(version, appHandlers.LinkAppHandlers);
+        return version.Installs.Where(static ins => ins is WebsiteAppInstall or StoreLinkAppInstall);
     }
 }

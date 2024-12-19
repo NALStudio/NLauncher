@@ -1,10 +1,10 @@
 ﻿using NLauncher.Index.Enums;
+using NLauncher.Index.Helpers;
 using NLauncher.Index.Models;
 using NLauncher.Index.Models.Applications;
 using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
 using NLauncher.IndexManager.Models;
-using NLauncher.Shared.Helpers;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Rendering;

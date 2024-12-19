@@ -1,64 +1,64 @@
-using NLauncher.Windows.Run;
+using NLauncher.Windows.Commands;
+using NLauncher.Windows.Commands.Install;
+using Spectre.Console.Cli;
+using System.Net.Http.Headers;
 
 namespace NLauncher.Windows;
 
 internal static class Program
 {
+    public static HttpClient HttpClient { get; } = CreateHttp();
+
     /// <summary>
     ///  The main entry point for the application.
     /// </summary>
     [STAThread]
-    private static async Task Main(string[] args)
-    {
-        bool wasRun = await TryRunFromArgs(args);
-
-        if (!wasRun)
-        {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
-            ApplicationConfiguration.Initialize();
-            Application.Run(new MainPage());
-        }
-    }
-
-    private static async ValueTask<bool> TryRunFromArgs(string[] args)
+    private static int Main(string[] args)
     {
         if (args.Length < 1)
-            return false;
-
-        string cmd = args[0];
-        string[] argsLeft = args[1..];
-        return cmd switch
         {
-            "rungameid" => await TryRunApp(argsLeft),
-            "install" => await TryRunInstall(argsLeft),
-            _ => false,
-        };
+            RunWinForms();
+            return 0;
+        }
+        else
+        {
+            return RunConsole(args);
+        }
     }
 
-    private static async ValueTask<bool> TryRunInstall(string[] args)
+    private static void RunWinForms()
     {
-
+        // To customize application configuration such as set high DPI settings or default font,
+        // see https://aka.ms/applicationconfiguration.
+        ApplicationConfiguration.Initialize();
+        Application.Run(new MainPage());
     }
 
-    private static async ValueTask<bool> TryRunApp(string[] args)
+    /// <summary>
+    /// This method blocks the thread until all tasks are complete.
+    /// </summary>
+    private static int RunConsole(string[] args)
     {
-        if (args.Length < 1)
-            return false;
+        CommandApp app = new();
 
-        if (!Guid.TryParse(args[0], out Guid appId))
-            return false;
-
-        try
+        app.Configure(config =>
         {
-            await RunApp.Run(appId);
-        }
-        catch (Exception e)
-        {
-            // TODO: Handle error
-            throw;
-        }
+            config.AddCommand<InstallCommand>("install");
+            config.AddCommand<RunCommand>("run");
+        });
 
-        return true;
+        return app.Run(args);
+    }
+
+    private static HttpClient CreateHttp()
+    {
+        HttpClient http = new();
+        http.DefaultRequestHeaders.UserAgent.Add(
+            new ProductInfoHeaderValue(
+                ProductHeaderValue.Parse(Constants.UserAgent)
+            )
+        );
+
+        return http;
     }
 }

@@ -1,9 +1,4 @@
 ﻿using NLauncher.Index.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NLauncher.Index.Models.Applications.Installs;
 public class BinaryAppInstall : AppInstall
@@ -13,5 +8,8 @@ public class BinaryAppInstall : AppInstall
     public required string DownloadHash { get; init; }
     public required string ExecutablePath { get; init; }
 
+    protected override Uri Href => DownloadUrl;
     public override Platforms GetSupportedPlatforms() => Platform;
+
+    public override bool SupportsAutomaticInstall(Platforms platform) => Platform.HasFlag(platform);
 }

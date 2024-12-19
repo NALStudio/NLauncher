@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using NLauncher.Code.Models;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
 using NLauncher.Services.Apps;
 using NLauncher.Services.Library;
-using NLauncher.Shared.AppHandlers.Base;
 
 namespace NLauncher.Components.Cards;
 public partial class LibraryCardItem
@@ -53,11 +51,7 @@ public partial class LibraryCardItem
         isInstalled = libraryEntry?.Data.IsInstalled == true;
 
         if (LinkPlayService.CanPlay(app))
-        {
-            InstallOption? primaryLink = LinkPlayService.GetPrimaryOption(app);
-            if (primaryLink is InstallOption opt)
-                linkPlayHref = ((LinkAppHandler)opt.Handler).GetHref(opt.Install);
-        }
+            linkPlayHref = LinkPlayService.TryGetPrimaryOption(app)?.GetHref();
 
         StateHasChanged();
     }

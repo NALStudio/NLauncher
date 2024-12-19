@@ -4,8 +4,6 @@
 @using NLauncher.Index.Models.Index
 @using System.Diagnostics.CodeAnalysis
 @using NLauncher.Services
-@using NLauncher.Shared.AppHandlers
-@using NLauncher.Shared.AppHandlers.Base
 @using System.Collections.Immutable
 
 <MudPaper Class="pa-3" Style="@Style" Outlined Elevation="0">
@@ -31,7 +29,7 @@
 
                 @if (canLinkPlay)
                 {
-                    string? href = GetLinkPlayHref();
+                    string? href = linkPlayPrimary?.GetHref();
 
                     <!-- Do not wrap this button in a parent element as it's a part of MudButtonGroup -->
                     <MudButton EndIcon="@(href is not null ? Icons.Material.Rounded.OpenInNew : null)"

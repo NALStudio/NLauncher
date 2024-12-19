@@ -5,7 +5,6 @@ using NLauncher.Services.Apps;
 using NLauncher.Services.Index;
 using NLauncher.Services.Library;
 using NLauncher.Services.Settings;
-using NLauncher.Shared.AppHandlers.Base;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NLauncher.Services;
@@ -19,17 +18,13 @@ public static class NLauncherServices
         services.AddSingleton<SettingsService>();
         services.AddScoped<IndexService>();
         services.AddSingleton<LibraryService>();
+
+        services.AddSingleton<AppInstallService>();
+        services.AddSingleton<AppLinkPlayService>();
     }
 
     public static void AddStorage<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TStorage>(IServiceCollection services) where TStorage : class, IStorageService
     {
         services.AddSingleton<IStorageService, TStorage>();
-    }
-
-    public static void AddAppHandling(IServiceCollection services, params IEnumerable<AppHandler> handlers)
-    {
-        services.AddSingleton(new AppHandlerService(handlers));
-        services.AddSingleton<AppInstallService>();
-        services.AddSingleton<AppLinkPlayService>();
     }
 }

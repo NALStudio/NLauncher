@@ -1,70 +1,58 @@
 ﻿@using NLauncher.Code
 @using NLauncher.Index.Models.Applications.Installs
-@using NLauncher.Shared.AppHandlers.Base
-@using NLauncher.Shared.AppHandlers.Shared
 @using System.Diagnostics
 
 @inject IDialogService DialogService
 
-<MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="@GetVariant()" StartIcon="@GetButtonIcon()" Href="@href" Target="_blank" OnClick="@(() => OnClick?.Invoke())">
+<MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="@GetVariant()" StartIcon="@GetStartIcon()" EndIcon="@GetEndIcon()" Href="@(href?.ToString())" Target="_blank" OnClick="@(() => OnClick?.Invoke())">
     @GetButtonText()
 </MudButton>
 
 @code {
     [Parameter, EditorRequired]
-    public required AppHandler Handler { get; set; }
-
-    [Parameter, EditorRequired]
     public required AppInstall Install { get; set; }
 
     [Parameter]
-    public bool IsRecommended { get; set; } = false;
+    public bool IsAutomatic { get; set; } = false;
 
     [Parameter]
     public Action? OnClick { get; set; }
 
-    private Variant GetVariant() => IsRecommended ? Variant.Outlined : Variant.Text;
+    private Variant GetVariant() => IsAutomatic ? Variant.Outlined : Variant.Text;
 
-    private string? href;
+    private Uri? href;
 
     protected override void OnParametersSet()
     {
-        href = GetHref(Handler, Install);
+        href = Install.GetHrefUri();
     }
 
-    private string? GetButtonIcon()
+    private string? GetEndIcon()
     {
-        return Handler switch
+        if (href is not null)
+            return Icons.Material.Rounded.OpenInNew;
+
+        return null;
+    }
+
+    private string? GetStartIcon()
+    {
+        return Install switch
         {
-            InstallAppHandler => Icons.Material.Rounded.Download,
-            LinkAppHandler => Icons.Material.Rounded.OpenInNew,
-            ManualInstallAppHandler => Icons.Material.Rounded.InstallDesktop,
+            BinaryAppInstall => Icons.Material.Rounded.Download,
+            StoreLinkAppInstall => Icons.Material.Rounded.Storefront,
+            WebsiteAppInstall => Icons.Material.Rounded.Language,
             _ => null
         };
     }
 
     private string GetButtonText()
     {
-        return Handler switch
+        return Install switch
         {
-            InstallAppHandler => "Automatic Install",
-            LinkAppHandler lh => $"Open In {lh.GetUrl(Install).Host}",
-            ManualInstallAppHandler mi => $"Manual Install",
-            RecommendNLauncherAppHandler => "Install Using NLauncher",
+            BinaryAppInstall => IsAutomatic ? "Automatic Install" : "Manual Install",
+            StoreLinkAppInstall or WebsiteAppInstall => $"Open In {href?.Host ?? "<error>"}",
             _ => "<error>"
         };
-    }
-
-    private static string? GetHref(AppHandler handler, AppInstall install)
-    {
-        if (handler is LinkAppHandler lh)
-            return lh.GetHref(install);
-        if (handler is RecommendNLauncherAppHandler)
-            return NLauncherConstants.LatestReleaseUrl;
-
-        if (handler is ManualInstallAppHandler mih)
-            return mih.GetDownloadLink(install);
-
-        return null;
     }
 }

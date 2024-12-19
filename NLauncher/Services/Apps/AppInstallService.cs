@@ -6,7 +6,6 @@ using NLauncher.Index.Enums;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Library;
-using NLauncher.Shared.AppHandlers.Base;
 
 namespace NLauncher.Services.Apps;
 public class AppInstallService
@@ -23,12 +22,10 @@ public class AppInstallService
         public bool AlwaysAskInstallMethod { get; init; } = false;
     }
 
-    private readonly AppHandlerService appHandlers;
     private readonly LibraryService library;
 
-    public AppInstallService(AppHandlerService appHandlers, LibraryService library)
+    public AppInstallService(LibraryService library)
     {
-        this.appHandlers = appHandlers;
         this.library = library;
     }
 
@@ -57,7 +54,7 @@ public class AppInstallService
         if (!version.IsSuccess)
             return false;
 
-        return InstallOption.EnumerateFromVersion(version.Value, appHandlers.AllHandlersExceptLink).Any();
+        return version.Value.Installs.Any();
     }
 
     private async Task<InstallResult> InternalInstall(AppManifest app, AppInstallConfig config)
@@ -66,34 +63,32 @@ public class AppInstallService
         if (!version.IsSuccess)
             return InstallResult.Failed(version);
 
-        InstallResult<InstallOption> resolvedInstall = await ResolveInstall(version.Value, config.DialogService, alwaysAskInstallMethod: config.AlwaysAskInstallMethod);
+        InstallResult<AppInstall> resolvedInstall = await ResolveInstall(version.Value, config.DialogService, alwaysAskInstallMethod: config.AlwaysAskInstallMethod);
         if (!resolvedInstall.IsSuccess)
             return InstallResult.Failed(resolvedInstall);
 
-        (AppHandler resolvedHandler, AppInstall install) = resolvedInstall.Value;
-        if (resolvedHandler is not InstallAppHandler handler)
+        AppInstall install = resolvedInstall.Value;
+        if (install is not BinaryAppInstall)
             return InstallResult.Cancelled();
 
         await config.DialogService.ShowMessageBox(null, "App installing has not yet been implemented.");
         return InstallResult.Cancelled();
     }
 
-    private async ValueTask<InstallResult<InstallOption>> ResolveInstall(AppVersion version, IDialogService dialogService, bool alwaysAskInstallMethod)
+    private async ValueTask<InstallResult<AppInstall>> ResolveInstall(AppVersion version, IDialogService dialogService, bool alwaysAskInstallMethod)
     {
-        InstallOption[] autoInstalls = InstallOption.EnumerateFromVersion(version, appHandlers.InstallAppHandlers).ToArray();
-        if (autoInstalls.Length == 1 && !alwaysAskInstallMethod) // If only one autoinstaller, use it automatically
-            return InstallResult.Success(autoInstalls[0]);
+        Platforms currentPlatform = PlatformsEnum.GetCurrentPlatform();
 
-        InstallOption[] validInstalls = InstallOption.EnumerateFromVersion(version, appHandlers.AllHandlersExceptLink).ToArray();
-        if (validInstalls.Length < 1) // if no installers, error
-            return InstallResult.Errored<InstallOption>($"This application version is not supported on {PlatformsEnum.GetCurrentPlatform()}.");
+        AppInstall[] autoInstalls = version.Installs.Where(ins => ins.SupportsAutomaticInstall(currentPlatform)).ToArray();
+        if (autoInstalls.Length == 1 && !alwaysAskInstallMethod)
+            return InstallResult.Success(autoInstalls[0]);
 
         // Multiple autoinstallers and any amount of manual installers
         // or zero autoinstallers and one or more manual installer.
         // Ask user to choose.
-        CancellableResult<InstallOption> chosenOption = await ChooseInstallDialog.ShowInstallAsync(dialogService, validInstalls);
+        CancellableResult<AppInstall> chosenOption = await ChooseInstallDialog.ShowInstallAsync(dialogService, version.Installs);
         if (chosenOption.WasCancelled)
-            return InstallResult.Cancelled<InstallOption>();
+            return InstallResult.Cancelled<AppInstall>();
 
         return InstallResult.Success(chosenOption.Value);
     }

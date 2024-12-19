@@ -1,15 +1,12 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
-using NLauncher.Code.Models;
 using NLauncher.Index.Enums;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Index.Models.Index;
 using NLauncher.Services.Apps;
 using NLauncher.Services.Library;
-using NLauncher.Shared.AppHandlers.Base;
-using NLauncher.Shared.AppHandlers.Shared;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
@@ -25,9 +22,6 @@ public partial class AppInfoCard
 
     [Inject]
     public AppInstallService AppInstallService { get; init; } = default!;
-
-    [Inject]
-    public AppHandlerService AppHandlerService { get; init; } = default!;
 
     [Inject]
     public LibraryService LibraryService { get; init; } = default!;
@@ -51,7 +45,7 @@ public partial class AppInfoCard
     private bool isAddingToLibrary = false;
 
     private bool canLinkPlay = false;
-    private InstallOption? linkPlayPrimary = null;
+    private AppInstall? linkPlayPrimary = null;
     private bool canInstall = false;
 
     protected override async Task OnParametersSetAsync()
@@ -70,7 +64,7 @@ public partial class AppInfoCard
         canAddToLibrary = !hasEntry;
 
         canLinkPlay = AppLinkPlayService.CanPlay(Entry.Manifest);
-        linkPlayPrimary = AppLinkPlayService.GetPrimaryOption(Entry.Manifest);
+        linkPlayPrimary = AppLinkPlayService.TryGetPrimaryOption(Entry.Manifest);
 
         canInstall = await AppInstallService.CanInstall(Entry.Manifest);
 
@@ -100,26 +94,18 @@ public partial class AppInfoCard
         }
     }
 
-    private string? GetLinkPlayHref()
-    {
-        if (linkPlayPrimary is InstallOption opt)
-            return ((LinkAppHandler)opt.Handler).GetHref(opt.Install);
-        else
-            return null;
-    }
-
     private string GetLinkPlayText()
     {
         const string playNow = "Play Now";
 
-        if (!linkPlayPrimary.HasValue)
+        if (linkPlayPrimary is null)
             return playNow;
 
-        return linkPlayPrimary.Value.Handler switch
+        return linkPlayPrimary switch
         {
-            WebsiteLinkAppHandler => playNow,
-            StoreLinkAppHandler => "Open Store Page",
-            _ => "Open External Link"
+            WebsiteAppInstall => playNow,
+            StoreLinkAppInstall => "Open Store Page",
+            _ => "Open External Link" // default case in case we forget to add a message to new link plays
         };
     }
 
@@ -127,7 +113,7 @@ public partial class AppInfoCard
     {
         if (Entry is null)
             return;
-        if (linkPlayPrimary.HasValue && !alwaysChoose)
+        if (linkPlayPrimary is not null && !alwaysChoose)
             return;
 
         await AppLinkPlayService.Play(Entry.Manifest, DialogService);

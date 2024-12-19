@@ -3,9 +3,7 @@ using Microsoft.AspNetCore.Components.WebView.WindowsForms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Web.WebView2.Core;
 using NLauncher.Services;
-using NLauncher.Shared.AppHandlers.Base;
 using NLauncher.Web.Services;
-using System.Net.Http.Headers;
 
 namespace NLauncher.Windows;
 
@@ -54,28 +52,15 @@ public partial class MainPage : Form
 
         services.AddWindowsFormsBlazorWebView();
 
-        services.AddScoped(_ => CreateHttp());
+        services.AddScoped(_ => Program.HttpClient);
 
         NLauncherServices.AddDefault(services);
         NLauncherServices.AddStorage<WindowsStorageService>(services);
-        NLauncherServices.AddAppHandling(services, AppHandler.WindowsHandlers);
 
 #if DEBUG
         services.AddBlazorWebViewDeveloperTools();
 #endif
 
         return services.BuildServiceProvider();
-    }
-
-    private static HttpClient CreateHttp()
-    {
-        HttpClient http = new();
-        http.DefaultRequestHeaders.UserAgent.Add(
-            new ProductInfoHeaderValue(
-                ProductHeaderValue.Parse(Constants.UserAgent)
-            )
-        );
-
-        return http;
     }
 }

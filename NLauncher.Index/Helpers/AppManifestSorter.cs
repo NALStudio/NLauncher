@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NLauncher.Shared.Helpers;
+namespace NLauncher.Index.Helpers;
 public static class AppManifestSorter
 {
     // We don't inherit from Comparer<AppManifest> since it throws an error that AppManifest must define IComparable
