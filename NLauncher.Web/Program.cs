@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using NLauncher.Services;
-using NLauncher.Shared.AppHandlers.Base;
 using NLauncher.Web.Services;
 using System.Runtime.Versioning;
 
@@ -20,7 +19,6 @@ public static class Program
 
         NLauncherServices.AddDefault(builder.Services);
         NLauncherServices.AddStorage<WebStorageService>(builder.Services);
-        NLauncherServices.AddAppHandling(builder.Services, AppHandler.WebHandlers);
 
         await builder.Build().RunAsync();
     }

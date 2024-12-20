@@ -89,6 +89,7 @@ File layout:
                 // Empty list means that this app version cannot be installed
                 {
                     "type": "string", // binary | msix | website | storelink (binary_diff type file format not yet determined)
+                    "id": "XXXX", // where XXXX is a random 4 character hex value representing an uint16. Install ids need to be unique on their specific version (the same id can be used in multiple installs if they are located in different versions). It's probably easiest to just randomly generate an id during install creation.
                 #IF BINARY
                     "platform": "string", // windows | browser | android | ..., most commonly windows
                     "download_url": "string", // URL of the zip (other zipping formats might be supported later?)

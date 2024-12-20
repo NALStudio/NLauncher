@@ -3,6 +3,7 @@ using NLauncher.Code.Models;
 using NLauncher.Components.Dialogs.Installs;
 using NLauncher.Components.Dialogs.Installs.Choose;
 using NLauncher.Index.Enums;
+using NLauncher.Index.Models;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Library;
@@ -70,6 +71,8 @@ public class AppInstallService
         AppInstall install = resolvedInstall.Value;
         if (install is not BinaryAppInstall)
             return InstallResult.Cancelled();
+
+        InstallGuid installId = new(app.Uuid, version.Value.VerNum, resolvedInstall.Value.Id);
 
         await config.DialogService.ShowMessageBox(null, "App installing has not yet been implemented.");
         return InstallResult.Cancelled();

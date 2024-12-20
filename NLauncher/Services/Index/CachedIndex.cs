@@ -107,8 +107,8 @@ public partial class IndexService
             string content64 = headerContentPair[1];
 
             string[] headerValues = header.Split(HeaderValuesDelimiter);
-            // FIXME: Verify headerValues array length
-
+            if (headerValues.Length < 2)
+                return null;
             string expiresTimestampValue = headerValues[0];
             string hash64 = headerValues[1];
 

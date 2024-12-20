@@ -19,9 +19,13 @@
                 Platforms currentPlatform = PlatformsEnum.GetCurrentPlatform();
                 foreach (AppInstall install in Options)
                 {
-                    <ChooseInstallDialogButton Install="@(install)" 
-                                               IsAutomatic="@(install.SupportsAutomaticInstall(currentPlatform))"
-                                               OnClick="@(() => Close(install))"/>
+                    if (install.SupportsAutomaticInstall(currentPlatform))
+                    {
+                        // If automatic install is supported, provide both options to user
+                        <ChooseInstallDialogButton Install="@(install)" IsAutomatic="true" OnClick="@(nav => Close(nav, install))"/>
+                    }
+
+                    <ChooseInstallDialogButton Install="@(install)" IsAutomatic="false" OnClick="@(nav => Close(nav, install))"/>
                 }
             }
         </MudStack>
@@ -38,9 +42,12 @@
     [Parameter]
     public bool ShowInstallNLauncher { get; set; } = false;
 
-    private void Close(AppInstall chosenOption)
+    private void Close(bool hrefNavigated, AppInstall chosenOption)
     {
-        Dialog!.Close(chosenOption);
+        if (!hrefNavigated)
+            Dialog!.Close(chosenOption);
+        else
+            Dialog!.Cancel();
     }
 
     /// <summary>

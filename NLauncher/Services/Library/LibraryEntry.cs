@@ -1,4 +1,4 @@
-﻿using NLauncher.Index.Models.Applications.Installs;
+﻿using NLauncher.Index.Models;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NLauncher.Services.Library;
@@ -12,12 +12,12 @@ public readonly record struct LibraryEntry(Guid AppId, long LastUpdatedTimestamp
 public record class LibraryData
 {
     /// <summary>
-    /// The install of the application or <see langword="null"/> if the application has not yet been installed.
+    /// The install id of the application or <see langword="null"/> if the application has not yet been installed.
     /// </summary>
     /// <remarks>
     /// If the app is not installed, it can still be in the library as a website link for example.
     /// </remarks>
-    public AppInstall? Install { get; init; }
+    public InstallGuid? Install { get; init; }
 
     [MemberNotNullWhen(true, nameof(Install))]
     public bool IsInstalled => Install is not null;

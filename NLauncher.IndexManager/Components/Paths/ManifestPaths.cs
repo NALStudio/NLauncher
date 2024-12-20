@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Globalization;
 
 namespace NLauncher.IndexManager.Components.Paths;
+
 internal sealed class ManifestPaths : DirectoryPathProvider
 {
     public string AssetsDirectory { get; }
@@ -24,4 +21,7 @@ internal sealed class ManifestPaths : DirectoryPathProvider
     {
         return System.IO.Directory.EnumerateFiles(Directory, "*.png");
     }
+
+    public string VersionFile(uint vernum) => Path.Join(Directory, "version_" + vernum.ToString(CultureInfo.InvariantCulture) + ".json");
+    public IEnumerable<string> EnumerateVersions() => System.IO.Directory.EnumerateFiles(Directory, "version_*.json");
 }

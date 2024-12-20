@@ -10,10 +10,14 @@ using System.Diagnostics.CodeAnalysis;
 namespace NLauncher.Services;
 public static class NLauncherServices
 {
-    public static void AddDefault(IServiceCollection services)
+    // includeMudBlazor is not currently used, but implemented in case it is needed in the future
+    public static void AddDefault(IServiceCollection services, bool includeMudBlazor = true)
     {
-        services.AddMudServices();
-        services.AddMudMarkdownServices();
+        if (includeMudBlazor)
+        {
+            services.AddMudServices();
+            services.AddMudMarkdownServices();
+        }
 
         services.AddSingleton<SettingsService>();
         services.AddScoped<IndexService>();

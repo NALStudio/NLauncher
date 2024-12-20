@@ -9,19 +9,22 @@ using System.Text.Json;
 
 namespace NLauncher.Services.Index;
 
+/// <summary>
+/// <see cref="IndexService"/> is multiprocessing safe-ish.
+/// </summary>
 public partial class IndexService : IDisposable
 {
-    private readonly ILogger<IndexService> logger;
+    private readonly ILogger<IndexService>? logger;
     private readonly HttpClient http;
     private readonly IStorageService storageService;
-    public IndexService(ILogger<IndexService> logger, HttpClient http, IStorageService storageService)
+    public IndexService(ILogger<IndexService>? logger, HttpClient http, IStorageService storageService)
     {
         this.logger = logger;
         this.http = http;
         this.storageService = storageService;
     }
 
-    private readonly object cachedLock = new();
+    private readonly Lock cachedLock = new();
     private CachedIndex? cached;
 
     private readonly SemaphoreSlim loadLock = new(1, 1);
@@ -84,7 +87,7 @@ public partial class IndexService : IDisposable
         CachedIndex? cached = await LoadIndexFromCache();
         if (IsCacheValid(cached))
         {
-            logger.LogInformation("Loaded index from cache.");
+            logger?.LogInformation("Loaded index from cache.");
             return cached.Value;
         }
 
@@ -92,7 +95,7 @@ public partial class IndexService : IDisposable
         IndexManifest fetched = await FetchIndexFromGitHub();
         CachedIndex cachedFetch = await SaveIndexToCache(fetched);
 
-        logger.LogInformation("Fetched index from GitHub.");
+        logger?.LogInformation("Fetched index from GitHub.");
         Debug.Assert(IsCacheValid(cachedFetch));
         return cachedFetch;
     }
@@ -125,7 +128,19 @@ public partial class IndexService : IDisposable
 
     private async ValueTask<CachedIndex?> LoadIndexFromCache()
     {
-        string serialized = await storageService.ReadAll(NLauncherConstants.FileNames.IndexCache);
+        string? serialized;
+        try
+        {
+            // Use try-catch so that if NLauncher.Windows accesses the index twice simultaneously (as it uses multiprocessing)
+            // it errors out and fetches from the internet instead of crashing completely
+            serialized = await storageService.ReadAll(NLauncherConstants.FileNames.IndexCache);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError(ex, "Could not read index cache.");
+            serialized = null;
+        }
+
         if (string.IsNullOrEmpty(serialized))
             return null;
 
@@ -140,11 +155,11 @@ public partial class IndexService : IDisposable
         catch (Exception e)
         {
             deserialized = null;
-            logger.LogError("Index deserialization failed with error:\n{}", e);
+            logger?.LogError("Index deserialization failed with error:\n{}", e);
         }
 
         if (!deserialized.HasValue)
-            logger.LogWarning("Cache value could not be deserialized.");
+            logger?.LogWarning("Cache value could not be deserialized.");
         return deserialized;
     }
 

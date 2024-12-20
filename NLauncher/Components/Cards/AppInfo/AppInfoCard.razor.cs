@@ -94,21 +94,6 @@ public partial class AppInfoCard
         }
     }
 
-    private string GetLinkPlayText()
-    {
-        const string playNow = "Play Now";
-
-        if (linkPlayPrimary is null)
-            return playNow;
-
-        return linkPlayPrimary switch
-        {
-            WebsiteAppInstall => playNow,
-            StoreLinkAppInstall => "Open Store Page",
-            _ => "Open External Link" // default case in case we forget to add a message to new link plays
-        };
-    }
-
     private async Task LinkPlay(bool alwaysChoose = false)
     {
         if (Entry is null)

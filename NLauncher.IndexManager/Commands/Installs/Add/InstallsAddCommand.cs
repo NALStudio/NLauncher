@@ -2,7 +2,6 @@
 using NLauncher.Index.Json;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
-using NLauncher.Index.Models.Index;
 using NLauncher.IndexManager.Commands.Installs.Add.BinaryProviders;
 using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
@@ -14,12 +13,12 @@ using Spectre.Console;
 using Spectre.Console.Cli;
 using System.Collections.Frozen;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Text.Json;
 
 namespace NLauncher.IndexManager.Commands.Installs.Add;
 internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
 {
+    private const ushort maxInstalls = 20_000; // ushort max value 65k and we don't want the random id generation to take forever (due to collisions), so... 20k?
     private readonly record struct SelectedVersion(AppVersion? Version);
 
     // TODO: Create install
@@ -28,7 +27,7 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
     public override ValidationResult Validate(CommandContext context, MainSettings settings) => Validate(settings);
     public ValidationResult Validate(MainSettings settings) => ValidationResult.Success();
 
-    private static readonly FrozenDictionary<string, Func<Task<AppInstall?>>> InstallBuilders = new Dictionary<string, Func<Task<AppInstall?>>>()
+    private static readonly FrozenDictionary<string, Func<ushort, Task<AppInstall?>>> InstallBuilders = new Dictionary<string, Func<ushort, Task<AppInstall?>>>()
     {
         { "Binary", ConstructBinary },
         { "Store Link", ConstructStoreLink },
@@ -52,26 +51,39 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
 
         AppVersion? createVersion = null;
         uint verNum;
+        ushort installId;
         if (version.Version is null)
         {
             createVersion = CreateVersion(manifest.Manifest.Versions);
             verNum = createVersion.VerNum;
+            installId = RandomInstallGuid(); // No need to check for duplicates as we create a new empty version
         }
         else
         {
             verNum = version.Version.VerNum;
+
+            if (version.Version.Installs.Length > maxInstalls)
+            {
+                AnsiConsole.MarkupLine($"[red]Maximum installs reached.[/]");
+                return 1;
+            }
+
+            do
+            {
+                installId = RandomInstallGuid();
+            } while (version.Version.Installs.Any(ins => ins.Id == installId));
         }
 
         AnsiFormatter.WriteSectionTitle("Create Install");
 
-        var typePrompt = new SelectionPrompt<KeyValuePair<string, Func<Task<AppInstall?>>>>()
+        var typePrompt = new SelectionPrompt<KeyValuePair<string, Func<ushort, Task<AppInstall?>>>>()
             .Title("Select Install Type")
             .AddChoices(InstallBuilders)
             .UseConverter(static kv => kv.Key);
 
-        Func<Task<AppInstall?>> constructFunc = AnsiConsole.Prompt(typePrompt).Value;
+        Func<ushort, Task<AppInstall?>> constructFunc = AnsiConsole.Prompt(typePrompt).Value;
 
-        AppInstall? install = await constructFunc();
+        AppInstall? install = await constructFunc(installId);
         if (install is null)
             return 1;
 
@@ -169,7 +181,7 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
         return OperationResult.Success();
     }
 
-    private static async Task<AppInstall?> ConstructBinary()
+    private static async Task<AppInstall?> ConstructBinary(ushort installId)
     {
         AnsiFormatter.WriteWarning("Currently only .zip format is supported.");
         AnsiFormatter.WriteWarning("No file type nor integrity verification is done by the index manager.");
@@ -208,6 +220,8 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
 
         return new BinaryAppInstall()
         {
+            Id = installId,
+
             Platform = platform,
             ExecutablePath = exePath,
 
@@ -216,7 +230,7 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
         };
     }
 
-    private static Task<AppInstall?> ConstructStoreLink()
+    private static Task<AppInstall?> ConstructStoreLink(ushort installId)
     {
         Platforms platform = AnsiConsole.Prompt(
             new SelectionPrompt<Platforms>()
@@ -228,6 +242,7 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
 
         StoreLinkAppInstall install = new()
         {
+            Id = installId,
             Platform = platform,
             Url = url
         };
@@ -235,13 +250,14 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
         return Task.FromResult<AppInstall?>(install);
     }
 
-    private static Task<AppInstall?> ConstructWebsite()
+    private static Task<AppInstall?> ConstructWebsite(ushort installId)
     {
         Uri url = AskUri("Website link:");
         bool supportsPwa = AnsiConsole.Confirm("Does your website support PWA?", defaultValue: false);
 
         WebsiteAppInstall install = new()
         {
+            Id = installId,
             Url = url,
             SupportsPwa = supportsPwa
         };
@@ -269,5 +285,10 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
             return ValidationResult.Error("URL scheme must be HTTPS.");
 
         return ValidationResult.Success();
+    }
+
+    private static ushort RandomInstallGuid()
+    {
+        return (ushort)Random.Shared.Next(ushort.MaxValue);
     }
 }

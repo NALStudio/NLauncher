@@ -4,7 +4,7 @@
 
 @inject IDialogService DialogService
 
-<MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="@GetVariant()" StartIcon="@GetStartIcon()" EndIcon="@GetEndIcon()" Href="@(href?.ToString())" Target="_blank" OnClick="@(() => OnClick?.Invoke())">
+<MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="@GetVariant()" StartIcon="@GetStartIcon()" EndIcon="@GetEndIcon()" Href="@(href?.ToString())" Target="_blank" OnClick="OnClickHandler">
     @GetButtonText()
 </MudButton>
 
@@ -16,7 +16,7 @@
     public bool IsAutomatic { get; set; } = false;
 
     [Parameter]
-    public Action? OnClick { get; set; }
+    public Action<bool>? OnClick { get; set; }
 
     private Variant GetVariant() => IsAutomatic ? Variant.Outlined : Variant.Text;
 
@@ -24,7 +24,16 @@
 
     protected override void OnParametersSet()
     {
-        href = Install.GetHrefUri();
+        if (IsAutomatic)
+            href = null;
+        else
+            href = Install.GetHrefUri();
+    }
+
+    private void OnClickHandler()
+    {
+        bool navigated = href is not null;
+        OnClick?.Invoke(navigated);
     }
 
     private string? GetEndIcon()
@@ -50,9 +59,11 @@
     {
         return Install switch
         {
-            BinaryAppInstall => IsAutomatic ? "Automatic Install" : "Manual Install",
+            BinaryAppInstall => $"{AutomaticOrManualText()} Install ({Install.GetSupportedPlatforms()})",
             StoreLinkAppInstall or WebsiteAppInstall => $"Open In {href?.Host ?? "<error>"}",
             _ => "<error>"
         };
     }
+
+    private string AutomaticOrManualText() => IsAutomatic ? "Automatic" : "Manual";
 }

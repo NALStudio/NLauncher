@@ -1,6 +1,4 @@
 ﻿using NLauncher.Index.Json;
-using NLauncher.Index.Models.Applications;
-using NLauncher.Index.Models.News;
 using NLauncher.IndexManager.Commands.Main;
 using NLauncher.IndexManager.Components;
 using NLauncher.IndexManager.Components.FileChangeTree;
@@ -59,7 +57,10 @@ internal class RebuildCommand : AsyncCommand<MainSettings>, IMainCommand
             ?? throw new InvalidOperationException($"Could not deserialize file: '{filepath}'");
 
         string newJson = JsonSerializer.Serialize(manifest, humanReadableJsonTypeInfo);
-        await File.WriteAllTextAsync(filepath, newJson);
+
+        // Only write if JSON is different (so that the FileChangeTree shows correct information)
+        if (newJson != oldJson)
+            await File.WriteAllTextAsync(filepath, newJson);
     }
 
     public ValidationResult Validate(MainSettings settings)

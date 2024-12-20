@@ -1,10 +1,4 @@
 ﻿using Spectre.Console;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Components.FileChangeTree;
 internal readonly ref struct FileChangeTreeRenderer(FileChangeTreeNode root)
@@ -27,6 +21,10 @@ internal readonly ref struct FileChangeTreeRenderer(FileChangeTreeNode root)
         ChangeData rootData = ExtractData(root);
         Tree tree = new(Render(rootData));
         AddChildrenToTree(tree, root);
+
+        if (tree.Nodes.Count < 1)
+            tree.AddNode(RenderNoChanges());
+
         return tree;
     }
 
@@ -138,5 +136,10 @@ internal readonly ref struct FileChangeTreeRenderer(FileChangeTreeNode root)
             markup = $"[{changeColor}]{markup}[/]";
 
         return new Markup(markup);
+    }
+
+    private static Markup RenderNoChanges()
+    {
+        return new Markup("[grey italic]no changes done[/]");
     }
 }

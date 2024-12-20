@@ -21,7 +21,7 @@ public readonly struct InstallResult
     /// <summary>
     /// <inheritdoc cref="InstallResult{T}.Failed"/>
     /// </summary>
-    public static InstallResult Failed<T>(InstallResult<T> innerFailure)
+    public static InstallResult Failed<T>(InstallResult<T> innerFailure) where T : notnull
     {
         if (innerFailure.IsSuccess)
             throw new ArgumentException("Cannot fail on a successful result.");
@@ -29,17 +29,20 @@ public readonly struct InstallResult
         return new(success: false, innerFailure.ErrorMessage);
     }
 
-    public static InstallResult<T> Success<T>(T value) => InstallResult<T>.Success(value);
-    public static InstallResult<T> Cancelled<T>() => InstallResult<T>.Cancelled();
-    public static InstallResult<T> Errored<T>(string? message = null) => InstallResult<T>.Errored(message);
+    public static InstallResult<T> Success<T>(T value) where T : notnull => InstallResult<T>.Success(value);
+    public static InstallResult<T> Cancelled<T>() where T : notnull => InstallResult<T>.Cancelled();
+    public static InstallResult<T> Errored<T>(string? message = null) where T : notnull => InstallResult<T>.Errored(message);
 
     /// <summary>
     /// <inheritdoc cref="InstallResult{T}.Failed"/>
     /// </summary>
-    public static InstallResult<T> Failed<T, TInner>(InstallResult<TInner> innerFailure) => InstallResult<T>.Failed(innerFailure);
+    public static InstallResult<T> Failed<T, TInner>(InstallResult<TInner> innerFailure) where T : notnull where TInner : notnull
+    {
+        return InstallResult<T>.Failed(innerFailure);
+    }
 }
 
-public readonly struct InstallResult<T>
+public readonly struct InstallResult<T> where T : notnull
 {
     [MemberNotNullWhen(true, nameof(Value)), MemberNotNullWhen(false, nameof(ErrorMessage))]
     public bool IsSuccess { get; init; } // defaults to false
@@ -65,7 +68,7 @@ public readonly struct InstallResult<T>
     /// <summary>
     /// Install either failed or was cancelled by the user.
     /// </summary>
-    public static InstallResult<T> Failed<TInner>(InstallResult<TInner> innerFailure)
+    public static InstallResult<T> Failed<TInner>(InstallResult<TInner> innerFailure) where TInner : notnull
     {
         if (innerFailure.IsSuccess)
             throw new ArgumentException("Cannot fail on a successful result.");
