@@ -1,6 +1,6 @@
-﻿using NLauncher.Index.Models;
-using NLauncher.Index.Models.Applications.Installs;
+﻿using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Index.Models.Index;
+using NLauncher.Index.Models.InstallTracking;
 using NLauncher.Services.Index;
 using NLauncher.Web.Services;
 using Spectre.Console.Cli;

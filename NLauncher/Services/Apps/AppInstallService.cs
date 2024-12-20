@@ -3,10 +3,11 @@ using NLauncher.Code.Models;
 using NLauncher.Components.Dialogs.Installs;
 using NLauncher.Components.Dialogs.Installs.Choose;
 using NLauncher.Index.Enums;
-using NLauncher.Index.Models;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
+using NLauncher.Index.Models.InstallTracking;
 using NLauncher.Services.Library;
+using System.Collections.Concurrent;
 
 namespace NLauncher.Services.Apps;
 public class AppInstallService
@@ -23,22 +24,51 @@ public class AppInstallService
         public bool AlwaysAskInstallMethod { get; init; } = false;
     }
 
+    private readonly record struct RunningInstall(Task Task, InstallProgress Progress, CancellationTokenSource CancellationTokenSource);
+
+    private readonly IPlatformInstaller? installer;
+    private readonly SemaphoreSlim installSemaphore = new(0, 3);
+    private static readonly ConcurrentDictionary<Guid, RunningInstall> runningInstalls = new();
+
     private readonly LibraryService library;
 
-    public AppInstallService(LibraryService library)
+    public AppInstallService(IPlatformInstaller? installer, LibraryService library)
     {
+        this.installer = installer;
         this.library = library;
     }
 
     /// <summary>
     /// Returns <see langword="true"/> if application installation was started succesfully, otherwise <see langword="false"/>.
     /// </summary>
-    public async Task<bool> InstallAsync(AppManifest app, AppInstallConfig config)
+    public async Task<bool> StartInstallAsync(AppManifest app, AppInstallConfig config)
     {
         InstallResult result = await InternalInstall(app, config);
         if (result.ErrorMessage is not null)
             await config.DialogService.ShowMessageBox("Error!", result.ErrorMessage);
         return result.IsSuccess;
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> if a running install was found and cancellation was requested succesfully.
+    /// </summary>
+    /// <remarks>
+    /// Method returns before the install has actually cancelled.
+    /// </remarks>
+    public bool CancelInstall(Guid appId)
+    {
+        if (runningInstalls.TryGetValue(appId, out RunningInstall install))
+        {
+            install.CancellationTokenSource.Cancel();
+            return true;
+        }
+
+        return false;
+    }
+
+    public IEnumerable<InstallProgress> GetProgresses()
+    {
+        return runningInstalls.Values.Select(static ins => ins.Progress);
     }
 
     /// <summary>
@@ -67,15 +97,22 @@ public class AppInstallService
         InstallResult<AppInstall> resolvedInstall = await ResolveInstall(version.Value, config.DialogService, alwaysAskInstallMethod: config.AlwaysAskInstallMethod);
         if (!resolvedInstall.IsSuccess)
             return InstallResult.Failed(resolvedInstall);
-
         AppInstall install = resolvedInstall.Value;
-        if (install is not BinaryAppInstall)
-            return InstallResult.Cancelled();
+
+        if (installer is null)
+            return InstallResult.Errored("Application installing is not supported by the current platform.");
 
         InstallGuid installId = new(app.Uuid, version.Value.VerNum, resolvedInstall.Value.Id);
+        InstallProgress progress = new();
+        CancellationTokenSource installCancelToken = new();
+        Task installTask = new(async () => await RunInstall(installer, installId, progress, installCancelToken.Token), TaskCreationOptions.LongRunning);
+        RunningInstall runningInstall = new(installTask, progress, installCancelToken);
 
-        await config.DialogService.ShowMessageBox(null, "App installing has not yet been implemented.");
-        return InstallResult.Cancelled();
+        if (!runningInstalls.TryAdd(app.Uuid, runningInstall))
+            return InstallResult.Errored("Application is already installing.");
+        installTask.Start(); // Start after adding so that if an error happens, we can remove the install safely
+
+        return InstallResult.Success();
     }
 
     private async ValueTask<InstallResult<AppInstall>> ResolveInstall(AppVersion version, IDialogService dialogService, bool alwaysAskInstallMethod)
@@ -121,5 +158,27 @@ public class AppInstallService
             return InstallResult.Errored<AppVersion>("Version not found.");
 
         return InstallResult.Success(version);
+    }
+
+    private async Task RunInstall(IPlatformInstaller installer, InstallGuid installId, InstallProgress progress, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await installSemaphore.WaitAsync(cancellationToken);
+            try
+            {
+                await library.UpdateEntryAsync(installId.AppId, lib => lib with { Install = null });
+                await installer.InstallAsync(installId, progress, cancellationToken);
+                await library.UpdateEntryAsync(installId.AppId, lib => lib with { Install = installId });
+            }
+            finally
+            {
+                installSemaphore.Release();
+            }
+        }
+        finally
+        {
+            _ = runningInstalls.TryRemove(installId.AppId, out _);
+        }
     }
 }

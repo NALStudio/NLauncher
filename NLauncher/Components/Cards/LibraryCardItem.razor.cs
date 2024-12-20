@@ -66,7 +66,7 @@ public partial class LibraryCardItem
 
         if (canInstall)
         {
-            await InstallService.InstallAsync(Entry.Manifest, new AppInstallService.AppInstallConfig(DialogService));
+            _ = await InstallService.StartInstallAsync(Entry.Manifest, new AppInstallService.AppInstallConfig(DialogService));
         }
         else if (isInstalled)
         {

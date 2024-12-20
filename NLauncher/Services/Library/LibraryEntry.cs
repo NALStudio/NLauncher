@@ -1,4 +1,4 @@
-﻿using NLauncher.Index.Models;
+﻿using NLauncher.Index.Models.InstallTracking;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NLauncher.Services.Library;

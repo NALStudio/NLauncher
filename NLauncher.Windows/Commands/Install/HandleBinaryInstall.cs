@@ -1,7 +1,7 @@
 ﻿using Downloader;
 using NLauncher.Code;
-using NLauncher.Index.Models;
 using NLauncher.Index.Models.Applications.Installs;
+using NLauncher.Index.Models.InstallTracking;
 using System.IO.Compression;
 using System.Security.Cryptography;
 

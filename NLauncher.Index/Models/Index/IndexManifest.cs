@@ -1,5 +1,6 @@
 ﻿using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
+using NLauncher.Index.Models.InstallTracking;
 using NLauncher.Index.Models.News;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;

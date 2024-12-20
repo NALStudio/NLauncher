@@ -6,8 +6,10 @@
 /// <para>WINDOWS: Uses AppData</para>
 /// </summary>
 /// <remarks>
+/// <para>
 /// A directory for downloading, unzipping, etc. should be provided by a different service.
 /// This 'Downloads' directory should be with the game folder somewhere else and not in AppData.
+/// </para>
 /// </remarks>
 public interface IStorageService
 {
@@ -32,6 +34,7 @@ public interface IStorageService
     /// </remarks>
     protected static void ThrowIfFilenameInvalid(string filename)
     {
+        // If any invalid characters are found (slashes, etc.), throw
         int invalidCharIndex = filename.IndexOfAny(Path.GetInvalidFileNameChars());
         if (invalidCharIndex != -1)
             throw new ArgumentException("Invalid filename");

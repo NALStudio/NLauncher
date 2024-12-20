@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json.Serialization;
 
-namespace NLauncher.Index.Models;
+namespace NLauncher.Index.Models.InstallTracking;
 
 [JsonConverter(typeof(JsonInstallGuidConverter))]
 public readonly record struct InstallGuid(Guid AppId, uint VerNum, ushort InstallId)

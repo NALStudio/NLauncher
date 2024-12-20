@@ -114,7 +114,7 @@ public partial class AppInfoCard
             AlwaysAskInstallMethod = alwaysChoose
         };
 
-        _ = await AppInstallService.InstallAsync(Entry.Manifest, settings);
+        _ = await AppInstallService.StartInstallAsync(Entry.Manifest, settings);
     }
 
     private static string GetReleaseDateString(AppRelease appRelease)
