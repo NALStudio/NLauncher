@@ -1,0 +1,160 @@
+﻿@using NLauncher.Code.Models
+@using NLauncher.Services.Apps
+@using System.Diagnostics
+
+@implements IAsyncDisposable
+
+@inject AppInstallService InstallService
+
+<MudPaper Class="pa-3" Outlined Elevation="0">
+    <MudStack Spacing="0">
+        <MudText Class="mb-1" Typo="Typo.h6">@(Install.App.DisplayName)</MudText>
+
+        @{
+            (string state, Color color) = GetState();
+            double? progress = GetProgress();
+            string? message = GetMessage();
+
+            <MudStack Row Spacing="0" StretchItems="StretchItems.Start">
+                <MudText Typo="Typo.subtitle1">@state</MudText>
+
+                @if (Install.IsFinished && !Install.GetResult().IsSuccess)
+                {
+                    <MudIconButton Size="Size.Small" Icon="@(Icons.Material.Rounded.Replay)" OnClick="RestartInstall" />
+                }
+                @if (!Install.IsFinished)
+                {
+                    <MudIconButton Size="Size.Small" Icon="@(Icons.Material.Rounded.Stop)" OnClick="StopInstall" />
+                }
+
+                <MudIconButton Disabled="@(!Install.IsFinished)" Size="Size.Small" Icon="@(Icons.Material.Rounded.Close)" OnClick="RemoveInstall" />
+            </MudStack>
+            <MudProgressLinear Class="mt-1" Rounded Color="@color" Indeterminate="@(!progress.HasValue)" Value="@(progress ?? 0d)" Min="0d" Max="1d" />
+
+            @if (!string.IsNullOrWhiteSpace(message))
+            {
+                <MudText Typo="Typo.caption">@message</MudText>
+            }
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public required RunningAppInstall Install { get; set; }
+
+    // Only load progress once before rendering so that the progress doesn't change mid-render (we don't want the text to flicker)
+    private InstallProgress? _renderProgress = null;
+    private InstallProgress? previouslyRenderedProgress = null;
+    private InstallProgress Progress => _renderProgress ??= (Install.Progress ?? InstallProgress.Starting);
+
+    private (Task Task, CancellationTokenSource Cancellation)? updateTask;
+    private bool ShouldUpdate => !Install.IsFinished;
+
+    protected override void OnParametersSet()
+    {
+        StartUiUpdateIfNeeded();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        previouslyRenderedProgress = _renderProgress;
+        _renderProgress = null;
+
+        if (!ShouldUpdate && updateTask?.Cancellation.IsCancellationRequested == false)
+        {
+            updateTask.Value.Cancellation.Cancel();
+
+            // Re-render one last time so that we transition to "Finished" state even if ShouldUpdate was updated during render
+            StateHasChanged();
+        }
+    }
+
+    private void StartUiUpdateIfNeeded()
+    {
+        // if should update and either task isn't running or cancellation has already been requested
+        if (ShouldUpdate && updateTask?.Cancellation.IsCancellationRequested != false)
+        {
+            CancellationTokenSource ct = new();
+            updateTask = (UpdateUI(ct.Token), ct);
+        }
+    }
+
+    private (string State, Color Color) GetState()
+    {
+        if (Install.IsFinished)
+        {
+            InstallResult result = Install.GetResult();
+
+            if (result.IsSuccess) 
+                return ("Finished", Color.Success); // success
+            else if (result.IsCancelled)
+                return ("Cancelled", Color.Warning); // cancelled
+            else
+                return ("Error", Color.Error); // error
+        }
+        else
+        {
+            return (Progress.Status, Color.Primary);
+        }
+    }
+
+    private string? GetMessage()
+    {
+        if (Install.IsFinished)
+            return Install.GetResult().ErrorMessage;
+        else
+            return Progress.Message;
+    }
+
+    private double? GetProgress()
+    {
+        if (Install.IsFinished)
+            return 1d;
+
+        return Progress.Progress;
+    }
+
+    private void RemoveInstall()
+    {
+        _ = InstallService.TryRemoveInstall(Install.App.Uuid);
+    }
+
+    private void StopInstall()
+    {
+        Install.RequestCancel();
+    }
+
+    private async Task RestartInstall()
+    {
+        await Install.RestartAsync();
+        StateHasChanged();
+        StartUiUpdateIfNeeded();
+    }
+
+    private async Task UpdateUI(CancellationToken cancellationToken)
+    {
+        using PeriodicTimer timer = new(TimeSpan.FromMilliseconds(250));
+        while (await timer.WaitForNextTickAsync(cancellationToken))
+        {
+            // InstallProgress is a record so it implements IEquatable
+            if (Install.Progress != previouslyRenderedProgress || Install.IsFinished)
+                StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (updateTask.HasValue)
+        {
+            updateTask.Value.Cancellation.Cancel();
+            try
+            {
+                await updateTask.Value.Task;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+    }
+}

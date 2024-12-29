@@ -27,10 +27,4 @@ public partial class SettingsMenu
             ? Icons.Material.Rounded.DarkMode
             : Icons.Material.Rounded.LightMode;
     }
-
-    public void ToggleOpen()
-    {
-        Open = !Open;
-        StateHasChanged();
-    }
 }

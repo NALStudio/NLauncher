@@ -2,6 +2,7 @@
 @using NLauncher.Components
 @using NLauncher.Components.Logo
 @using NLauncher.Components.Menus
+@using NLauncher.Components.Menus.Downloads
 @using NLauncher.Index.Models.Index
 
 @inherits LayoutComponentBase
@@ -14,8 +15,9 @@
                        Style="margin-right:8px"
                        Icon="@(Icons.Material.Rounded.Menu)"
                        OnClick="@(() => SetDrawerOpen(true))" />
-
-        <NLauncherBanner />
+        <a href="./">
+            <NLauncherBanner />
+        </a>
         <MudSpacer />
         <MudStack Style="margin-left:16px" Row AlignItems="AlignItems.Center">
             <!-- Use null value to force autocomplete to clear once an app was selected -->
@@ -37,14 +39,16 @@
             <!-- App bar menus -->
             <!-- Use MudPopover instead of MudMenu for better UX since MudMenu behaviour was a bit funky -->
             <MudTooltip Text="Downloads" Delay="1000">
-                <MudIconButton Icon="@(Icons.Material.Rounded.Download)" OnClick="ToggleDownloadsMenu" />
+                <MudBadge Overlap Dot Visible="@anyInstallsRunning" Color="Color.Primary">
+                    <MudIconButton Icon="@(Icons.Material.Rounded.Download)" OnClick="@(AppBarMenus.ToggleDownloads)" />
+                </MudBadge>
             </MudTooltip>
-            <DownloadsMenu Open="@downloadsMenuOpen" />
+            <DownloadsMenu Open="@(AppBarMenus.DownloadsOpen)" />
 
             <MudTooltip Text="Settings" Delay="1000">
-                <MudIconButton Icon="@(Icons.Material.Rounded.Settings)" OnClick="ToggleSettingsMenu" />
+                <MudIconButton Icon="@(Icons.Material.Rounded.Settings)" OnClick="@(AppBarMenus.ToggleSettings)" />
             </MudTooltip>
-            <SettingsMenu Open="@settingsMenuOpen" />
+            <SettingsMenu Open="@(AppBarMenus.SettingsOpen)" />
             <!--/ App bar menus /-->
 
         </MudStack>
@@ -66,7 +70,7 @@
     </MudMainContent>
 </MudLayout>
 
-<MudOverlay Visible="@AnyMenuOpen" LockScroll="false" AutoClose OnClosed="() => CloseAllMenus()" />
+<MudOverlay Visible="@(AppBarMenus.AnyMenuOpen)" LockScroll="false" AutoClose OnClosed="AppBarMenus.CloseAll" />
 
 <style>
     .appbar-style {

@@ -1,7 +1,4 @@
-﻿using NLauncher.Index.Models.Applications;
-using NLauncher.Index.Models.Applications.Installs;
-using NLauncher.Index.Models.InstallTracking;
-using NLauncher.Index.Models.News;
+﻿using NLauncher.Index.Models.News;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
@@ -26,20 +23,5 @@ public class IndexManifest
     {
         entriesLookup ??= Entries.ToImmutableDictionary(key => key.Manifest.Uuid);
         return entriesLookup.TryGetValue(id, out entry);
-    }
-
-    public bool TryFindInstall(InstallGuid id, [MaybeNullWhen(false)] out AppInstall install)
-    {
-        install = null;
-
-        if (!TryGetEntry(id.AppId, out IndexEntry? entry))
-            return false;
-
-        AppVersion? version = entry.Manifest.GetVersion(id.VerNum);
-        if (version is null)
-            return false;
-
-        install = version.Installs.SingleOrDefault(ins => ins.Id == id.InstallId);
-        return install is not null;
     }
 }

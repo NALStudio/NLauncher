@@ -2,6 +2,7 @@
 using MudBlazor;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
+using NLauncher.Services;
 using NLauncher.Services.Apps;
 using NLauncher.Services.Library;
 
@@ -20,6 +21,9 @@ public partial class LibraryCardItem
     [Inject]
     private LibraryService LibraryService { get; set; } = default!;
 
+    [Inject]
+    private AppBarMenus AppBarMenus { get; set; } = default!;
+
     /// <summary>
     /// Use <see langword="null"/> for skeleton.
     /// </summary>
@@ -32,12 +36,14 @@ public partial class LibraryCardItem
     private bool canInstall = false;
 
     private bool CanPlay => isInstalled || linkPlayHref is not null;
+    private bool isInstalling = false;
     private bool isInstalled = false;
     private string? linkPlayHref = null;
 
     protected override async Task OnParametersSetAsync()
     {
         canInstall = false;
+        isInstalling = false;
         isInstalled = false;
         linkPlayHref = null;
 
@@ -45,7 +51,9 @@ public partial class LibraryCardItem
             return;
         AppManifest app = Entry.Manifest;
 
+        // These can be initialized in OnParametersSetAsync since LibraryPage updates all of its children every time an install finishes
         canInstall = await InstallService.CanInstall(app);
+        isInstalling = InstallService.IsInstalling(app.Uuid);
 
         LibraryEntry? libraryEntry = await LibraryService.TryGetEntry(app.Uuid);
         isInstalled = libraryEntry?.Data.IsInstalled == true;
@@ -64,9 +72,14 @@ public partial class LibraryCardItem
         if (linkPlayHref is not null)
             return;
 
-        if (canInstall)
+        if (InstallService.IsInstalling(Entry.Manifest.Uuid))
+        {
+            AppBarMenus.OpenDownloads();
+        }
+        else if (canInstall)
         {
             _ = await InstallService.StartInstallAsync(Entry.Manifest, new AppInstallService.AppInstallConfig(DialogService));
+            StateHasChanged(); // Update canInstall
         }
         else if (isInstalled)
         {

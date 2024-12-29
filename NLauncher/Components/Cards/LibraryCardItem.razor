@@ -38,9 +38,14 @@
             <a class="library_card_overlay" style="align-content:center"
                href="@linkPlayHref" target="_blank"
                @onclick="@OnCardPressed">
+
                @if (CanPlay)
                {
                     <MudText Align="Align.Center" Typo="Typo.h4">PLAY</MudText>
+               }
+               else if (isInstalling)
+               {
+                   <MudText Align="Align.Center" Typo="Typo.h4">INSTALLING</MudText>
                }
                else if (canInstall)
                {

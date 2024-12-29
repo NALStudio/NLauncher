@@ -14,10 +14,10 @@ namespace NLauncher.Services.Index;
 /// </summary>
 public partial class IndexService : IDisposable
 {
-    private readonly ILogger<IndexService>? logger;
+    private readonly ILogger<IndexService> logger;
     private readonly HttpClient http;
     private readonly IStorageService storageService;
-    public IndexService(ILogger<IndexService>? logger, HttpClient http, IStorageService storageService)
+    public IndexService(ILogger<IndexService> logger, HttpClient http, IStorageService storageService)
     {
         this.logger = logger;
         this.http = http;
@@ -87,7 +87,7 @@ public partial class IndexService : IDisposable
         CachedIndex? cached = await LoadIndexFromCache();
         if (IsCacheValid(cached))
         {
-            logger?.LogInformation("Loaded index from cache.");
+            logger.LogInformation("Loaded index from cache.");
             return cached.Value;
         }
 
@@ -95,7 +95,7 @@ public partial class IndexService : IDisposable
         IndexManifest fetched = await FetchIndexFromGitHub();
         CachedIndex cachedFetch = await SaveIndexToCache(fetched);
 
-        logger?.LogInformation("Fetched index from GitHub.");
+        logger.LogInformation("Fetched index from GitHub.");
         Debug.Assert(IsCacheValid(cachedFetch));
         return cachedFetch;
     }
@@ -137,7 +137,7 @@ public partial class IndexService : IDisposable
         }
         catch (Exception ex)
         {
-            logger?.LogError(ex, "Could not read index cache.");
+            logger.LogError(ex, "Could not read index cache.");
             serialized = null;
         }
 
@@ -155,11 +155,11 @@ public partial class IndexService : IDisposable
         catch (Exception e)
         {
             deserialized = null;
-            logger?.LogError("Index deserialization failed with error:\n{}", e);
+            logger.LogError("Index deserialization failed with error:\n{}", e);
         }
 
         if (!deserialized.HasValue)
-            logger?.LogWarning("Cache value could not be deserialized.");
+            logger.LogWarning("Cache value could not be deserialized.");
         return deserialized;
     }
 

@@ -1,5 +1,4 @@
 ﻿using NLauncher.Index.Enums;
-using NLauncher.Index.Json.Converters;
 using System.Text.Json.Serialization;
 
 namespace NLauncher.Index.Models.Applications.Installs;
@@ -10,11 +9,6 @@ namespace NLauncher.Index.Models.Applications.Installs;
 [JsonDerivedType(typeof(StoreLinkAppInstall), "storelink")]
 public abstract class AppInstall
 {
-    // JsonPropertyOrder so that Id is always at top
-    [JsonPropertyOrder(int.MinValue)]
-    [JsonConverter(typeof(JsonHexNumberConverter<ushort>))]
-    public required ushort Id { get; init; }
-
     // Uri instead of string so that I can quickly verify that the link is absolute and hopefully not malware
     protected abstract Uri Href { get; }
     public abstract Platforms GetSupportedPlatforms();
@@ -27,9 +21,4 @@ public abstract class AppInstall
         return href;
     }
     public string GetHref() => GetHrefUri().ToString();
-
-    /// <summary>
-    /// Returns <see langword="true"/> if automatic installation is supported by <paramref name="platform"/>.
-    /// </summary>
-    public virtual bool SupportsAutomaticInstall(Platforms platform) => false;
 }

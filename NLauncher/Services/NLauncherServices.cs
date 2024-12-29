@@ -19,12 +19,19 @@ public static class NLauncherServices
             services.AddMudMarkdownServices();
         }
 
+        services.AddSingleton<AppBarMenus>();
+
         services.AddSingleton<SettingsService>();
         services.AddScoped<IndexService>();
         services.AddSingleton<LibraryService>();
 
         services.AddSingleton<AppInstallService>();
         services.AddSingleton<AppLinkPlayService>();
+    }
+
+    public static void AddInstalling<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TInstaller>(IServiceCollection services) where TInstaller : class, IPlatformInstaller
+    {
+        services.AddSingleton<IPlatformInstaller, TInstaller>();
     }
 
     public static void AddStorage<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TStorage>(IServiceCollection services) where TStorage : class, IStorageService

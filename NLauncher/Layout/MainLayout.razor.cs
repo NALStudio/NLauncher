@@ -3,12 +3,13 @@ using NLauncher.Code.Extensions;
 using NLauncher.Code.IndexSearch;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
+using NLauncher.Services;
+using NLauncher.Services.Apps;
 using NLauncher.Services.Index;
-using System.Collections.Immutable;
 
 namespace NLauncher.Layout;
 
-public partial class MainLayout
+public partial class MainLayout : IDisposable
 {
     [Inject]
     private IndexService IndexService { get; set; } = default!;
@@ -16,25 +17,20 @@ public partial class MainLayout
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
 
-    private bool settingsMenuOpen = false;
-    private bool downloadsMenuOpen = false;
+    [Inject]
+    private AppBarMenus AppBarMenus { get; set; } = default!;
 
-    private bool AnyMenuOpen => settingsMenuOpen || downloadsMenuOpen;
+    [Inject]
+    private AppInstallService AppInstallService { get; set; } = default!;
 
+    private bool anyInstallsRunning = false;
     private bool drawerOpen = true;
 
-    private void SetMenuOpen(bool settings = false, bool downloads = false)
+    protected override void OnInitialized()
     {
-        if (settings && downloads)
-            throw new ArgumentException("Cannot have multiple menus open at once.");
-
-        settingsMenuOpen = settings;
-        downloadsMenuOpen = downloads;
+        AppBarMenus.OnChanged += AppBarMenusChanged;
+        AppInstallService.InstallChanged += InstallCountChanged;
     }
-
-    private void CloseAllMenus() => SetMenuOpen();
-    private void ToggleSettingsMenu() => SetMenuOpen(settings: !settingsMenuOpen);
-    private void ToggleDownloadsMenu() => SetMenuOpen(downloads: !downloadsMenuOpen);
 
     private void SetDrawerOpen(bool open)
     {
@@ -54,5 +50,24 @@ public partial class MainLayout
     {
         IndexManifest index = await IndexService.GetIndexAsync();
         NavigationManager.NavigateToApp(index, app);
+    }
+
+    private void InstallCountChanged()
+    {
+        anyInstallsRunning = AppInstallService.GetInstalls().Any(static ins => !ins.IsFinished);
+        StateHasChanged();
+    }
+
+    private void AppBarMenusChanged()
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        AppBarMenus.OnChanged -= AppBarMenusChanged;
+        AppInstallService.InstallChanged -= InstallCountChanged;
+
+        GC.SuppressFinalize(this);
     }
 }

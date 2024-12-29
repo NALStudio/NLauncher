@@ -1,5 +1,6 @@
-﻿using NLauncher.Index.Models.InstallTracking;
+﻿using NLauncher.Index.Models.Applications.Installs;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace NLauncher.Services.Library;
 
@@ -17,8 +18,10 @@ public record class LibraryData
     /// <remarks>
     /// If the app is not installed, it can still be in the library as a website link for example.
     /// </remarks>
-    public InstallGuid? Install { get; init; }
+    public AppInstall? Install { get; init; }
+    public uint? InstalledVerNum { get; init; }
 
+    [JsonIgnore]
     [MemberNotNullWhen(true, nameof(Install))]
     public bool IsInstalled => Install is not null;
 

@@ -38,5 +38,10 @@ public interface IStorageService
         int invalidCharIndex = filename.IndexOfAny(Path.GetInvalidFileNameChars());
         if (invalidCharIndex != -1)
             throw new ArgumentException("Invalid filename");
+
+        // If filename doesn't have an extension, throw
+        // filename is guaranteed to be a single filename at this point
+        if (string.IsNullOrWhiteSpace(Path.GetExtension(filename)))
+            throw new ArgumentException("Filename doesn't have an extension.");
     }
 }

@@ -15,18 +15,15 @@
                 </MudButton>
             }
 
-            @{
-                Platforms currentPlatform = PlatformsEnum.GetCurrentPlatform();
-                foreach (AppInstall install in Options)
+            @foreach (AppInstall install in Options)
+            {
+                if (SupportsAutomaticInstall?.Invoke(install) == true)
                 {
-                    if (install.SupportsAutomaticInstall(currentPlatform))
-                    {
-                        // If automatic install is supported, provide both options to user
-                        <ChooseInstallDialogButton Install="@(install)" IsAutomatic="true" OnClick="@(nav => Close(nav, install))"/>
-                    }
-
-                    <ChooseInstallDialogButton Install="@(install)" IsAutomatic="false" OnClick="@(nav => Close(nav, install))"/>
+                    // If automatic install is supported, provide both options to user
+                    <ChooseInstallDialogButton Install="@(install)" IsAutomatic="true" OnClick="@(nav => Close(nav, install))"/>
                 }
+
+                <ChooseInstallDialogButton Install="@(install)" IsAutomatic="false" OnClick="@(nav => Close(nav, install))"/>
             }
         </MudStack>
     </DialogContent>
@@ -38,6 +35,9 @@
 
     [Parameter, EditorRequired]
     public required ImmutableArray<AppInstall> Options { get; set; }
+
+    [Parameter]
+    public Func<AppInstall, bool>? SupportsAutomaticInstall { get; set; }
 
     [Parameter]
     public bool ShowInstallNLauncher { get; set; } = false;
@@ -53,10 +53,10 @@
     /// <summary>
     /// Run <see cref="ShowAsync" /> with default "Choose Install" title.
     /// </summary>
-    public static async Task<CancellableResult<AppInstall>> ShowInstallAsync(IDialogService dialogService, IEnumerable<AppInstall> options)
+    public static async Task<CancellableResult<AppInstall>> ShowInstallAsync(IDialogService dialogService, IEnumerable<AppInstall> options, Func<AppInstall, bool>? supportsAutomaticInstall = null)
     {
         bool showInstallNLauncher = OperatingSystem.IsBrowser();
-        return await ShowAsync(dialogService, "Choose Install", options, showInstallNLauncher: showInstallNLauncher);
+        return await ShowAsync(dialogService, "Choose Install", options, supportsAutomaticInstall: supportsAutomaticInstall, showInstallNLauncher: showInstallNLauncher);
     }
 
     /// <summary>
@@ -65,7 +65,7 @@
     public static async Task<CancellableResult<AppInstall>> ShowLinkAsync(IDialogService dialogService, IEnumerable<AppInstall> options)
         => await ShowAsync(dialogService, "Choose Website", options);
 
-    public static async Task<CancellableResult<AppInstall>> ShowAsync(IDialogService dialogService, string title, IEnumerable<AppInstall> options, bool showInstallNLauncher = false)
+    public static async Task<CancellableResult<AppInstall>> ShowAsync(IDialogService dialogService, string title, IEnumerable<AppInstall> options, Func<AppInstall, bool>? supportsAutomaticInstall = null, bool showInstallNLauncher = false)
     {
         DialogOptions dialogOptions = new()
         {
@@ -75,7 +75,9 @@
         ImmutableArray<AppInstall> optionsArray = options.ToImmutableArray();
         DialogParameters<ChooseInstallDialog> dialogParameters = new()
         {
-            { x => x.Options, optionsArray }
+            { x => x.Options, optionsArray },
+            { x => x.SupportsAutomaticInstall, supportsAutomaticInstall },
+            { x => x.ShowInstallNLauncher, showInstallNLauncher }
         };
 
         IDialogReference dialog = await dialogService.ShowAsync<ChooseInstallDialog>(title, dialogParameters, dialogOptions);

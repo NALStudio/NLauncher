@@ -43,10 +43,12 @@ internal static class Program
 
         app.Configure(config =>
         {
-            config.AddCommand<InstallCommand>("install");
+            config.AddBranch<InstallSettings>("install", install =>
+            {
+                install.AddCommand<BinaryInstallCommand>("binary");
+            });
             config.AddCommand<RunCommand>("run");
         });
-
         return app.Run(args);
     }
 

@@ -1,30 +1,33 @@
 ﻿using NLauncher.Services;
-using NLauncher.Windows;
 
-namespace NLauncher.Web.Services;
+namespace NLauncher.Windows.Services;
 
-public partial class WindowsStorageService : IStorageService
+public class WindowsStorageService : IStorageService
 {
-    private static string? appDataPath;
+    public static string AppDataPath { get; } = GetAppDataPath();
 
-    private static string GetAppDataPath(string filename)
+    private static string GetAppDataPath()
+    {
+        string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        return Path.Join(appData, Constants.AppDataDirname);
+    }
+
+    private static string GetPath(string filename)
     {
         IStorageService.ThrowIfFilenameInvalid(filename);
-
-        appDataPath ??= Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return Path.Join(appDataPath, Constants.AppDataDirname, filename);
+        return Path.Join(AppDataPath, filename);
     }
 
     public async ValueTask WriteAll(string filename, string text)
     {
-        string path = GetAppDataPath(filename);
+        string path = GetPath(filename);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         await File.WriteAllTextAsync(path, text);
     }
 
     public async ValueTask<string> ReadAll(string filename)
     {
-        string path = GetAppDataPath(filename);
+        string path = GetPath(filename);
         if (File.Exists(path))
             return await File.ReadAllTextAsync(path);
         else

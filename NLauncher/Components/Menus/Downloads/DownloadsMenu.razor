@@ -1,0 +1,53 @@
+﻿@using NLauncher.Services.Apps
+@using NLauncher.Services.Settings
+
+@inject SettingsService Settings
+@inject AppInstallService InstallService
+
+@implements IDisposable
+
+<MudPopover AnchorOrigin="Origin.BottomRight"
+            TransformOrigin="Origin.TopRight"
+            Class="downloads_menu_popover"
+            Open="@Open">
+    <MudStack Class="ma-3">
+        @{
+            RunningAppInstall[] installs = InstallService.GetInstalls();
+            foreach (RunningAppInstall ins in installs)
+            {
+                <DownloadsMenuItem Install="ins" />
+            }
+
+            if (installs.Length < 1)
+            {
+                <MudText Class="ma-3" Style="opacity:0.5" Align="Align.Center" Typo="Typo.caption">No Downloads.</MudText>
+            }
+        }
+    </MudStack>
+</MudPopover>
+
+<style>
+.downloads_menu_popover {
+    width: clamp(300px, 33%, 600px);
+}
+</style>
+
+@code {
+    [Parameter]
+    public bool Open { get; set; }
+
+    protected override void OnInitialized()
+    {
+        InstallService.InstallChanged += InstallsChanged;
+    }
+
+    private void InstallsChanged()
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        InstallService.InstallChanged -= InstallsChanged;
+    }
+}

@@ -10,6 +10,4 @@ public class BinaryAppInstall : AppInstall
 
     protected override Uri Href => DownloadUrl;
     public override Platforms GetSupportedPlatforms() => Platform;
-
-    public override bool SupportsAutomaticInstall(Platforms platform) => Platform.HasFlag(platform);
 }

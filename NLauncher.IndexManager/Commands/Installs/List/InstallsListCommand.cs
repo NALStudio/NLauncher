@@ -7,18 +7,10 @@ using NLauncher.IndexManager.Components.PromptUtils;
 using NLauncher.IndexManager.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using Spectre.Console.Rendering;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace NLauncher.IndexManager.Commands.Installs.List;
 internal class InstallsListCommand : AsyncCommand<InstallsListSettings>, IMainCommand, IMainCommandVariant
 {
-    // TODO: Display installs of a specific version
     public override async Task<int> ExecuteAsync(CommandContext context, InstallsListSettings settings) => await Execute(settings, appFilter: settings.AppId, showAllVersions: settings.ShowAllVersions);
     public override ValidationResult Validate(CommandContext context, InstallsListSettings settings) => Validate(settings);
     public ValidationResult Validate(MainSettings settings)

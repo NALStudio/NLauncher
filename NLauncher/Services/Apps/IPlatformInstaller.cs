@@ -1,7 +1,12 @@
-﻿using NLauncher.Index.Models.InstallTracking;
+﻿using NLauncher.Code.Models;
+using NLauncher.Index.Models.Applications.Installs;
 
 namespace NLauncher.Services.Apps;
 public interface IPlatformInstaller
 {
-    public abstract Task InstallAsync(InstallGuid installId, InstallProgress progress, CancellationToken cancellationToken);
+    public abstract bool InstallSupported(AppInstall install);
+    public virtual bool UninstallSupported(AppInstall install) => InstallSupported(install);
+
+    public abstract Task<InstallResult> InstallAsync(Guid appId, AppInstall install, Action<InstallProgress> onProgressUpdate, CancellationToken cancellationToken);
+    public abstract Task<InstallResult> UninstallAsync(Guid appId, AppInstall existingInstall, Action<InstallProgress> onProgressUpdate, CancellationToken cancellationToken);
 }

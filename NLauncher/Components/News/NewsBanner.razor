@@ -18,7 +18,7 @@
         {
             NewsEntry? news = newsSorted?[i];
 
-            <MudCarouselItem Transition="Transition.Custom" CustomTransitionEnter="news_banner_carousel_item_in" Style="@GetBackgroundImageCss(news)">
+            <MudCarouselItem Transition="Transition.Custom" CustomTransitionEnter="news_banner_carousel_item_in" CustomTransitionExit="news_banner_carousel_item_out" Style="@GetBackgroundImageCss(news)">
                 @if (news is null)
                 {
                     <MudSkeleton Width="100%" Height="100%" SkeletonType="SkeletonType.Rectangle" />
@@ -80,6 +80,18 @@
     }
     .news_banner_carousel_item_in {
         animation: 0.5s news_banner_carousel_item_in_animation;
+    }
+
+    /* Stolen from: https://github.com/MudBlazor/MudBlazor/blob/be169a7689e809b07574882ca5e7e299149756d2/src/MudBlazor/Styles/components/_carousel.scss#L72 */
+    /* A fadeout is used to hide overlapping edges since the border-radius makes these very visible. */
+    @@keyframes news_banner_carousel_item_out_animation {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+
+    .news_banner_carousel_item_out {
+        animation: 0.5s news_banner_carousel_item_out_animation;
+        animation-fill-mode: forwards;
     }
 </style>
 

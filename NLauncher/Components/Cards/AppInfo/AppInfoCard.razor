@@ -43,15 +43,16 @@
                     </MudButton>
                 }
 
-                <!-- Only show install button if there are multiple link app handlers or other app handlers --> 
-                @if (canInstall)
+                <!-- Only show install button if there are multiple link app handlers or other app handlers -->
+                <!-- canInstall is false when app is installed/installing, we still want to show the button though -->
+                @if (canInstall || isInstalling || isInstalled)
                 {
                     <!-- Do not wrap this button in a parent element as it's a part of MudButtonGroup -->
                     <!-- oncontextmenu:preventDefault produces an error for some reason -->
-                    <MudButton Disabled="@IsLoading"
+                    <MudButton Disabled="@(IsLoading || isInstalled || isInstalling || isStartingInstall)"
                                OnClick="@(() => Install())"
                                @oncontextmenu="@(() => Install(alwaysChoose: true))">
-                        Install
+                        @(isInstalling ? "Installing" : (isInstalled ? "Installed" : "Install"))
                     </MudButton>
                 }
             </MudButtonGroup>

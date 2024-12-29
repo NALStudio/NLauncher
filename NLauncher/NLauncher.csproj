@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
+	<!-- Windows App assembly name is NLauncher, so this has to be changed for the compilation to finish properly. -->
+	<AssemblyName>NLauncher.Shared</AssemblyName>
+
 	<!-- Blazor WASM crashes if this flag is set -->
 	<!--<IsAotCompatible>true</IsAotCompatible>-->
 	  

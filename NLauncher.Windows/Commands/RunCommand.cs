@@ -9,9 +9,9 @@ internal class RunSettings : CommandSettings
     public required Guid AppId { get; init; }
 }
 
-internal class RunCommand : AsyncCommand<InstallSettings>
+internal class RunCommand : AsyncCommand<BinaryInstallSettings>
 {
-    public override Task<int> ExecuteAsync(CommandContext context, InstallSettings settings)
+    public override Task<int> ExecuteAsync(CommandContext context, BinaryInstallSettings settings)
     {
         throw new NotImplementedException();
     }

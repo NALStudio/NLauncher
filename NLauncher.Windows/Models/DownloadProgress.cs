@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace NLauncher.Code;
+namespace NLauncher.Windows.Models;
 public readonly record struct DownloadProgress(long DownloadedBytes, long TotalBytes)
 {
     public double Progress => TotalBytes != 0L ? DownloadedBytes / (double)TotalBytes : 0d;

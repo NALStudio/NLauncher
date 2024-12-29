@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebView;
 using Microsoft.AspNetCore.Components.WebView.WindowsForms;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
 using NLauncher.Services;
-using NLauncher.Web.Services;
+using NLauncher.Windows.Services;
 
 namespace NLauncher.Windows;
 
@@ -23,11 +25,18 @@ public partial class MainPage : Form
         blazorWebView.RootComponents.Add<WinApp>("#app");
         blazorWebView.RootComponents.Add<HeadOutlet>("head::after");
 
+        blazorWebView.BlazorWebViewInitializing += WebViewInitializationStarted;
+
         // WebView title changed reference: https://github.com/MicrosoftEdge/WebView2Feedback/issues/1816
-        blazorWebView.WebView.CoreWebView2InitializationCompleted += WebView_CoreWebView2InitializationCompleted;
+        blazorWebView.WebView.CoreWebView2InitializationCompleted += CoreWebView2InitializationCompleted;
     }
 
-    private void WebView_CoreWebView2InitializationCompleted(object? sender, CoreWebView2InitializationCompletedEventArgs e)
+    private void WebViewInitializationStarted(object? sender, BlazorWebViewInitializingEventArgs e)
+    {
+        e.UserDataFolder = Path.Join(WindowsStorageService.AppDataPath, Constants.WebViewUserDataFolder);
+    }
+
+    private void CoreWebView2InitializationCompleted(object? sender, CoreWebView2InitializationCompletedEventArgs e)
     {
         if (e.IsSuccess)
             blazorWebView.WebView.CoreWebView2.DocumentTitleChanged += (_, _) => UpdateWindowTitle();
@@ -49,6 +58,12 @@ public partial class MainPage : Form
     private static IServiceProvider BuildServices()
     {
         ServiceCollection services = new();
+        services.AddLogging(builder =>
+        {
+#if DEBUG
+            builder.AddDebug();
+#endif
+        });
 
         services.AddWindowsFormsBlazorWebView();
 
@@ -56,6 +71,7 @@ public partial class MainPage : Form
 
         NLauncherServices.AddDefault(services);
         NLauncherServices.AddStorage<WindowsStorageService>(services);
+        NLauncherServices.AddInstalling<WindowsPlatformInstaller>(services);
 
 #if DEBUG
         services.AddBlazorWebViewDeveloperTools();

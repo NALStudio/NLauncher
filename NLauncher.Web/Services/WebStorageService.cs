@@ -5,7 +5,7 @@ using System.Runtime.Versioning;
 namespace NLauncher.Web.Services;
 
 [SupportedOSPlatform("browser")]
-public partial class WebStorageService : IStorageService
+public class WebStorageService : IStorageService
 {
     private readonly IJSRuntime js;
     public WebStorageService(IJSRuntime js)

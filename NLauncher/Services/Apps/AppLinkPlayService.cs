@@ -21,9 +21,14 @@ public class AppLinkPlayService
         if (storeLink is not null)
             return storeLink;
 
+        // More can be added in the same fashion as above
+
         return null;
     }
 
+    /// <summary>
+    /// Returns a single value of type <typeparamref name="T"/> in <paramref name="installs"/> or <see langword="null"/> if either none or more than 1 are found.
+    /// </summary>
     private static T? GetSingleOrNull<T>(ICollection<AppInstall> installs) where T : AppInstall
     {
         T? value = null;
@@ -47,6 +52,7 @@ public class AppLinkPlayService
     }
 
     public bool CanPlay(AppManifest app) => GetLinkPlayInstalls(app).Any();
+    public static bool CanPlay(AppInstall ins) => ins is WebsiteAppInstall or StoreLinkAppInstall;
 
     private static IEnumerable<AppInstall> GetLinkPlayInstalls(AppManifest app)
     {
@@ -55,6 +61,6 @@ public class AppLinkPlayService
         if (version is null)
             return Enumerable.Empty<AppInstall>();
 
-        return version.Installs.Where(static ins => ins is WebsiteAppInstall or StoreLinkAppInstall);
+        return version.Installs.Where(CanPlay);
     }
 }

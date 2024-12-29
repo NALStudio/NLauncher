@@ -1,13 +1,14 @@
-﻿using MudBlazor;
+﻿using Microsoft.Extensions.Logging;
+using MudBlazor;
 using NLauncher.Code.Models;
 using NLauncher.Components.Dialogs.Installs;
 using NLauncher.Components.Dialogs.Installs.Choose;
 using NLauncher.Index.Enums;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
-using NLauncher.Index.Models.InstallTracking;
 using NLauncher.Services.Library;
-using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NLauncher.Services.Apps;
 public class AppInstallService
@@ -24,51 +25,90 @@ public class AppInstallService
         public bool AlwaysAskInstallMethod { get; init; } = false;
     }
 
-    private readonly record struct RunningInstall(Task Task, InstallProgress Progress, CancellationTokenSource CancellationTokenSource);
+    private readonly Dictionary<Guid, RunningAppInstall> installsUnsafe = new();
 
-    private readonly IPlatformInstaller? installer;
-    private readonly SemaphoreSlim installSemaphore = new(0, 3);
-    private static readonly ConcurrentDictionary<Guid, RunningInstall> runningInstalls = new();
+    /// <summary>
+    /// Fires when an install is added, removed or finished.
+    /// </summary>
+    public event Action? InstallChanged;
 
+    private readonly ILogger<AppInstallService> logger;
+
+    private readonly IPlatformInstaller installer;
     private readonly LibraryService library;
+    private readonly AppBarMenus appBarMenus;
 
-    public AppInstallService(IPlatformInstaller? installer, LibraryService library)
+    public AppInstallService(ILogger<AppInstallService> logger, IPlatformInstaller installer, LibraryService library, AppBarMenus appBarMenus)
     {
+        this.logger = logger;
         this.installer = installer;
         this.library = library;
+        this.appBarMenus = appBarMenus;
     }
 
     /// <summary>
     /// Returns <see langword="true"/> if application installation was started succesfully, otherwise <see langword="false"/>.
+    /// The app installation is queued into the <see cref="RunningAppInstall"/> service.
     /// </summary>
     public async Task<bool> StartInstallAsync(AppManifest app, AppInstallConfig config)
     {
         InstallResult result = await InternalInstall(app, config);
         if (result.ErrorMessage is not null)
             await config.DialogService.ShowMessageBox("Error!", result.ErrorMessage);
-        return result.IsSuccess;
+
+        bool success = result.IsSuccess;
+        if (success)
+            appBarMenus.OpenDownloads();
+        return success;
+    }
+
+    public RunningAppInstall[] GetInstalls()
+    {
+        lock (installsUnsafe)
+            return installsUnsafe.Values.ToArray();
+    }
+
+    public bool TryGetInstall(Guid appId, [MaybeNullWhen(false)] out RunningAppInstall install)
+    {
+        lock (installsUnsafe)
+            return installsUnsafe.TryGetValue(appId, out install);
+    }
+
+    public bool IsInstalling(Guid appId)
+    {
+        if (TryGetInstall(appId, out RunningAppInstall? install))
+            return !install.IsFinished;
+        else
+            return false;
     }
 
     /// <summary>
-    /// Returns <see langword="true"/> if a running install was found and cancellation was requested succesfully.
+    /// Returns <see langword="false"/> if install is not found or install is currently running.
     /// </summary>
-    /// <remarks>
-    /// Method returns before the install has actually cancelled.
-    /// </remarks>
-    public bool CancelInstall(Guid appId)
+    public bool TryRemoveInstall(Guid appId)
     {
-        if (runningInstalls.TryGetValue(appId, out RunningInstall install))
+        lock (installsUnsafe)
         {
-            install.CancellationTokenSource.Cancel();
-            return true;
+            if (!installsUnsafe.TryGetValue(appId, out RunningAppInstall? install))
+                return false;
+
+            if (!install.IsFinished)
+                return false;
+
+            if (installsUnsafe.Remove(appId, out RunningAppInstall? removed))
+            {
+                removed.OnCompleted -= OnInstallCompleted;
+                removed.OnRestarted -= OnInstallRestarted;
+            }
+            else
+            {
+                logger.LogError("Install removal was unsuccesful even though all checks passed.");
+                return false;
+            }
         }
 
-        return false;
-    }
-
-    public IEnumerable<InstallProgress> GetProgresses()
-    {
-        return runningInstalls.Values.Select(static ins => ins.Progress);
+        InstallChanged?.Invoke();
+        return true;
     }
 
     /// <summary>
@@ -76,16 +116,38 @@ public class AppInstallService
     /// </summary>
     /// <remarks>
     /// Application cannot be installed if:
-    ///     - no installable version can be found
-    ///     - or the app has already been installed.
+    /// <list type="bullet">
+    ///     <item>
+    ///         <description>no installable version can be found,</description>
+    ///     </item>
+    ///     <item>
+    ///         <description>the app has already been installed</description>
+    ///     </item>
+    ///     <item>
+    ///         <description>or the install can be handled by <see cref="AppLinkPlayService"/> if <paramref name="includeLinkHandled"/> is <see langword="false"/>.</description>
+    ///     </item>
+    /// </list>
     /// </remarks>
-    public async Task<bool> CanInstall(AppManifest app)
+    public async Task<bool> CanInstall(AppManifest app, bool includeLinkHandled = true)
     {
         InstallResult<AppVersion> version = await ResolveVersion(app, null, verifyIfNotLatestVersion: false);
         if (!version.IsSuccess)
             return false;
 
-        return version.Value.Installs.Any();
+        ImmutableArray<AppInstall> installs = version.Value.Installs;
+        if (includeLinkHandled)
+            return installs.Length > 0;
+        else
+            return installs.Any(static ins => !AppLinkPlayService.CanPlay(ins));
+    }
+
+    private void OnInstallRestarted()
+    {
+        InstallChanged?.Invoke();
+    }
+    private void OnInstallCompleted(InstallResult result)
+    {
+        InstallChanged?.Invoke();
     }
 
     private async Task<InstallResult> InternalInstall(AppManifest app, AppInstallConfig config)
@@ -99,34 +161,45 @@ public class AppInstallService
             return InstallResult.Failed(resolvedInstall);
         AppInstall install = resolvedInstall.Value;
 
-        if (installer is null)
-            return InstallResult.Errored("Application installing is not supported by the current platform.");
+        if (!installer.InstallSupported(install))
+            return InstallResult.Errored("This install is not supported by the current platform.");
 
-        InstallGuid installId = new(app.Uuid, version.Value.VerNum, resolvedInstall.Value.Id);
-        InstallProgress progress = new();
-        CancellationTokenSource installCancelToken = new();
-        Task installTask = new(async () => await RunInstall(installer, installId, progress, installCancelToken.Token), TaskCreationOptions.LongRunning);
-        RunningInstall runningInstall = new(installTask, progress, installCancelToken);
-
-        if (!runningInstalls.TryAdd(app.Uuid, runningInstall))
+        RunningAppInstall runningInstall = new(library, installer, app, version.Value, install);
+        if (!TryAddInstall(app.Uuid, runningInstall))
             return InstallResult.Errored("Application is already installing.");
-        installTask.Start(); // Start after adding so that if an error happens, we can remove the install safely
 
+        runningInstall.OnCompleted += OnInstallCompleted;
+        runningInstall.OnRestarted += OnInstallRestarted;
+        runningInstall.Start();
         return InstallResult.Success();
+    }
+
+    private bool TryAddInstall(Guid appId, RunningAppInstall newInstall)
+    {
+        lock (installsUnsafe)
+        {
+            if (installsUnsafe.TryGetValue(appId, out RunningAppInstall? existingInstall) && !existingInstall.IsFinished)
+                return false;
+
+            installsUnsafe[appId] = newInstall;
+        }
+
+        InstallChanged?.Invoke();
+        return true;
     }
 
     private async ValueTask<InstallResult<AppInstall>> ResolveInstall(AppVersion version, IDialogService dialogService, bool alwaysAskInstallMethod)
     {
         Platforms currentPlatform = PlatformsEnum.GetCurrentPlatform();
 
-        AppInstall[] autoInstalls = version.Installs.Where(ins => ins.SupportsAutomaticInstall(currentPlatform)).ToArray();
+        AppInstall[] autoInstalls = version.Installs.Where(installer.InstallSupported).ToArray();
         if (autoInstalls.Length == 1 && !alwaysAskInstallMethod)
             return InstallResult.Success(autoInstalls[0]);
 
         // Multiple autoinstallers and any amount of manual installers
         // or zero autoinstallers and one or more manual installer.
         // Ask user to choose.
-        CancellableResult<AppInstall> chosenOption = await ChooseInstallDialog.ShowInstallAsync(dialogService, version.Installs);
+        CancellableResult<AppInstall> chosenOption = await ChooseInstallDialog.ShowInstallAsync(dialogService, version.Installs, supportsAutomaticInstall: installer.InstallSupported);
         if (chosenOption.WasCancelled)
             return InstallResult.Cancelled<AppInstall>();
 
@@ -158,27 +231,5 @@ public class AppInstallService
             return InstallResult.Errored<AppVersion>("Version not found.");
 
         return InstallResult.Success(version);
-    }
-
-    private async Task RunInstall(IPlatformInstaller installer, InstallGuid installId, InstallProgress progress, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await installSemaphore.WaitAsync(cancellationToken);
-            try
-            {
-                await library.UpdateEntryAsync(installId.AppId, lib => lib with { Install = null });
-                await installer.InstallAsync(installId, progress, cancellationToken);
-                await library.UpdateEntryAsync(installId.AppId, lib => lib with { Install = installId });
-            }
-            finally
-            {
-                installSemaphore.Release();
-            }
-        }
-        finally
-        {
-            _ = runningInstalls.TryRemove(installId.AppId, out _);
-        }
     }
 }
