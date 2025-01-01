@@ -2,12 +2,16 @@
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Library;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Channels;
 
 namespace NLauncher.Services.Apps;
 
 public class RunningAppInstall
 {
+    private readonly record struct InstallTask(Task<InstallResult> Task, CancellationTokenSource Cancellation, ChannelReader<InstallProgress> ProgressChannel);
+
     private readonly LibraryService library;
     private readonly IPlatformInstaller installer;
 
@@ -16,12 +20,15 @@ public class RunningAppInstall
     public AppInstall Install { get; }
 
     [MemberNotNullWhen(true, nameof(installTask))]
+    public bool IsRunning => installTask?.Task.IsCompleted == false;
+
+    [MemberNotNullWhen(true, nameof(installTask))]
     public bool IsFinished => installTask?.Task.IsCompleted == true;
 
-    private (Task<InstallResult> Task, CancellationTokenSource Cancellation)? installTask = null;
-    public InstallProgress? Progress { get; set; }
+    public InstallProgress? LatestProgress { get; private set; }
+    private InstallTask? installTask = null;
 
-    public event Action? OnRestarted;
+    public event Action? OnStarted;
     public event Action<InstallResult>? OnCompleted;
 
     public RunningAppInstall(LibraryService library, IPlatformInstaller installer, AppManifest app, AppVersion version, AppInstall install)
@@ -39,13 +46,18 @@ public class RunningAppInstall
         if (installTask.HasValue)
             throw new InvalidOperationException("Install already started.");
 
+        // We cannot guarantee single reader as we expose the API publically
+        Channel<InstallProgress> channel = Channel.CreateBounded<InstallProgress>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropOldest, SingleWriter = true });
+
         CancellationTokenSource ct = new();
-        Task<InstallResult> task = RunInstall(ct.Token);
+        Task<InstallResult> task = RunInstall(channel.Writer, ct.Token);
 
         // Execute synchronously so that we can update Blazor UI with the event.
         task.ContinueWith(t => OnCompleted?.Invoke(t.Result), TaskContinuationOptions.ExecuteSynchronously);
 
-        installTask = (task, ct);
+        installTask = new(task, ct, channel.Reader);
+
+        OnStarted?.Invoke();
     }
 
     /// <summary>
@@ -62,12 +74,11 @@ public class RunningAppInstall
                 return false;
 
             installTask = null;
-            Progress = null;
+            LatestProgress = null;
         }
 
         Start();
 
-        OnRestarted?.Invoke();
         return true;
     }
 
@@ -76,29 +87,56 @@ public class RunningAppInstall
         installTask?.Cancellation.Cancel();
     }
 
+    public IAsyncEnumerable<InstallProgress> ListenForProgressUpdates(CancellationToken cancellationToken = default)
+    {
+        ThrowIfNotRunning();
+        return installTask.Value.ProgressChannel.ReadAllAsync(cancellationToken);
+    }
+
     public InstallResult GetResult()
     {
-        if (!IsFinished)
-            throw new InvalidOperationException("Installation hasn't yet finished.");
-
+        ThrowIfNotFinished();
         return installTask.Value.Task.Result;
     }
 
-    private async Task<InstallResult> RunInstall(CancellationToken cancellationToken)
+    public async ValueTask<InstallResult> WaitForResult(CancellationToken cancellationToken = default)
     {
+        if (IsFinished)
+        {
+            return GetResult();
+        }
+        else
+        {
+            ThrowIfNotRunning();
+            return await installTask.Value.Task.WaitAsync(cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// NOTE: This function does not throw when <paramref name="cancellationToken"/> is cancelled.
+    /// </summary>
+    private async Task<InstallResult> RunInstall(ChannelWriter<InstallProgress> progressChannel, CancellationToken cancellationToken)
+    {
+        void ProgressUpdate(InstallProgress prog)
+        {
+            LatestProgress = prog;
+            bool written = progressChannel.TryWrite(prog);
+            Debug.Assert(written);
+        }
+
         InstallResult result;
 
         try
         {
             // Remove old install entry
-            await library.UpdateEntryAsync(App.Uuid, lib => lib with { Install = null, InstalledVerNum = null });
+            await library.UpdateEntryAsync(App.Uuid, lib => lib with { Install = null });
 
             // Start install
-            result = await installer.InstallAsync(App.Uuid, Install, onProgressUpdate: UpdateProgress, cancellationToken);
+            result = await installer.InstallAsync(App.Uuid, Install, onProgressUpdate: ProgressUpdate, cancellationToken);
 
             // Add new install entry if install was successful
             if (result.IsSuccess)
-                await library.UpdateEntryAsync(App.Uuid, lib => lib with { Install = Install, InstalledVerNum = Version.VerNum });
+                await library.UpdateEntryAsync(App.Uuid, lib => lib with { Install = new(Version.VerNum, Install) });
         }
         catch (OperationCanceledException)
         {
@@ -109,11 +147,22 @@ public class RunningAppInstall
             result = InstallResult.Errored();
         }
 
+        // No need to register to CancellationToken as we catch the OperationCanceledException
+        progressChannel.Complete();
         return result;
     }
 
-    private void UpdateProgress(InstallProgress progress)
+    [MemberNotNull(nameof(installTask))]
+    private void ThrowIfNotFinished()
     {
-        Progress = progress;
+        if (!IsFinished)
+            throw new InvalidOperationException("Installation hasn't yet finished.");
+    }
+
+    [MemberNotNull(nameof(installTask))]
+    private void ThrowIfNotRunning()
+    {
+        if (!IsRunning)
+            throw new InvalidOperationException("Installation is not running.");
     }
 }

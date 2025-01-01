@@ -1,4 +1,6 @@
 ﻿@using NLauncher.Code.Extensions
+@using NLauncher.Components.Menus
+@using NLauncher.Components.Menus.LibraryCard
 @using NLauncher.Index.Enums
 @using NLauncher.Index.Models.Applications
 @using NLauncher.Index.Models.Index
@@ -13,10 +15,9 @@
     @{
         IndexAsset? backgroundImage = Entry?.Assets.Largest(AssetType.Panel);
 
-        <!-- onclick on MudCard instead of MudItem so that the click doesn't register inside the grid spacing -->
         <MudPaper Outlined Elevation="0"
-                  Class="card_hover_effect library_card_container"
-                  Style="@GetBackgroundImageCss(backgroundImage)">
+        Class="card_hover_effect library_card_container"
+        Style="@GetBackgroundImageCss(backgroundImage)">
             <!-- Image -->
             @if (Entry is not null)
             {
@@ -36,27 +37,32 @@
             }
 
             <a class="library_card_overlay" style="align-content:center"
-               href="@linkPlayHref" target="_blank"
-               @onclick="@OnCardPressed">
+            href="@linkPlayHref" target="_blank"
+            @onclick="OnCardPressed"
+            @oncontextmenu="@OpenContextMenu" @oncontextmenu:preventDefault>
+                <MudIconButton Class="library_card_overlay_button" Icon="@(Icons.Material.Rounded.MoreVert)" OnClick="OpenContextMenu" />
 
-               @if (CanPlay)
-               {
+                @if (CanPlay)
+                {
                     <MudText Align="Align.Center" Typo="Typo.h4">PLAY</MudText>
-               }
-               else if (isInstalling)
-               {
-                   <MudText Align="Align.Center" Typo="Typo.h4">INSTALLING</MudText>
-               }
-               else if (canInstall)
-               {
-                   <MudText Align="Align.Center" Typo="Typo.h4">INSTALL</MudText>
-               }
-               else
-               {
+                }
+                else if (isInstalling)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.h4">INSTALLING</MudText>
+                }
+                else if (canInstall)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.h4">INSTALL</MudText>
+                }
+                else
+                {
                     <MudText Align="Align.Center" Typo="Typo.h4">NOT AVAILABLE</MudText>
-               }
+                }
             </a>
         </MudPaper>
+
+        <!-- Outside of library card overlay to prevent overlay flickering --> 
+        <LibraryCardMenu @ref=menu Entry="@Entry" />
     }
 </MudItem>
 
@@ -88,5 +94,10 @@
 }
 .library_card_overlay:hover {
     opacity: 1;
+}
+
+.library_card_overlay_button {
+    position: absolute;
+    right: 4px; top: 4px;
 }
 </style>

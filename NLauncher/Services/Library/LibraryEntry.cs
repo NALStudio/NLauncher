@@ -13,13 +13,12 @@ public readonly record struct LibraryEntry(Guid AppId, long LastUpdatedTimestamp
 public record class LibraryData
 {
     /// <summary>
-    /// The install id of the application or <see langword="null"/> if the application has not yet been installed.
+    /// The install of the application or <see langword="null"/> if the application has not yet been installed.
     /// </summary>
     /// <remarks>
     /// If the app is not installed, it can still be in the library as a website link for example.
     /// </remarks>
-    public AppInstall? Install { get; init; }
-    public uint? InstalledVerNum { get; init; }
+    public LibraryInstallData? Install { get; init; }
 
     [JsonIgnore]
     [MemberNotNullWhen(true, nameof(Install))]
@@ -30,3 +29,5 @@ public record class LibraryData
     /// </summary>
     public uint? VerNum { get; init; }
 }
+
+public record class LibraryInstallData(uint VerNum, AppInstall Install);

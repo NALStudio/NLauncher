@@ -1,0 +1,187 @@
+﻿@using NLauncher.Code.Models
+@using System.Threading.Channels
+@using System.Diagnostics
+@using NLauncher.Components.Menus.Downloads
+@using NLauncher.Index.Models.Applications
+@using System.Text
+@using NLauncher.Index.Models.Index
+@using NLauncher.Services.Index
+
+@implements IAsyncDisposable
+
+<MudDialog>
+    <DialogContent>
+        <!-- y padding needed so that the scroll bar isn't visible in dialog -->
+        <MudStack Row Class="py-2 px-4" Spacing="6" AlignItems="AlignItems.Center">
+            @{
+                (bool indeterminate, double value) = GetProgress();
+                (string state, Color color) = GetState();
+
+                <MudProgressCircular Color="@color"
+                                     Indeterminate="@indeterminate"
+                                     Value="@value"
+                                     Min="0"
+                                     Max="1" />
+
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.h6">
+                        @state
+                    </MudText>
+
+                    @if (!result.HasValue && !string.IsNullOrWhiteSpace(progress.Message))
+                    {
+                        <MudText Typo="Typo.subtitle1">
+                            @(progress.Message)
+                        </MudText>
+                    }
+                </MudStack>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Disabled="@(!CanCloseDialog)" Color="Color.Primary" OnClick="CloseDialog">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Inject]
+    private IndexService IndexService { get; set; } = default!;
+
+    [Parameter]
+    public Guid? AppId { get; set; } = null;
+
+    private bool CanCloseDialog => result.HasValue;
+
+    // single writer cannot be guaranteed as we expose this API publically
+    private Channel<InstallProgress> channel = Channel.CreateBounded<InstallProgress>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropOldest, SingleReader = true });
+    InstallResult? result = null;
+    private InstallProgress progress = InstallProgress.Starting;
+
+    private (Task Task, CancellationTokenSource CancellationToken)? updateUi;
+
+    protected override void OnInitialized()
+    {
+        CancellationTokenSource ct = new();
+        updateUi = (UpdateUI(ct.Token), ct);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        SetTitle(null);
+        AppManifest? app = await LoadApp();
+        if (app is not null)
+            SetTitle(app);
+    }
+
+    public void UpdateProgress(InstallProgress progress)
+    {
+        bool written = channel.Writer.TryWrite(progress);
+        Debug.Assert(written, "Channel should drop the oldest element so that all writes do not block.");
+    }
+
+    public void SetResult(InstallResult result)
+    {
+        if (this.result.HasValue)
+            throw new InvalidOperationException("Result has already been set.");
+
+        this.result = result;
+        channel.Writer.Complete();
+
+        // Uninstall is a bit too quick and makes this auto-close look quite jarring
+        // if (result.IsSuccess)
+        //     CloseDialog();
+    }
+
+    private void SetTitle(AppManifest? app)
+    {
+        StringBuilder sb = new("Uninstalling");
+
+        if (app is not null)
+        {
+            sb.Append(' ');
+            sb.Append(app.DisplayName);
+        }
+
+        sb.Append("...");
+        MudDialog.SetTitle(sb.ToString());
+    }
+
+    private (string State, Color Color) GetState()
+    {
+        return DownloadsMenuItem.GetState(result, progress, finishedText: "Uninstalled");
+    }
+
+    /*
+    private string? GetIcon()
+    {
+        if (!result.HasValue)
+            return null;
+
+        if (result.Value.IsSuccess)
+            return Icons.Material.Rounded.Check;
+
+        if (result.Value.IsCancelled)
+            return Icons.Material.Rounded.Block;
+
+        return Icons.Material.Rounded.PriorityHigh;
+    }
+    */
+
+    private async Task<AppManifest?> LoadApp()
+    {
+        if (!AppId.HasValue)
+            return null;
+
+        Guid appId = AppId.Value;
+        IndexManifest index = await IndexService.GetIndexAsync();
+
+        if (!index.TryGetEntry(appId, out IndexEntry? entry))
+            return null;
+
+        return entry.Manifest;
+    }
+
+    private (bool Indeterminate, double Value) GetProgress()
+    {
+        if (result.HasValue)
+            return (false, 1d);
+        else
+            return (!progress.Progress.HasValue, progress.Progress ?? 0d);
+    }
+
+    private async Task UpdateUI(CancellationToken cancellationToken)
+    {
+        await foreach (InstallProgress progress in channel.Reader.ReadAllAsync(cancellationToken))
+        {
+            this.progress = progress;
+            StateHasChanged();
+        }
+
+        Debug.Assert(result.HasValue);
+        StateHasChanged();
+    }
+
+    private void CloseDialog()
+    {
+        if (CanCloseDialog)
+            MudDialog.Close();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (updateUi.HasValue)
+        {
+            updateUi.Value.CancellationToken.Cancel();
+
+            try
+            {
+                await updateUi.Value.Task;
+            }
+            catch (OperationCanceledException)
+            {}
+        }
+    }
+}

@@ -1,0 +1,26 @@
+﻿@using MudBlazor.Utilities
+@using NLauncher.Index.Models.Index
+@using NLauncher.Services.Apps
+@using System.Diagnostics
+
+@inject AppUninstallService UninstallService
+@inject IDialogService DialogService
+
+<MudMenu @ref=menu PositionAtCursor>
+    <LibraryCardMenuContent Entry="Entry" />
+</MudMenu>
+
+@code {
+    [Parameter, EditorRequired]
+    public required IndexEntry? Entry { get; set; }
+
+    private MudMenu menu = default!;
+    private MouseEventArgs? eventArgs = null;
+
+    // The incorrect position should be fixed in the next MudBlazor update
+    public async Task Open(MouseEventArgs args)
+    {
+        eventArgs = args;
+        await menu.OpenMenuAsync(args);
+    }
+}

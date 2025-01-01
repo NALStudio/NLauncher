@@ -98,7 +98,7 @@ public class AppInstallService
             if (installsUnsafe.Remove(appId, out RunningAppInstall? removed))
             {
                 removed.OnCompleted -= OnInstallCompleted;
-                removed.OnRestarted -= OnInstallRestarted;
+                removed.OnStarted -= OnInstallStarted;
             }
             else
             {
@@ -141,7 +141,7 @@ public class AppInstallService
             return installs.Any(static ins => !AppLinkPlayService.CanPlay(ins));
     }
 
-    private void OnInstallRestarted()
+    private void OnInstallStarted()
     {
         InstallChanged?.Invoke();
     }
@@ -169,7 +169,7 @@ public class AppInstallService
             return InstallResult.Errored("Application is already installing.");
 
         runningInstall.OnCompleted += OnInstallCompleted;
-        runningInstall.OnRestarted += OnInstallRestarted;
+        runningInstall.OnStarted += OnInstallStarted;
         runningInstall.Start();
         return InstallResult.Success();
     }

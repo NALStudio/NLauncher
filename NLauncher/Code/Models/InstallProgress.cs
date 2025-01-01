@@ -1,4 +1,6 @@
-﻿namespace NLauncher.Code.Models;
+﻿using NLauncher.Code.Language;
+
+namespace NLauncher.Code.Models;
 public readonly record struct InstallProgress
 {
     public static InstallProgress Starting { get; } = Indeterminate("Starting...");
@@ -11,11 +13,10 @@ public readonly record struct InstallProgress
     {
         static string? DownloadMessage(long downloadedBytes, long totalBytes)
         {
-            const decimal bytesToMegaBytes = 1m / (1024 * 1024);
-            decimal downloadedMeg = downloadedBytes * bytesToMegaBytes;
-            decimal totalMeg = totalBytes * bytesToMegaBytes;
+            string downloaded = HumanizeBinary.HumanizeBytes(downloadedBytes);
+            string total = HumanizeBinary.HumanizeBytes(totalBytes);
 
-            return $"{downloadedMeg:G3} MB / {totalMeg:G3} MB";
+            return $"{downloaded} / {total}";
         }
 
         downloadedBytes ??= 0L;

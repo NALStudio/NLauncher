@@ -1,0 +1,44 @@
+﻿@using MudBlazor.Utilities
+@using NLauncher.Index.Models.Index
+@using NLauncher.Services.Apps
+@using System.Diagnostics
+
+@inject AppUninstallService UninstallService
+@inject IDialogService DialogService
+
+<MudMenuItem Disabled="@(!canUninstall)" OnClick="Uninstall">Uninstall</MudMenuItem>
+
+@code {
+    [CascadingParameter]
+    private MudPopover? ParentMenu { get; set; }
+
+    [Parameter, EditorRequired]
+    public required IndexEntry? Entry { get; set; }
+
+    private bool canUninstall;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        ResetData();
+        if (Entry is not null)
+            await LoadData(Entry);
+    }
+
+    private void ResetData()
+    {
+        canUninstall = false;
+    }
+
+    private async Task LoadData(IndexEntry entry)
+    {
+        canUninstall = await UninstallService.CanUninstall(entry.Manifest.Uuid);
+
+        StateHasChanged();
+    }
+
+    private async Task Uninstall()
+    {
+        Debug.Assert(Entry is not null);
+        _ = await UninstallService.UninstallAsync(Entry.Manifest.Uuid, DialogService);
+    }
+}

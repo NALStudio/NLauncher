@@ -1,5 +1,6 @@
 using NLauncher.Windows.Commands;
 using NLauncher.Windows.Commands.Install;
+using NLauncher.Windows.Commands.Uninstall;
 using Spectre.Console.Cli;
 using System.Net.Http.Headers;
 
@@ -46,6 +47,10 @@ internal static class Program
             config.AddBranch<InstallSettings>("install", install =>
             {
                 install.AddCommand<BinaryInstallCommand>("binary");
+            });
+            config.AddBranch<UninstallSettings>("uninstall", uninstall =>
+            {
+                uninstall.AddCommand<BinaryUninstallCommand>("binary");
             });
             config.AddCommand<RunCommand>("run");
         });

@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
+using NLauncher.Components.Menus.LibraryCard;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
 using NLauncher.Services;
@@ -32,6 +34,8 @@ public partial class LibraryCardItem
 
     [Parameter, EditorRequired]
     public LibraryData? LibraryData { get; set; }
+
+    private LibraryCardMenu? menu;
 
     private bool canInstall = false;
 
@@ -85,6 +89,11 @@ public partial class LibraryCardItem
         {
             await DialogService.ShowMessageBox(null, "Game startup has not yet been implemented.");
         }
+    }
+
+    private void OpenContextMenu(MouseEventArgs args)
+    {
+        menu?.Open(args);
     }
 
     private static string GetBackgroundImageCss(IndexAsset? asset)
