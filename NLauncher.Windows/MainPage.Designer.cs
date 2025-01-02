@@ -48,6 +48,7 @@ partial class MainPage
         Controls.Add(blazorWebView);
         MinimumSize = new Size(480, 270);
         Name = "MainPage";
+        Text = "NLauncher";
         ResumeLayout(false);
     }
 

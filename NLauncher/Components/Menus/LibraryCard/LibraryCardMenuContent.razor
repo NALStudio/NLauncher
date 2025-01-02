@@ -1,11 +1,24 @@
 ﻿@using MudBlazor.Utilities
+@using NLauncher.Index.Models.Applications.Installs
 @using NLauncher.Index.Models.Index
 @using NLauncher.Services.Apps
 @using System.Diagnostics
+@using NLauncher.Services.Library
 
 @inject AppUninstallService UninstallService
 @inject IDialogService DialogService
+@inject AppInstallService AppInstallService
+@inject LibraryService LibraryService
+@inject IPlatformInstaller PlatformInstaller
 
+<!-- Hide "remove from library"" button when application can be uninstalled -->
+<!-- (we also show the button if we can both uninstall and remove from library although this is currently not possible) -->
+@if (!canUninstall || canRemoveFromLibrary)
+{
+    <MudMenuItem Disabled="@(!canRemoveFromLibrary)" OnClick="RemoveFromLibrary">Remove From Library</MudMenuItem>
+}
+
+<MudMenuItem Disabled="@(!BrowseLocalsData.HasValue)" OnClick="BrowseLocals">Browse Local Files</MudMenuItem>
 <MudMenuItem Disabled="@(!canUninstall)" OnClick="Uninstall">Uninstall</MudMenuItem>
 
 @code {
@@ -15,6 +28,8 @@
     [Parameter, EditorRequired]
     public required IndexEntry? Entry { get; set; }
 
+    private (Guid appId, AppInstall install)? BrowseLocalsData;
+    private bool canRemoveFromLibrary;
     private bool canUninstall;
 
     protected override async Task OnParametersSetAsync()
@@ -26,11 +41,20 @@
 
     private void ResetData()
     {
+        BrowseLocalsData = null;
+        canRemoveFromLibrary = false;
         canUninstall = false;
     }
 
     private async Task LoadData(IndexEntry entry)
     {
+        LibraryEntry? libraryEntry = await LibraryService.TryGetEntry(entry.Manifest.Uuid);
+        AppInstall? installed = libraryEntry?.Data.Install?.Install;
+
+        if (installed is not null && PlatformInstaller.BrowseLocalFilesSupported(installed))
+            BrowseLocalsData = (entry.Manifest.Uuid, installed);
+
+        canRemoveFromLibrary = libraryEntry?.Data.IsInstalled != true && !AppInstallService.IsInstalling(entry.Manifest.Uuid);
         canUninstall = await UninstallService.CanUninstall(entry.Manifest.Uuid);
 
         StateHasChanged();
@@ -40,5 +64,33 @@
     {
         Debug.Assert(Entry is not null);
         _ = await UninstallService.UninstallAsync(Entry.Manifest.Uuid, DialogService);
+    }
+
+    private async Task BrowseLocals()
+    {
+        if (!BrowseLocalsData.HasValue)
+            return;
+
+        (Guid appId, AppInstall install) = BrowseLocalsData.Value;
+        bool opened = false;
+        if (PlatformInstaller.BrowseLocalFilesSupported(install))
+            opened = await PlatformInstaller.BrowseLocalFilesAsync(appId, install);
+
+        if (!opened)
+            await ShowError("Local files could not be opened.");
+    }
+
+    private async Task RemoveFromLibrary()
+    {
+        if (Entry is null)
+            return;
+
+        if (!await LibraryService.RemoveEntryAsync(Entry.Manifest.Uuid))
+            await ShowError("Failed to remove app from library");
+    }
+
+    private async Task ShowError(string message)
+    {
+        await DialogService.ShowMessageBox("Error!", message);
     }
 }

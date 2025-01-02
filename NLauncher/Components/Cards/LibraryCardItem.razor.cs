@@ -44,6 +44,8 @@ public partial class LibraryCardItem
     private bool isInstalled = false;
     private string? linkPlayHref = null;
 
+    private bool mouseInsideMoreButton = false;
+
     protected override async Task OnParametersSetAsync()
     {
         canInstall = false;
@@ -102,5 +104,17 @@ public partial class LibraryCardItem
             return string.Empty;
 
         return $"background-image: url(\"{asset.Url}\")";
+    }
+
+    private void MouseEnteredMoreButton()
+    {
+        mouseInsideMoreButton = true;
+        StateHasChanged();
+    }
+
+    private void MouseLeftMoreButton()
+    {
+        mouseInsideMoreButton = false;
+        StateHasChanged();
     }
 }

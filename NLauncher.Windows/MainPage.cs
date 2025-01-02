@@ -11,14 +11,9 @@ namespace NLauncher.Windows;
 
 public partial class MainPage : Form
 {
-    private const string defaultTitle = "NLauncher";
-    private bool canChangeTitle = false;
-
     public MainPage()
     {
         InitializeComponent();
-
-        Text = defaultTitle;
 
         blazorWebView.HostPage = "wwwroot\\index.html";
         blazorWebView.Services = BuildServices();
@@ -46,12 +41,10 @@ public partial class MainPage : Form
     {
         string title = blazorWebView.WebView.CoreWebView2.DocumentTitle;
 
-        // During webview initialization, webview spews a bunch of random titles.
-        // We don't want these random titles to flicker on the window itself so we'll just wait until a proper title is provided.
-        if (title.StartsWith(defaultTitle, StringComparison.OrdinalIgnoreCase))
-            canChangeTitle = true;
-
-        if (canChangeTitle)
+        // During webview initialization, webview spews some random titles.
+        // We don't want these random titles to flicker on the window itself so we'll only change titles if they're valid.
+        // We check this each time because WebView first shows the title from the <head>, then random gibberish and then again the title from <head> which is dumb as fuck
+        if (title.StartsWith("NLauncher", StringComparison.OrdinalIgnoreCase))
             Text = title;
     }
 

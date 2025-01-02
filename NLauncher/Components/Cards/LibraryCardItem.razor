@@ -36,11 +36,18 @@
                 <MudSkeleton Width="100%" Height="100%" SkeletonType="SkeletonType.Rectangle" />
             }
 
-            <a class="library_card_overlay" style="align-content:center"
-            href="@linkPlayHref" target="_blank"
-            @onclick="OnCardPressed"
-            @oncontextmenu="@OpenContextMenu" @oncontextmenu:preventDefault>
-                <MudIconButton Class="library_card_overlay_button" Icon="@(Icons.Material.Rounded.MoreVert)" OnClick="OpenContextMenu" />
+            <a class="library_card_overlay"
+               style="align-content:center"
+               href="@(!mouseInsideMoreButton ? linkPlayHref : null)"
+               target="_blank"
+               @onclick="OnCardPressed"
+               @oncontextmenu="@OpenContextMenu" @oncontextmenu:preventDefault>
+
+                <MudIconButton @onmouseenter=MouseEnteredMoreButton
+                               @onmouseleave=MouseLeftMoreButton
+                               Class="library_card_overlay_button"
+                               Icon="@(Icons.Material.Rounded.MoreVert)"
+                               OnClick="OpenContextMenu" />
 
                 @if (CanPlay)
                 {
