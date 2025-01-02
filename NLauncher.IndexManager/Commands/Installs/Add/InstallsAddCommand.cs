@@ -167,28 +167,11 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
 
     private static async Task<AppInstall?> ConstructBinary()
     {
-        AnsiFormatter.WriteWarning("Currently only .zip format is supported.");
-        AnsiFormatter.WriteWarning("No file type nor integrity verification is done by the index manager.");
-        AnsiFormatter.WriteWarning("Thus it is the user's responsibility to ensure that they provide a valid file.");
-        AnsiConsole.Confirm("Is your file a valid .zip file?");
-
         Platforms platform = AnsiConsole.Prompt(
             new SelectionPrompt<Platforms>()
                 .Title("Choose Supported Platform")
                 .AddChoices(Enum.GetValues<Platforms>().Where(static p => p != Platforms.None))
         );
-
-        string exePath = AnsiConsole.Ask<string>("Executable path inside .zip:");
-        if (Path.IsPathRooted(exePath)) // Path is not relative if it's rooted
-        {
-            AnsiFormatter.WriteError("Path must be relative.");
-            return null;
-        }
-        if (Path.GetExtension(exePath) != ".exe")
-        {
-            AnsiFormatter.WriteError("Path must point to a .exe file.");
-            return null;
-        }
 
         InstallBinaryProvider provider = AnsiConsole.Prompt(
             new SelectionPrompt<InstallBinaryProvider>()
@@ -197,19 +180,84 @@ internal class InstallsAddCommand : AsyncCommand<MainSettings>, IMainCommand
                 .UseConverter(static p => p.DisplayName)
         );
 
-        AnsiFormatter.WriteSectionTitle("Compute Hash");
+        AnsiFormatter.WriteSectionTitle("Verify Files");
         InstallBinaryProvider.FileData? fileData = await provider.LoadFileDataAsync();
         if (fileData is null)
             return null;
 
+        string? executablePath = TrySelectExecutable(fileData.Files);
+        if (executablePath is null)
+            return null;
+        if (Path.IsPathRooted(executablePath)) // Path is not relative if it's rooted
+        {
+            AnsiFormatter.WriteError("Path must be relative.");
+            return null;
+        }
+
         return new BinaryAppInstall()
         {
             Platform = platform,
-            ExecutablePath = exePath,
+            ExecutablePath = executablePath,
 
             DownloadUrl = fileData.DownloadUrl,
             DownloadHash = Convert.ToBase64String(fileData.Hash.AsSpan())
         };
+    }
+
+    private static string? TrySelectExecutable(ImmutableArray<string> files)
+    {
+        string[] executables = files.Where(static f => Path.GetExtension(f) == ".exe").ToArray();
+        if (executables.Length < 1)
+        {
+            AnsiFormatter.WriteError("No executables found.");
+            return null;
+        }
+
+        string? commonRootFolder = GetCommonRootFolder(files);
+        if (commonRootFolder is not null)
+        {
+            for (int i = 0; i < executables.Length; i++)
+                executables[i] = Path.GetRelativePath(commonRootFolder, executables[i]);
+        }
+
+        return AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Choose Executable")
+                .AddChoices(executables)
+        );
+    }
+
+    private static string? GetRootFolder(string? path)
+    {
+        string? dir = Path.GetDirectoryName(path);
+        if (string.IsNullOrEmpty(dir)) // If file does not have a parent directory, it also doesn't have a root folder.
+            return null;
+
+        // Find the last directory. Taking the directory name of this directory results in null.
+        while (true)
+        {
+            string? newDir = Path.GetDirectoryName(dir);
+
+            if (string.IsNullOrEmpty(newDir))
+                return dir;
+
+            dir = newDir;
+        }
+    }
+
+    private static string? GetCommonRootFolder(IList<string> files)
+    {
+        if (files.Count < 1)
+            return null;
+
+        string? rootFolder = GetRootFolder(files[0]);
+        if (rootFolder is null)
+            return null;
+
+        if (files.All(f => f.StartsWith(rootFolder)))
+            return rootFolder;
+        else
+            return null;
     }
 
     private static Task<AppInstall?> ConstructStoreLink()

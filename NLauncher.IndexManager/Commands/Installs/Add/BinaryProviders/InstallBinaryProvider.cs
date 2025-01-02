@@ -1,15 +1,9 @@
-﻿using NLauncher.Index.Models.Applications.Installs;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Immutable;
 
 namespace NLauncher.IndexManager.Commands.Installs.Add.BinaryProviders;
 internal abstract class InstallBinaryProvider
 {
-    public record class FileData(Uri DownloadUrl, ImmutableArray<byte> Hash);
+    public record class FileData(Uri DownloadUrl, ImmutableArray<byte> Hash, ImmutableArray<string> Files);
 
     public abstract string DisplayName { get; }
 

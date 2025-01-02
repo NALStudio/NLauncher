@@ -2,6 +2,7 @@
 using NLauncher.IndexManager.Components;
 using Spectre.Console;
 using System.Collections.Immutable;
+using System.IO.Compression;
 using System.Security.Cryptography;
 
 namespace NLauncher.IndexManager.Commands.Installs.Add.BinaryProviders;
@@ -15,9 +16,12 @@ internal class WebFileInstallBinaryProvider : InstallBinaryProvider
         return await ComputeFileDataFromDownloads(url);
     }
 
-    public static async Task<FileData?> ComputeFileDataFromDownloads(Uri downloadUrl, int downloadCount = 2)
+    public static async Task<FileData?> ComputeFileDataFromDownloads(Uri downloadUrl)
     {
-        Task<byte[]>[] tasks = new Task<byte[]>[downloadCount];
+        const int hashCount = 2;
+
+        Task<byte[]>[] hashTasks = new Task<byte[]>[hashCount];
+        Task<string[]>? zipTask = null;
 
         await AnsiConsole.Progress()
             .Columns(
@@ -30,30 +34,33 @@ internal class WebFileInstallBinaryProvider : InstallBinaryProvider
             )
             .StartAsync(async ctx =>
             {
-                for (int i = 0; i < downloadCount; i++)
+                for (int i = 0; i < hashCount; i++)
                 {
-                    ProgressTask prog = ctx.AddTask($"Downloading file #{i}...");
-                    tasks[i] = DownloadAndComputeHash(prog, downloadUrl);
+                    ProgressTask hashProg = ctx.AddTask($"Downloading file... (hash #{i + 1})");
+                    hashTasks[i] = DownloadAndComputeHash(hashProg, downloadUrl);
                 }
 
-                await Task.WhenAll(tasks);
+                ProgressTask zipProg = ctx.AddTask("Downloading file... (zip)");
+                zipTask = DownloadAndGetFiles(zipProg, downloadUrl);
+
+                await Task.WhenAll([.. hashTasks, zipTask]);
             });
 
         AnsiConsole.WriteLine("Verifying file hashes...");
-        ReadOnlySpan<byte> expectedHash = tasks[0].Result.AsSpan();
-        for (int i = 1; i < tasks.Length; i++)
+        ReadOnlySpan<byte> expectedHash = hashTasks[0].Result.AsSpan();
+        for (int i = 1; i < hashTasks.Length; i++)
         {
-            if (!expectedHash.SequenceEqual(tasks[i].Result))
+            if (!expectedHash.SequenceEqual(hashTasks[i].Result))
             {
                 AnsiFormatter.WriteError("Downloaded files' hashes don't match.");
                 return null;
             }
         }
 
-        return new FileData(downloadUrl, expectedHash.ToImmutableArray());
+        return new FileData(downloadUrl, expectedHash.ToImmutableArray(), zipTask!.Result.ToImmutableArray());
     }
 
-    private static async Task<byte[]> DownloadAndComputeHash(ProgressTask progress, Uri downloadUrl)
+    private static async Task<Stream> DownloadAsStream(ProgressTask progress, Uri downloadUrl)
     {
         void DownloadProgressChanged(object? sender, DownloadProgressChangedEventArgs e)
         {
@@ -66,7 +73,19 @@ internal class WebFileInstallBinaryProvider : InstallBinaryProvider
             .Build();
         download.ChunkDownloadProgressChanged += DownloadProgressChanged;
 
-        Stream downloadStream = await download.StartAsync();
+        return await download.StartAsync();
+    }
+
+    private static async Task<byte[]> DownloadAndComputeHash(ProgressTask progress, Uri downloadUrl)
+    {
+        Stream downloadStream = await DownloadAsStream(progress, downloadUrl);
         return await SHA256.HashDataAsync(downloadStream);
+    }
+
+    private static async Task<string[]> DownloadAndGetFiles(ProgressTask progress, Uri downloadUrl)
+    {
+        Stream downloadStream = await DownloadAsStream(progress, downloadUrl);
+        using ZipArchive zip = new(downloadStream, ZipArchiveMode.Read);
+        return zip.Entries.Select(static e => e.FullName).ToArray();
     }
 }

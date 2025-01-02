@@ -1,10 +1,4 @@
 ﻿using Spectre.Console;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Components;
 
@@ -33,6 +27,11 @@ internal static class AnsiFormatter
     public static void WriteWarning(string msg)
     {
         AnsiConsole.MarkupLine($"[yellow]{msg.EscapeMarkup()}[/]");
+    }
+
+    public static void WriteSuccess(string msg)
+    {
+        AnsiConsole.MarkupLine($"[green]{msg.EscapeMarkup()}[/]");
     }
 
     public static TextPath DeletedFile(string pathToFileOrDirectory) => ColoredPath(pathToFileOrDirectory, Color.Yellow).LeafColor(Color.Red);
