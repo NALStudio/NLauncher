@@ -58,7 +58,7 @@ public partial class AppInfoCard : IDisposable
 
     protected override void OnInitialized()
     {
-        AppInstallService.InstallChanged += OnInstallChanged;
+        AppInstallService.OnCountChanged += OnInstallChanged;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -165,6 +165,8 @@ public partial class AppInfoCard : IDisposable
     {
         if (Entry is null)
             return;
+        if (isStartingInstall)
+            return;
 
         isStartingInstall = true;
 
@@ -191,19 +193,19 @@ public partial class AppInfoCard : IDisposable
             return "TBD";
     }
 
-    private static string? GetPlatformIcon(Platforms platform)
+    private static string GetPlatformIcon(Platforms platform)
     {
         return platform switch
         {
             Platforms.Windows => Icons.Custom.Brands.MicrosoftWindows,
             Platforms.Browser => Icons.Material.Rounded.Language,
             Platforms.Android => Icons.Material.Rounded.Android,
-            _ => null
+            _ => Icons.Material.Rounded.DeviceUnknown
         };
     }
 
     public void Dispose()
     {
-        AppInstallService.InstallChanged -= OnInstallChanged;
+        AppInstallService.OnCountChanged -= OnInstallChanged;
     }
 }

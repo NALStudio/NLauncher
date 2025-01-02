@@ -20,6 +20,9 @@ public class LibraryService
     /// <summary>
     /// Fired when any entry change happens.
     /// </summary>
+    /// <remarks>
+    /// This event is called from the thread that is doing the entry change.
+    /// </remarks>
     public event Action? EntriesChanged;
 
     public async Task<LibraryEntry[]> GetEntriesAsync()

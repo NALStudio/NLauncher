@@ -16,6 +16,7 @@
             @{
                 (bool indeterminate, double value) = GetProgress();
                 (string state, Color color) = GetState();
+                string? message = result.HasValue ? result.Value.ErrorMessage : progress.Message;
 
                 <MudProgressCircular Color="@color"
                                      Indeterminate="@indeterminate"
@@ -28,10 +29,10 @@
                         @state
                     </MudText>
 
-                    @if (!result.HasValue && !string.IsNullOrWhiteSpace(progress.Message))
+                    @if (!string.IsNullOrWhiteSpace(message))
                     {
                         <MudText Typo="Typo.subtitle1">
-                            @(progress.Message)
+                            @message
                         </MudText>
                     }
                 </MudStack>

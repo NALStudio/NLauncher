@@ -25,12 +25,13 @@ public class AppInstallService
         public bool AlwaysAskInstallMethod { get; init; } = false;
     }
 
-    private readonly Dictionary<Guid, RunningAppInstall> installsUnsafe = new();
+    private readonly OrderedDictionary<Guid, RunningAppInstall> installsUnsafe = new();
 
-    /// <summary>
-    /// Fires when an install is added, removed or finished.
-    /// </summary>
-    public event Action? InstallChanged;
+    public event Action? OnCountChanged;
+
+    private int _activeCount;
+    public int ActiveCount => _activeCount;
+    public event Action<int>? OnActiveCountChanged;
 
     private readonly ILogger<AppInstallService> logger;
 
@@ -97,8 +98,7 @@ public class AppInstallService
 
             if (installsUnsafe.Remove(appId, out RunningAppInstall? removed))
             {
-                removed.OnCompleted -= OnInstallCompleted;
-                removed.OnStarted -= OnInstallStarted;
+                UnsubscribeEvents(removed);
             }
             else
             {
@@ -107,7 +107,7 @@ public class AppInstallService
             }
         }
 
-        InstallChanged?.Invoke();
+        OnCountChanged?.Invoke();
         return true;
     }
 
@@ -141,15 +141,6 @@ public class AppInstallService
             return installs.Any(static ins => !AppLinkPlayService.CanPlay(ins));
     }
 
-    private void OnInstallStarted()
-    {
-        InstallChanged?.Invoke();
-    }
-    private void OnInstallCompleted(InstallResult result)
-    {
-        InstallChanged?.Invoke();
-    }
-
     private async Task<InstallResult> InternalInstall(AppManifest app, AppInstallConfig config)
     {
         InstallResult<AppVersion> version = await ResolveVersion(app, config.DialogService, verifyIfNotLatestVersion: config.VerifyIfNotLatestVersion);
@@ -168,8 +159,6 @@ public class AppInstallService
         if (!TryAddInstall(app.Uuid, runningInstall))
             return InstallResult.Errored("Application is already installing.");
 
-        runningInstall.OnCompleted += OnInstallCompleted;
-        runningInstall.OnStarted += OnInstallStarted;
         runningInstall.Start();
         return InstallResult.Success();
     }
@@ -178,13 +167,19 @@ public class AppInstallService
     {
         lock (installsUnsafe)
         {
-            if (installsUnsafe.TryGetValue(appId, out RunningAppInstall? existingInstall) && !existingInstall.IsFinished)
-                return false;
+            if (installsUnsafe.TryGetValue(appId, out RunningAppInstall? existingInstall))
+            {
+                if (!existingInstall.IsFinished)
+                    return false;
 
+                UnsubscribeEvents(existingInstall);
+            }
+
+            SubscribeEvents(newInstall);
             installsUnsafe[appId] = newInstall;
         }
 
-        InstallChanged?.Invoke();
+        OnCountChanged?.Invoke();
         return true;
     }
 
@@ -231,5 +226,29 @@ public class AppInstallService
             return InstallResult.Errored<AppVersion>("Version not found.");
 
         return InstallResult.Success(version);
+    }
+
+    private void IncrementActiveCount()
+    {
+        int count = Interlocked.Increment(ref _activeCount);
+        OnActiveCountChanged?.Invoke(count);
+    }
+
+    private void DecrementActiveCount()
+    {
+        int count = Interlocked.Decrement(ref _activeCount);
+        OnActiveCountChanged?.Invoke(count);
+    }
+
+    private void SubscribeEvents(RunningAppInstall install)
+    {
+        install.OnStarted += IncrementActiveCount;
+        install.OnBeforeFinish += DecrementActiveCount;
+    }
+
+    private void UnsubscribeEvents(RunningAppInstall install)
+    {
+        install.OnStarted -= IncrementActiveCount;
+        install.OnBeforeFinish -= DecrementActiveCount;
     }
 }

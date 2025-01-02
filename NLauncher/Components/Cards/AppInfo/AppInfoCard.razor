@@ -104,13 +104,9 @@
                             <MudStack Row Spacing="2">
                                 @foreach (Platforms platform in supportedPlatforms.GetIndividualValues())
                                 {
-                                    string? icon = GetPlatformIcon(platform);
-                                    if (icon is not null)
-                                    {
-                                        <MudTooltip RootStyle="height:24px" Text="@(platform.ToString())" Placement="Placement.Top">
-                                            <MudIcon Icon="@icon" />
-                                        </MudTooltip>
-                                    }
+                                    <MudTooltip RootStyle="height:24px" Text="@(platform.ToString())" Placement="Placement.Top">
+                                        <MudIcon Icon="@(GetPlatformIcon(platform))" />
+                                    </MudTooltip>
                                 }
                             </MudStack>
                         </ValueContent>

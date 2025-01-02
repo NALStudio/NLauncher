@@ -29,7 +29,14 @@ public class RunningAppInstall
     private InstallTask? installTask = null;
 
     public event Action? OnStarted;
-    public event Action<InstallResult>? OnCompleted;
+
+    /// <summary>
+    /// Fires just before the install is about to finish.
+    /// </summary>
+    /// <remarks>
+    /// This function will almost always be called from another thread.
+    /// </remarks>
+    public event Action? OnBeforeFinish;
 
     public RunningAppInstall(LibraryService library, IPlatformInstaller installer, AppManifest app, AppVersion version, AppInstall install)
     {
@@ -50,10 +57,7 @@ public class RunningAppInstall
         Channel<InstallProgress> channel = Channel.CreateBounded<InstallProgress>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropOldest, SingleWriter = true });
 
         CancellationTokenSource ct = new();
-        Task<InstallResult> task = RunInstall(channel.Writer, ct.Token);
-
-        // Execute synchronously so that we can update Blazor UI with the event.
-        task.ContinueWith(t => OnCompleted?.Invoke(t.Result), TaskContinuationOptions.ExecuteSynchronously);
+        Task<InstallResult> task = Task.Run(() => RunInstall(channel.Writer, ct.Token));
 
         installTask = new(task, ct, channel.Reader);
 
@@ -149,6 +153,8 @@ public class RunningAppInstall
 
         // No need to register to CancellationToken as we catch the OperationCanceledException
         progressChannel.Complete();
+
+        OnBeforeFinish?.Invoke();
         return result;
     }
 

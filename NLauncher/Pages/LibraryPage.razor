@@ -39,6 +39,7 @@
         StateHasChanged(); // Refresh state after index service has been discovered (we can now render the app cards)
     }
 
+    // This method must be thread safe
     private async Task LoadAppsAsync()
     {
         LibraryEntry[] library = await LibraryService.GetEntriesAsync();
@@ -47,6 +48,6 @@
         Array.Sort<LibraryEntry>(library, static (a, b) => b.LastUpdatedTimestamp.CompareTo(a.LastUpdatedTimestamp));
 
         librarySorted = library;
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 }

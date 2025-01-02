@@ -24,12 +24,13 @@ public partial class MainLayout : IDisposable
     private AppInstallService AppInstallService { get; set; } = default!;
 
     private bool anyInstallsRunning = false;
+
     private bool drawerOpen = true;
 
     protected override void OnInitialized()
     {
         AppBarMenus.OnChanged += AppBarMenusChanged;
-        AppInstallService.InstallChanged += InstallCountChanged;
+        AppInstallService.OnActiveCountChanged += InstallCountChanged;
     }
 
     private void SetDrawerOpen(bool open)
@@ -52,10 +53,10 @@ public partial class MainLayout : IDisposable
         NavigationManager.NavigateToApp(index, app);
     }
 
-    private void InstallCountChanged()
+    private void InstallCountChanged(int count)
     {
-        anyInstallsRunning = AppInstallService.GetInstalls().Any(static ins => !ins.IsFinished);
-        StateHasChanged();
+        anyInstallsRunning = count > 0;
+        InvokeAsync(StateHasChanged);
     }
 
     private void AppBarMenusChanged()
@@ -66,7 +67,7 @@ public partial class MainLayout : IDisposable
     public void Dispose()
     {
         AppBarMenus.OnChanged -= AppBarMenusChanged;
-        AppInstallService.InstallChanged -= InstallCountChanged;
+        AppInstallService.OnActiveCountChanged -= InstallCountChanged;
 
         GC.SuppressFinalize(this);
     }
