@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 
 namespace NLauncher.Index.Enums;
 
@@ -20,9 +21,11 @@ public enum Platforms
 
 public static class PlatformsEnum
 {
+    public static ImmutableArray<Platforms> IndividualValues { get; } = Enum.GetValues<Platforms>().Where(static p => int.PopCount((int)p) == 1).ToImmutableArray();
+
     public static IEnumerable<Platforms> GetIndividualValues(this Platforms platforms)
     {
-        foreach (Platforms value in Enum.GetValues<Platforms>())
+        foreach (Platforms value in IndividualValues)
         {
             if (platforms.HasFlag(value))
                 yield return value;
