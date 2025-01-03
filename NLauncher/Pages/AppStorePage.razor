@@ -14,11 +14,9 @@
 
 @if (app is not null)
 {
+    // Show app name in title if possible
+    // use default title otherwise
     <PageTitle>NLauncher - @(app.Manifest.DisplayName)</PageTitle>
-}
-else
-{
-    <PageTitle>NLauncher</PageTitle>
 }
 
 <MudContainer MaxWidth="MaxWidth.Large" Gutters="false">

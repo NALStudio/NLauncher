@@ -1,0 +1,26 @@
+﻿@{
+    string? valueText = Value ?? AltText;
+
+    if (valueText is not null)
+    {
+        <MudStack Row AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.subtitle2">@Label</MudText>
+            <MudText Typo="Typo.caption" Style="flex:1" Align="Align.Right">@valueText</MudText>
+        </MudStack>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required string Label { get; set; }
+
+    /// <summary>
+    /// <para>Component will be hidden if this is set as <see langword="null" />.</para>
+    /// <para>If <see cref="AltText" /> is set, it will be used in place of the value instead of hiding the entire component.</para>
+    /// </summary>
+    [Parameter, EditorRequired]
+    public required string? Value { get; set; }
+
+    [Parameter]
+    public string? AltText { get; set; }
+}

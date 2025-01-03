@@ -17,26 +17,6 @@ public class WindowsPlatformInstaller : IPlatformInstaller, IDisposable
         this.logger = logger;
     }
 
-    public bool BrowseLocalFilesSupported(AppInstall install)
-    {
-        return install is BinaryAppInstall;
-    }
-
-    public virtual ValueTask<bool> BrowseLocalFilesAsync(Guid appId, AppInstall install)
-    {
-        if (install is not BinaryAppInstall)
-            return ValueTask.FromResult(false);
-
-        DirectoryInfo dir = SystemDirectories.GetLibraryPath(appId);
-        if (!dir.Exists)
-            return ValueTask.FromResult(false);
-
-        // Hopefully the path is not malicious, I have no way to check really other than that the directory actually exists
-        // I try to be a bit more secure by using explorer instead of running the path manually... Explorer will still open a file if one exists though...
-        Process.Start("explorer.exe", [dir.FullName]);
-        return ValueTask.FromResult(true);
-    }
-
     public bool InstallSupported(AppInstall install)
     {
         return install is BinaryAppInstall bai && bai.Platform.HasFlag(Platforms.Windows);
@@ -47,7 +27,7 @@ public class WindowsPlatformInstaller : IPlatformInstaller, IDisposable
         InstallResult result = await RunInstallAsync(uninstall: false, appId, install, onProgressUpdate, cancellationToken);
 
         // Clean download directory
-        DirectoryInfo downloadDir = SystemDirectories.GetDownloadsPath(appId);
+        DirectoryInfo downloadDir = SystemPaths.GetDownloadsPath(appId);
         if (downloadDir.Exists)
         {
             if (result.IsSuccess)

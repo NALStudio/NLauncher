@@ -1,15 +1,23 @@
 ﻿@using MudBlazor.Utilities
+@using NLauncher.Code.Language
+@using NLauncher.Components.Dialogs.Uninstalls
 @using NLauncher.Index.Models.Applications.Installs
 @using NLauncher.Index.Models.Index
+@using NLauncher.Pages
 @using NLauncher.Services.Apps
 @using System.Diagnostics
+@using NLauncher.Services.Index
 @using NLauncher.Services.Library
 
 @inject AppUninstallService UninstallService
 @inject IDialogService DialogService
 @inject AppInstallService AppInstallService
 @inject LibraryService LibraryService
+@inject IAppLocalFiles AppLocalFiles
 @inject IPlatformInstaller PlatformInstaller
+@inject IndexService IndexService
+
+<MudMenuItem Disabled="@(storePageHref is null)" Href="@storePageHref">Open Store Page</MudMenuItem>
 
 <!-- Hide "remove from library"" button when application can be uninstalled -->
 <!-- (we also show the button if we can both uninstall and remove from library although this is currently not possible) -->
@@ -21,6 +29,18 @@
 <MudMenuItem Disabled="@(!BrowseLocalsData.HasValue)" OnClick="BrowseLocals">Browse Local Files</MudMenuItem>
 <MudMenuItem Disabled="@(!canUninstall)" OnClick="Uninstall">Uninstall</MudMenuItem>
 
+@if (data.Count > 0)
+{
+    <MudPaper Class="ma-2 pa-2" Elevation="0" Outlined>
+        <MudStack Spacing="0">
+            @foreach ((string label, string value) in data)
+            {
+                <LibraryCardMenuDataEntry Label="@label" Value="@value" />
+            }
+        </MudStack>
+    </MudPaper>
+}
+
 @code {
     [CascadingParameter]
     private MudPopover? ParentMenu { get; set; }
@@ -28,42 +48,98 @@
     [Parameter, EditorRequired]
     public required IndexEntry? Entry { get; set; }
 
+    private bool firstLoadStarted = false;
+    private IndexEntry? oldEntry = null;
+
+    // Buttons
+    private string? storePageHref;
     private (Guid appId, AppInstall install)? BrowseLocalsData;
     private bool canRemoveFromLibrary;
     private bool canUninstall;
 
+    // Data
+    private readonly List<(string Label, string Value)> data = new();
+
     protected override async Task OnParametersSetAsync()
     {
-        ResetData();
-        if (Entry is not null)
-            await LoadData(Entry);
+        if (!ReferenceEquals(oldEntry, Entry) || !firstLoadStarted)
+        {
+            oldEntry = Entry;
+            firstLoadStarted = true;
+
+            await ReloadAll();
+        }
     }
 
-    private void ResetData()
+    private async Task ReloadAll()
     {
+        ResetAll();
+
+        if (Entry is IndexEntry entry)
+        {
+            IndexManifest index = await IndexService.GetIndexAsync();
+            LibraryEntry? libraryEntry = await LibraryService.TryGetEntry(entry.Manifest.Uuid);
+
+            await LoadButtons(entry, index, libraryEntry);
+            StateHasChanged();
+
+            await LoadData(entry, index, libraryEntry);
+            StateHasChanged();
+        }
+    }
+
+    private void ResetAll()
+    {
+        storePageHref = null;
         BrowseLocalsData = null;
         canRemoveFromLibrary = false;
         canUninstall = false;
+
+        data.Clear();
     }
 
-    private async Task LoadData(IndexEntry entry)
+    private async Task LoadButtons(IndexEntry entry, IndexManifest index, LibraryEntry? libraryEntry)
     {
-        LibraryEntry? libraryEntry = await LibraryService.TryGetEntry(entry.Manifest.Uuid);
         AppInstall? installed = libraryEntry?.Data.Install?.Install;
 
-        if (installed is not null && PlatformInstaller.BrowseLocalFilesSupported(installed))
+        storePageHref = AppStorePage.GetPageRoute(index, entry.Manifest.Uuid);
+
+        if (installed is not null && AppLocalFiles.OpenFileBrowserSupported(installed))
             BrowseLocalsData = (entry.Manifest.Uuid, installed);
 
         canRemoveFromLibrary = libraryEntry?.Data.IsInstalled != true && !AppInstallService.IsInstalling(entry.Manifest.Uuid);
         canUninstall = await UninstallService.CanUninstall(entry.Manifest.Uuid);
+    }
 
-        StateHasChanged();
+    private async Task LoadData(IndexEntry entry, IndexManifest index, LibraryEntry? libraryEntry)
+    {
+        LibraryInstallData? install = libraryEntry?.Data.Install;
+
+        if (install is not null)
+        {
+            long? sizeInBytes = await Task.Run(() => AppLocalFiles.ComputeSizeInBytes(entry.Manifest.Uuid, install.Install));
+            if (sizeInBytes.HasValue)
+                TryAddData("Size", HumanizeBinary.HumanizeBytes(sizeInBytes.Value));
+
+            TryAddData("Version", entry.Manifest.GetVersion(install.VerNum)?.Identifier);
+        }
+    }
+
+    private void TryAddData(string label, string? value)
+    {
+        if (value is null)
+            return;
+
+        data.Add((label, value));
     }
 
     private async Task Uninstall()
     {
         Debug.Assert(Entry is not null);
-        _ = await UninstallService.UninstallAsync(Entry.Manifest.Uuid, DialogService);
+
+        bool uninstall = await ConfirmUninstallDialog.ShowAsync(DialogService, Entry.Manifest);
+        if (uninstall)
+            _ = await UninstallService.UninstallAsync(Entry.Manifest.Uuid, DialogService);
     }
 
     private async Task BrowseLocals()
@@ -73,8 +149,8 @@
 
         (Guid appId, AppInstall install) = BrowseLocalsData.Value;
         bool opened = false;
-        if (PlatformInstaller.BrowseLocalFilesSupported(install))
-            opened = await PlatformInstaller.BrowseLocalFilesAsync(appId, install);
+        if (AppLocalFiles.OpenFileBrowserSupported(install))
+            opened = await AppLocalFiles.OpenFileBrowserAsync(appId, install);
 
         if (!opened)
             await ShowError("Local files could not be opened.");

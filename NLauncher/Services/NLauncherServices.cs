@@ -35,6 +35,11 @@ public static class NLauncherServices
         services.AddSingleton<AppUninstallService>();
     }
 
+    public static void AddAppFiles<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TAppFiles>(IServiceCollection services) where TAppFiles : class, IAppLocalFiles
+    {
+        services.AddSingleton<IAppLocalFiles, TAppFiles>();
+    }
+
     public static void AddStorage<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TStorage>(IServiceCollection services) where TStorage : class, IStorageService
     {
         services.AddSingleton<IStorageService, TStorage>();

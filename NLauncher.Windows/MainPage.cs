@@ -65,6 +65,7 @@ public partial class MainPage : Form
         NLauncherServices.AddDefault(services);
         NLauncherServices.AddStorage<WindowsStorageService>(services);
         NLauncherServices.AddInstalling<WindowsPlatformInstaller>(services);
+        NLauncherServices.AddAppFiles<WindowsAppLocalFiles>(services);
 
 #if DEBUG
         services.AddBlazorWebViewDeveloperTools();

@@ -8,7 +8,7 @@ internal class BinaryUninstallCommand : Command<UninstallSettings>
     {
         Console.WriteLine("Uninstalling...");
 
-        DirectoryInfo dir = SystemDirectories.GetLibraryPath(settings.AppId);
+        DirectoryInfo dir = SystemPaths.GetLibraryPath(settings.AppId);
         if (dir.Exists)
             dir.Delete(recursive: true);
 

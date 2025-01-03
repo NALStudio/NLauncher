@@ -12,8 +12,8 @@
     <!-- Clip overflow to fix skeleton rendering incorrectly -->
     <!-- onclick on MudCard instead of MudItem so that the click doesn't register inside the grid spacing -->
     <MudCard @onclick=StoreCardClicked
-             @onmouseover=SetHoverEffectVisible
-             @onmouseout=SetHoverEffectHidden
+             @onmouseenter=SetHoverEffectVisible
+             @onmouseleave=SetHoverEffectHidden
              Class="card_hover_effect"
              Style="overflow:clip;cursor:pointer"
              Outlined Elevation="0">
@@ -106,13 +106,19 @@
 
     private void SetHoverEffectVisible()
     {
-        hoverEffectVisible = true;
-        StateHasChanged();
+        if (!hoverEffectVisible)
+        {
+            hoverEffectVisible = true;
+            StateHasChanged();
+        }
     }
     private void SetHoverEffectHidden()
     {
-        hoverEffectVisible = false;
-        StateHasChanged();
+        if (hoverEffectVisible)
+        {
+            hoverEffectVisible = false;
+            StateHasChanged();
+        }
     }
 
     private string GetBackgroundHoverStyle()

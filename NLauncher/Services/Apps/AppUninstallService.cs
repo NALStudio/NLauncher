@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using MudBlazor;
 using NLauncher.Code.Models;
-using NLauncher.Components.Dialogs;
+using NLauncher.Components.Dialogs.Uninstalls;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Library;
 

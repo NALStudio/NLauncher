@@ -17,7 +17,7 @@ public static class HumanizeBinary
 
     private static (string Prefix, decimal Divisor) PickBestUnit(decimal value)
     {
-        const decimal minFormattableValue = 0.9995m; // 0,9995 => 1,0
+        const decimal minFormattableValue = 0.9995m; // 0,9995 => 1,0 when rounded to three significant digits
 
         // Use binary scale of 1024 instead of the SI scale of 1000;
         const decimal scale = 1024m;

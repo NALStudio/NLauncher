@@ -1,0 +1,48 @@
+﻿@using NLauncher.Index.Models.Applications
+@using System.Diagnostics
+
+<MudDialog>
+    <DialogContent>
+        <p>Are you sure you want to uninstall @(App.DisplayName)?</p>
+        <p>This operation cannot be undone.</p>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(Dialog!.Cancel)">Cancel</MudButton>
+        <MudButton OnClick="@(() => Dialog!.Close(true))" Variant="Variant.Filled" Color="Color.Error" StartIcon="@(Icons.Material.Rounded.Delete)">
+            Uninstall
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? Dialog { get; set; }
+
+    [Parameter, EditorRequired]
+    public required AppManifest App { get; set; }
+
+    /// <summary>
+    /// Returns <see langword="true" /> if user accepted the uninstall.
+    /// </summary>
+    public static async Task<bool> ShowAsync(IDialogService dialogService, AppManifest app)
+    {
+        DialogOptions options = new()
+        {
+            CloseOnEscapeKey = true
+        };
+
+        DialogParameters<ConfirmUninstallDialog> parameters = new()
+        {
+            { x => x.App, app }
+        };
+
+        IDialogReference dialog = await dialogService.ShowAsync<ConfirmUninstallDialog>("Uninstall", parameters, options);
+        DialogResult? result = await dialog.Result;
+
+        if (result is null || result.Canceled)
+            return false;
+
+        Debug.Assert((bool?)result.Data == true);
+        return true;
+    }
+}

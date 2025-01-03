@@ -54,6 +54,7 @@ internal static class Program
             });
             config.AddCommand<RunCommand>("run");
         });
+
         return app.Run(args);
     }
 

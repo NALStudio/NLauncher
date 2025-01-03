@@ -1,14 +1,7 @@
-﻿using NLauncher.Index.Json;
-using NLauncher.Index.Models;
-using NLauncher.Services.Index;
-using NLauncher.Services.Library;
+﻿using NLauncher.Services.Library;
+using NLauncher.Services.Sessions;
 using NLauncher.Services.Settings;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace NLauncher.Code.Json;
 
@@ -17,4 +10,5 @@ namespace NLauncher.Code.Json;
 [JsonSerializable(typeof(SettingsService.Settings))]
 [JsonSerializable(typeof(IEnumerable<LibraryEntry>))]
 [JsonSerializable(typeof(LibraryEntry[]))]
-internal partial class NLauncherJsonContext : JsonSerializerContext;
+[JsonSerializable(typeof(GameSession[]))]
+public partial class NLauncherJsonContext : JsonSerializerContext;
