@@ -7,7 +7,7 @@ public class WindowsAppLocalFiles : IAppLocalFiles
 {
     public long? ComputeSizeInBytes(Guid appId, AppInstall existingInstall)
     {
-        DirectoryInfo dir = SystemPaths.GetLibraryPath(appId);
+        DirectoryInfo dir = SystemDirectories.GetLibraryPath(appId);
         if (!dir.Exists)
             return null;
 
@@ -24,7 +24,7 @@ public class WindowsAppLocalFiles : IAppLocalFiles
         if (existingInstall is not BinaryAppInstall)
             return ValueTask.FromResult(false);
 
-        DirectoryInfo dir = SystemPaths.GetLibraryPath(appId);
+        DirectoryInfo dir = SystemDirectories.GetLibraryPath(appId);
         if (!dir.Exists)
             return ValueTask.FromResult(false);
 

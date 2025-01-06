@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
 using NLauncher.Services;
 using NLauncher.Windows.Services;
+using NLauncher.Windows.Services.Apps;
 
 namespace NLauncher.Windows;
 
@@ -65,7 +66,9 @@ public partial class MainPage : Form
         NLauncherServices.AddDefault(services);
         NLauncherServices.AddStorage<WindowsStorageService>(services);
         NLauncherServices.AddInstalling<WindowsPlatformInstaller>(services);
+
         NLauncherServices.AddAppFiles<WindowsAppLocalFiles>(services);
+        NLauncherServices.AddAppRunning<WindowsAppStartup>(services);
 
 #if DEBUG
         services.AddBlazorWebViewDeveloperTools();

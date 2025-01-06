@@ -10,7 +10,7 @@ using NLauncher.Services.Library;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
-namespace NLauncher.Services.Apps;
+namespace NLauncher.Services.Apps.Installing;
 public class AppInstallService
 {
     public class AppInstallConfig
@@ -97,9 +97,7 @@ public class AppInstallService
                 return false;
 
             if (installsUnsafe.Remove(appId, out RunningAppInstall? removed))
-            {
                 UnsubscribeEvents(removed);
-            }
             else
             {
                 logger.LogError("Install removal was unsuccesful even though all checks passed.");
@@ -207,7 +205,7 @@ public class AppInstallService
         if (libraryEntry?.Data.IsInstalled == true)
             return InstallResult.Errored<AppVersion>("App has already been installed.");
 
-        uint? vernum = libraryEntry?.Data.VerNum;
+        uint? vernum = libraryEntry?.Data.ChosenVerNum;
 
         // Ask user to confirm that they want to install an older version
         if (vernum.HasValue && verifyIfNotLatestVersion)

@@ -6,6 +6,8 @@ using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
 using NLauncher.Services;
 using NLauncher.Services.Apps;
+using NLauncher.Services.Apps.Installing;
+using NLauncher.Services.Apps.Running;
 using NLauncher.Services.Library;
 
 namespace NLauncher.Components.Cards;
@@ -19,6 +21,9 @@ public partial class LibraryCardItem
 
     [Inject]
     private AppLinkPlayService LinkPlayService { get; set; } = default!;
+
+    [Inject]
+    private AppRunningService RunningService { get; set; } = default!;
 
     [Inject]
     private LibraryService LibraryService { get; set; } = default!;
@@ -75,10 +80,16 @@ public partial class LibraryCardItem
         if (Entry is null)
             return;
 
-        if (linkPlayHref is not null)
-            return;
+        Guid appId = Entry.Manifest.Uuid;
 
-        if (InstallService.IsInstalling(Entry.Manifest.Uuid))
+        if (linkPlayHref is not null)
+        {
+            // Link pressed, update timestamp for sorting and exit
+            await LibraryService.UpdateEntryAsync(appId);
+            return;
+        }
+
+        if (InstallService.IsInstalling(appId))
         {
             AppBarMenus.OpenDownloads();
         }
@@ -89,7 +100,9 @@ public partial class LibraryCardItem
         }
         else if (isInstalled)
         {
-            await DialogService.ShowMessageBox(null, "Game startup has not yet been implemented.");
+            bool success = await RunningService.RunApp(appId, DialogService);
+            if (success)
+                await LibraryService.UpdateEntryAsync(appId); // update timestamp for sorting
         }
     }
 

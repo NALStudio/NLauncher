@@ -1,13 +1,22 @@
-﻿using NLauncher.Code.Json;
+﻿using Microsoft.Extensions.Logging;
+using NLauncher.Code.Json;
 using NLauncher.Services.Sessions;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 
 namespace NLauncher.Windows.Services.GameSessions;
 public class WindowsGameSessionService : IGameSessionService
 {
     private static readonly string SessionDirectory = Path.Join(WindowsStorageService.AppDataPath, "Sessions");
-    private static readonly byte leftBracket = "["u8.ToArray().Single();
+    private static readonly byte newline = "\n"u8.ToArray().Single();
+
+    private readonly ILogger<WindowsGameSessionService> logger;
+    public WindowsGameSessionService(ILogger<WindowsGameSessionService> logger)
+    {
+        this.logger = logger;
+    }
 
     private static string GetSessionFilePath(Guid appId)
     {
@@ -18,32 +27,59 @@ public class WindowsGameSessionService : IGameSessionService
         return Path.Join(SessionDirectory, filename);
     }
 
-    public async ValueTask<GameSession[]?> LoadSessions(Guid appId)
+    public async ValueTask<GameSession[]?> LoadSessionsAsync(Guid appId)
+    {
+        try
+        {
+            List<GameSession> sessions = new();
+            await foreach (GameSession gs in InternalLoadSessions(appId))
+                sessions.Add(gs);
+            return sessions.ToArray();
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    private async IAsyncEnumerable<GameSession> InternalLoadSessions(Guid appId)
     {
         string filepath = GetSessionFilePath(appId);
+        await using FileStream stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using StreamReader sr = new(stream, Encoding.UTF8);
 
-        FileStream stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return await JsonSerializer.DeserializeAsync(stream, NLauncherJsonContext.Default.GameSessionArray);
+        string? line;
+        // Using cancellation token changes type from Task to ValueTask
+        while (!string.IsNullOrEmpty(line = await sr.ReadLineAsync(CancellationToken.None)))
+        {
+            bool sessionDeserializeError = false;
+            GameSession? session = null;
+            try
+            {
+                session = JsonSerializer.Deserialize(line, NLauncherJsonContext.Default.GameSession);
+            }
+            catch (Exception ex)
+            {
+                sessionDeserializeError = true;
+                logger.LogError(ex, "GameSession could not be deserialized.");
+            }
+
+            if (session is not null)
+                yield return session;
+            else if (!sessionDeserializeError)
+                logger.LogError("GameSession deserialized as null.");
+        }
     }
 
     internal static void WriteNewSessionSynchronous(FileStream stream, GameSession session)
     {
-        Span<byte> singleByte = stackalloc byte[1];
+        ReadOnlySpan<byte> sessionBytes = JsonSerializer.SerializeToUtf8Bytes(session, NLauncherJsonContext.Default.GameSession);
+        if (sessionBytes.Contains(newline))
+            throw new ArgumentException("Session serialization resulted in newlines.");
 
-        // Add [ to start if missing
-        stream.Seek(0, SeekOrigin.Begin);
-        int startingBracket = stream.ReadByte();
-        if (startingBracket != leftBracket)
-        {
-            stream.Seek(0, SeekOrigin.Begin);
-            stream.Write("[\n"u8);
-        }
-
-        // Write value
-        JsonSerializer.Serialize(stream, session, NLauncherJsonContext.Default.GameSession);
-        stream.Write(",\n"u8);
-
-        // TODO: Add missing ]
+        Debug.Assert(stream.Position == stream.Length);
+        stream.Write(sessionBytes);
+        stream.WriteByte(newline);
     }
 
     /// <summary>

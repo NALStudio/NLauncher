@@ -24,4 +24,12 @@ public class IndexManifest
         entriesLookup ??= Entries.ToImmutableDictionary(key => key.Manifest.Uuid);
         return entriesLookup.TryGetValue(id, out entry);
     }
+
+    public IndexEntry? GetEntryOrNull(Guid id)
+    {
+        if (TryGetEntry(id, out IndexEntry? entry))
+            return entry;
+        else
+            return null;
+    }
 }

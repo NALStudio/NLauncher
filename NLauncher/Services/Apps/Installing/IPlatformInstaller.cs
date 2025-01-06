@@ -1,7 +1,7 @@
 ﻿using NLauncher.Code.Models;
 using NLauncher.Index.Models.Applications.Installs;
 
-namespace NLauncher.Services.Apps;
+namespace NLauncher.Services.Apps.Installing;
 public interface IPlatformInstaller
 {
     public abstract bool InstallSupported(AppInstall install);

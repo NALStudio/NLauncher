@@ -26,11 +26,14 @@ public class GameSession
         DurationMs = durationMs;
     }
 
+    public GameSession(DateTimeOffset start, DateTimeOffset end) : this(start, end, duration: end - start)
+    {
+    }
+
     public GameSession(DateTimeOffset start, DateTimeOffset end, TimeSpan duration)
     {
         Start = start.ToUnixTimeSeconds();
         End = end.ToUnixTimeSeconds();
-
         DurationMs = duration.Ticks / TimeSpan.TicksPerMillisecond;
     }
 

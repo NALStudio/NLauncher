@@ -2,7 +2,11 @@
 internal static class Constants
 {
     public const string AppDataDirname = "NALStudio/NLauncher";
-    public const string WebViewUserDataFolder = "WebView"; // Relative to %LOCALAPPDATA%/{AppDataDirname}/*
+
+    /// <summary>
+    /// Relative to <c>%LOCALAPPDATA%/{AppDataDirname}/*</c>
+    /// </summary>
+    public const string WebViewUserDataFolder = "WebView";
 
     public const string UserAgent = "NLauncher/1.0";
 }

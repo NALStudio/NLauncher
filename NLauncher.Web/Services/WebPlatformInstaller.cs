@@ -1,6 +1,6 @@
 ﻿using NLauncher.Code.Models;
 using NLauncher.Index.Models.Applications.Installs;
-using NLauncher.Services.Apps;
+using NLauncher.Services.Apps.Installing;
 
 namespace NLauncher.Web.Services;
 

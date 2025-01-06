@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 
-namespace NLauncher.Services.Apps;
+namespace NLauncher.Services.Apps.Installing;
 
 public class RunningAppInstall
 {
@@ -106,9 +106,7 @@ public class RunningAppInstall
     public async ValueTask<InstallResult> WaitForResult(CancellationToken cancellationToken = default)
     {
         if (IsFinished)
-        {
             return GetResult();
-        }
         else
         {
             ThrowIfNotRunning();

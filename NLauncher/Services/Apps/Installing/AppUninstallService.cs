@@ -5,7 +5,7 @@ using NLauncher.Components.Dialogs.Uninstalls;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Library;
 
-namespace NLauncher.Services.Apps;
+namespace NLauncher.Services.Apps.Installing;
 public class AppUninstallService
 {
     private readonly ILogger<AppUninstallService> logger;

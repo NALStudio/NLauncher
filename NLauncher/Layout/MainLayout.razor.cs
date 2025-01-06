@@ -4,7 +4,7 @@ using NLauncher.Code.IndexSearch;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
 using NLauncher.Services;
-using NLauncher.Services.Apps;
+using NLauncher.Services.Apps.Installing;
 using NLauncher.Services.Index;
 
 namespace NLauncher.Layout;

@@ -1,5 +1,5 @@
-using NLauncher.Windows.Commands;
 using NLauncher.Windows.Commands.Install;
+using NLauncher.Windows.Commands.Run;
 using NLauncher.Windows.Commands.Uninstall;
 using Spectre.Console.Cli;
 using System.Net.Http.Headers;
@@ -52,7 +52,10 @@ internal static class Program
             {
                 uninstall.AddCommand<BinaryUninstallCommand>("binary");
             });
-            config.AddCommand<RunCommand>("run");
+            config.AddBranch<RunSettings>("run", run =>
+            {
+                run.AddCommand<BinaryRunCommand>("binary");
+            });
         });
 
         return app.Run(args);

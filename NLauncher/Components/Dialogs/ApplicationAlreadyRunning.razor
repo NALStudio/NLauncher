@@ -1,0 +1,72 @@
+﻿@using NLauncher.Index.Models.Applications
+
+<MudDialog>
+    <DialogContent>
+        @(TriedRun?.DisplayName ?? "App") could not be started because @(GetReason()).
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@KillProcess">Kill</MudButton>
+        <MudButton OnClick="@(() => Dialog!.Close())" Variant="Variant.Filled" Color="Color.Primary">
+            Ok
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudMessageBox @ref=killProcessMessageBox Title="Kill Process" CancelText="Cancel">
+    <MessageContent>
+        Are you sure you want to kill @(AlreadyRunning?.DisplayName ?? "the app")?
+        This will stop its progress immediately, no progress will be saved.
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error">Kill</MudButton>
+    </YesButton>
+</MudMessageBox>
+
+@code {
+    private MudMessageBox? killProcessMessageBox;
+
+    [CascadingParameter]
+    private MudDialogInstance? Dialog { get; set; }
+
+    [Parameter, EditorRequired]
+    public required AppManifest? TriedRun { get; set; }
+
+    [Parameter, EditorRequired]
+    public required AppManifest? AlreadyRunning { get; set; }
+
+    private string GetReason()
+    {
+        if (TriedRun is null || AlreadyRunning is null)
+            return "another NLauncher application is already running";
+
+        if (TriedRun.Uuid == AlreadyRunning.Uuid)
+            return "another instance of it is already running";
+        else
+            return $"an instance of {AlreadyRunning.DisplayName} is already running";
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> if the process should be killed. <see langword="false"/> otherwise.
+    /// </summary>
+    public static async Task<bool> ShowAsync(IDialogService dialogService, AppManifest? triedRun, AppManifest? alreadyRunning)
+    {
+        DialogParameters<ApplicationAlreadyRunning> parameters = new()
+        {
+            { x => x.TriedRun, triedRun },
+            { x => x.AlreadyRunning, alreadyRunning }
+        };
+
+        IDialogReference dialog = await dialogService.ShowAsync<ApplicationAlreadyRunning>("Application Already Running", parameters);
+        DialogResult? result = await dialog.Result;
+        if (result?.Canceled == true)
+            return false;
+        else
+            return (result?.Data as bool?) == true;
+    }
+
+    private async Task KillProcess()
+    {
+        bool? kill = await killProcessMessageBox!.ShowAsync();
+        Dialog!.Close(kill);
+    }
+}

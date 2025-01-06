@@ -2,7 +2,7 @@
 using NLauncher.Code.Models;
 using NLauncher.Index.Enums;
 using NLauncher.Index.Models.Applications.Installs;
-using NLauncher.Services.Apps;
+using NLauncher.Services.Apps.Installing;
 using NLauncher.Windows.Models;
 using System.Diagnostics;
 
@@ -27,7 +27,7 @@ public class WindowsPlatformInstaller : IPlatformInstaller, IDisposable
         InstallResult result = await RunInstallAsync(uninstall: false, appId, install, onProgressUpdate, cancellationToken);
 
         // Clean download directory
-        DirectoryInfo downloadDir = SystemPaths.GetDownloadsPath(appId);
+        DirectoryInfo downloadDir = SystemDirectories.GetDownloadsPath(appId);
         if (downloadDir.Exists)
         {
             if (result.IsSuccess)
@@ -60,7 +60,7 @@ public class WindowsPlatformInstaller : IPlatformInstaller, IDisposable
         {
             process.OutputDataReceived += (s, e) => OutputDataReceived(appId, e.Data, onProgressUpdate);
 
-            cancellationToken.Register(process.Kill);
+            cancellationToken.Register(() => KillProcessAndChildren(process));
 
             // One final chance to exit before process is actually started
             if (cancellationToken.IsCancellationRequested)
@@ -144,11 +144,13 @@ public class WindowsPlatformInstaller : IPlatformInstaller, IDisposable
         return InstallProgress.Indeterminate(line);
     }
 
+    private void KillProcessAndChildren(Process p) => p.Kill(entireProcessTree: true);
+
     public void Dispose()
     {
         foreach (Process p in runningProcesses)
         {
-            p.Kill();
+            KillProcessAndChildren(p);
             p.Dispose();
         }
 

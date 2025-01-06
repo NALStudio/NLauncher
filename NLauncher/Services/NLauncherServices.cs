@@ -2,6 +2,8 @@
 using MudBlazor;
 using MudBlazor.Services;
 using NLauncher.Services.Apps;
+using NLauncher.Services.Apps.Installing;
+using NLauncher.Services.Apps.Running;
 using NLauncher.Services.Index;
 using NLauncher.Services.Library;
 using NLauncher.Services.Settings;
@@ -38,6 +40,12 @@ public static class NLauncherServices
     public static void AddAppFiles<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TAppFiles>(IServiceCollection services) where TAppFiles : class, IAppLocalFiles
     {
         services.AddSingleton<IAppLocalFiles, TAppFiles>();
+    }
+
+    public static void AddAppRunning<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TAppStartup>(IServiceCollection services) where TAppStartup : class, IAppStartup
+    {
+        services.AddSingleton<IAppStartup, TAppStartup>();
+        services.AddSingleton<AppRunningService>();
     }
 
     public static void AddStorage<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TStorage>(IServiceCollection services) where TStorage : class, IStorageService

@@ -27,7 +27,8 @@ public record class LibraryData
     /// <summary>
     /// The chosen version's version number or <see langword="null"/> if no version is chosen (use latest version).
     /// </summary>
-    public uint? VerNum { get; init; }
+    [JsonPropertyName("vernum")]
+    public uint? ChosenVerNum { get; init; }
 }
 
-public record class LibraryInstallData(uint VerNum, AppInstall Install);
+public record class LibraryInstallData([property: JsonPropertyName("vernum")] uint VerNum, AppInstall Install);

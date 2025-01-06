@@ -1,4 +1,5 @@
 ﻿@using NLauncher.Services.Apps
+@using NLauncher.Services.Apps.Installing
 @using NLauncher.Services.Settings
 
 @inject SettingsService Settings
@@ -7,9 +8,9 @@
 @implements IDisposable
 
 <MudPopover AnchorOrigin="Origin.BottomRight"
-TransformOrigin="Origin.TopRight"
-Class="downloads_menu_popover"
-Open="@Open">
+            TransformOrigin="Origin.TopRight"
+            Class="downloads_menu_popover"
+            Open="@Open">
     <MudStack Class="ma-3">
         @{
             RunningAppInstall[] installs = InstallService.GetInstalls();

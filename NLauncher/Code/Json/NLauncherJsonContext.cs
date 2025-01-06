@@ -10,5 +10,5 @@ namespace NLauncher.Code.Json;
 [JsonSerializable(typeof(SettingsService.Settings))]
 [JsonSerializable(typeof(IEnumerable<LibraryEntry>))]
 [JsonSerializable(typeof(LibraryEntry[]))]
-[JsonSerializable(typeof(GameSession[]))]
+[JsonSerializable(typeof(GameSession))]
 public partial class NLauncherJsonContext : JsonSerializerContext;
