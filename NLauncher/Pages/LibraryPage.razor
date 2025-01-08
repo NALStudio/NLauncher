@@ -21,7 +21,7 @@
             if (entry.HasValue && index?.TryGetEntry(entry.Value.AppId, out IndexEntry? foundEntry) == true)
                 app = foundEntry;
 
-            <LibraryCardItem LibraryData="@(entry?.Data)" Entry="app" />
+            <LibraryCardItem Entry="app" />
         }
     }
 </MudGrid>

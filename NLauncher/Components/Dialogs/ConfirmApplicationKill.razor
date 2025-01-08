@@ -1,0 +1,33 @@
+﻿@using NLauncher.Index.Models.Applications
+
+<MudDialog>
+    <DialogContent>
+        Are you sure you want to kill @(App?.DisplayName ?? "the app")?
+        This will stop its progress immediately, no progress will be saved.
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => Dialog?.Cancel())">Cancel</MudButton>
+        <MudButton OnClick="@(() => Dialog?.Close())" Variant="Variant.Filled" Color="Color.Error">Kill</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? Dialog { get; set; }
+
+    [Parameter]
+    public AppManifest? App { get; set; }
+
+    public static async Task<bool> ShowAsync(IDialogService dialogService, AppManifest? app)
+    {
+        DialogParameters<ConfirmApplicationKill> parameters = new()
+        {
+            { x => x.App, app }
+        };
+
+        IDialogReference dialog = await dialogService.ShowAsync<ConfirmApplicationKill>("Kill Process", parameters);
+        DialogResult? result = await dialog.Result;
+
+        return result?.Canceled == false;
+    }
+}

@@ -5,25 +5,16 @@
         @(TriedRun?.DisplayName ?? "App") could not be started because @(GetReason()).
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@KillProcess">Kill</MudButton>
+        <MudButton OnClick="@KillProcess">Kill Process</MudButton>
         <MudButton OnClick="@(() => Dialog!.Close())" Variant="Variant.Filled" Color="Color.Primary">
             Ok
         </MudButton>
     </DialogActions>
 </MudDialog>
 
-<MudMessageBox @ref=killProcessMessageBox Title="Kill Process" CancelText="Cancel">
-    <MessageContent>
-        Are you sure you want to kill @(AlreadyRunning?.DisplayName ?? "the app")?
-        This will stop its progress immediately, no progress will be saved.
-    </MessageContent>
-    <YesButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Error">Kill</MudButton>
-    </YesButton>
-</MudMessageBox>
-
 @code {
-    private MudMessageBox? killProcessMessageBox;
+    [Inject]
+    private IDialogService DialogService { get; set; } = default!;
 
     [CascadingParameter]
     private MudDialogInstance? Dialog { get; set; }
@@ -66,7 +57,7 @@
 
     private async Task KillProcess()
     {
-        bool? kill = await killProcessMessageBox!.ShowAsync();
+        bool? kill = await ConfirmApplicationKill.ShowAsync(DialogService, AlreadyRunning);
         Dialog!.Close(kill);
     }
 }

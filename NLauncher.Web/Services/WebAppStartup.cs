@@ -6,9 +6,8 @@ namespace NLauncher.Web.Services;
 
 public class WebAppStartup : IAppStartup
 {
-    public async ValueTask<IAppHandle?> StartAsync(Guid appId, AppInstall install, IDialogService dialogService)
+    public ValueTask<AppHandle?> StartAsync(Guid appId, AppInstall install, IDialogService dialogService)
     {
-        _ = await dialogService.ShowMessageBox("Not Supported", "Application startup is not supported on the web platform.");
-        return null;
+        return ValueTask.FromResult<AppHandle?>(null);
     }
 }

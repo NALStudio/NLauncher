@@ -22,40 +22,40 @@ public static class NLauncherServices
             services.AddMudMarkdownServices();
         }
 
-        services.AddSingleton<AppBarMenus>();
+        services.AddScoped<AppBarMenus>();
 
-        services.AddSingleton<SettingsService>();
+        services.AddScoped<SettingsService>();
         services.AddScoped<IndexService>();
-        services.AddSingleton<LibraryService>();
+        services.AddScoped<LibraryService>();
 
-        services.AddSingleton<AppLinkPlayService>();
+        services.AddScoped<AppLinkPlayService>();
     }
 
     public static void AddInstalling<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TInstaller>(IServiceCollection services) where TInstaller : class, IPlatformInstaller
     {
-        services.AddSingleton<IPlatformInstaller, TInstaller>();
-        services.AddSingleton<AppInstallService>();
-        services.AddSingleton<AppUninstallService>();
+        services.AddScoped<IPlatformInstaller, TInstaller>();
+        services.AddScoped<AppInstallService>();
+        services.AddScoped<AppUninstallService>();
     }
 
     public static void AddAppFiles<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TAppFiles>(IServiceCollection services) where TAppFiles : class, IAppLocalFiles
     {
-        services.AddSingleton<IAppLocalFiles, TAppFiles>();
+        services.AddScoped<IAppLocalFiles, TAppFiles>();
     }
 
     public static void AddAppRunning<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TAppStartup>(IServiceCollection services) where TAppStartup : class, IAppStartup
     {
-        services.AddSingleton<IAppStartup, TAppStartup>();
-        services.AddSingleton<AppRunningService>();
+        services.AddScoped<IAppStartup, TAppStartup>();
+        services.AddScoped<AppRunningService>();
     }
 
     public static void AddGameSessions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TGameSessions>(IServiceCollection services) where TGameSessions : class, IGameSessionService
     {
-        services.AddSingleton<IGameSessionService, TGameSessions>();
+        services.AddScoped<IGameSessionService, TGameSessions>();
     }
 
     public static void AddStorage<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TStorage>(IServiceCollection services) where TStorage : class, IStorageService
     {
-        services.AddSingleton<IStorageService, TStorage>();
+        services.AddScoped<IStorageService, TStorage>();
     }
 }

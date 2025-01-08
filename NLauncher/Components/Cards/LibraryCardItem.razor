@@ -16,8 +16,8 @@
         IndexAsset? backgroundImage = Entry?.Assets.Largest(AssetType.Panel);
 
         <MudPaper Outlined Elevation="0"
-        Class="card_hover_effect library_card_container"
-        Style="@GetBackgroundImageCss(backgroundImage)">
+                  Class="card_hover_effect library_card_container"
+                  Style="@GetBackgroundImageCss(backgroundImage)">
             <!-- Image -->
             @if (Entry is not null)
             {
@@ -37,34 +37,19 @@
             }
 
             <a class="library_card_overlay"
-               style="align-content:center"
-               href="@(!mouseInsideMoreButton ? linkPlayHref : null)"
+               href="@(!mouseInsideMoreButton ? href : null)"
                target="_blank"
                @onclick="OnCardPressed"
                @oncontextmenu="@OpenContextMenu" @oncontextmenu:preventDefault>
+                <div class="d-flex align-center justify-center" style="position:absolute;left:0;right:0;top:0;bottom:0">
+                    <AppActionButton Class="library_card_overlay_actionbutton" @ref=actionButton App="@(Entry?.Manifest)" PlayHref="@href" />
+                </div>
 
                 <MudIconButton @onmouseenter=MouseEnteredMoreButton
                                @onmouseleave=MouseLeftMoreButton
                                Class="library_card_overlay_button"
                                Icon="@(Icons.Material.Rounded.MoreVert)"
                                OnClick="OpenContextMenu" />
-
-                @if (CanPlay)
-                {
-                    <MudText Align="Align.Center" Typo="Typo.h4">PLAY</MudText>
-                }
-                else if (isInstalling)
-                {
-                    <MudText Align="Align.Center" Typo="Typo.h4">INSTALLING</MudText>
-                }
-                else if (canInstall)
-                {
-                    <MudText Align="Align.Center" Typo="Typo.h4">INSTALL</MudText>
-                }
-                else
-                {
-                    <MudText Align="Align.Center" Typo="Typo.h4">NOT AVAILABLE</MudText>
-                }
             </a>
         </MudPaper>
 
