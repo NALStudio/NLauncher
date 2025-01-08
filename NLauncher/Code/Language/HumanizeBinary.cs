@@ -1,7 +1,22 @@
 ﻿namespace NLauncher.Code.Language;
 public static class HumanizeBinary
 {
+    /// <summary>
+    /// Converts the provided value into a human readable representation of bytes.
+    /// </summary>
+    /// <remarks>
+    /// <para>A suitable unit prefix is chosen from giga, mega and kilobytes.</para>
+    /// <para>A maximum of three significant digits is displayed in the result.</para>
+    /// </remarks>
     public static string HumanizeBytes(decimal bytes) => Humanize(bytes, "B");
+
+    /// <summary>
+    /// Converts the provided value into a human readable representation of bits.
+    /// </summary>
+    /// <remarks>
+    /// <para>A suitable unit prefix is chosen from giga, mega and kilobits.</para>
+    /// <para>A maximum of three significant digits is displayed in the result.</para>
+    /// </remarks>
     public static string HumanizeBits(decimal bits) => Humanize(bits, "b");
 
     private static string Humanize(decimal value, string unit)

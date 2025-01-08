@@ -9,6 +9,7 @@
 @using NLauncher.Services.Apps.Installing
 @using NLauncher.Services.Index
 @using NLauncher.Services.Library
+@using NLauncher.Services.Sessions
 
 @inject AppUninstallService UninstallService
 @inject IDialogService DialogService
@@ -16,6 +17,7 @@
 @inject LibraryService LibraryService
 @inject IAppLocalFiles AppLocalFiles
 @inject IPlatformInstaller PlatformInstaller
+@inject IGameSessionService GameSessionService
 @inject IndexService IndexService
 
 <MudMenuItem Disabled="@(storePageHref is null)" Href="@storePageHref">Open Store Page</MudMenuItem>
@@ -114,13 +116,16 @@
 
     private async Task LoadData(IndexEntry entry, IndexManifest index, LibraryEntry? libraryEntry)
     {
-        LibraryInstallData? install = libraryEntry?.Data.Install;
+        TimeSpan? playtime = await GameSessionService.ComputeTotalTime(entry.Manifest.Uuid);
+        if (playtime.HasValue)
+            AddData("Playtime", HumanizeTime.HumanizeTimeSpan(playtime.Value));
 
+        LibraryInstallData? install = libraryEntry?.Data.Install;
         if (install is not null)
         {
             long? sizeInBytes = await Task.Run(() => AppLocalFiles.ComputeSizeInBytes(entry.Manifest.Uuid, install.Install));
             if (sizeInBytes.HasValue)
-                TryAddData("Size", HumanizeBinary.HumanizeBytes(sizeInBytes.Value));
+                AddData("Size", HumanizeBinary.HumanizeBytes(sizeInBytes.Value));
 
             TryAddData("Version", entry.Manifest.GetVersion(install.VerNum)?.Identifier);
         }
@@ -131,6 +136,11 @@
         if (value is null)
             return;
 
+        AddData(label, value);
+    }
+
+    private void AddData(string label, string value)
+    {
         data.Add((label, value));
     }
 

@@ -21,12 +21,12 @@
         <MudSpacer />
         <MudStack Style="margin-left:16px" Row AlignItems="AlignItems.Center">
             <!-- Use null value to force autocomplete to clear once an app was selected -->
-            <MudAutocomplete Class="d-none d-sm-flex"
+            <MudAutocomplete @ref=indexSearch
+                             Class="d-none d-sm-flex"
                              T="IndexEntry"
                              SearchFunc="SearchIndex"
                              ToStringFunc="@(static e => e?.Manifest?.DisplayName)"
                              MaxItems="5"
-                             Value="null"
                              ValueChanged="@(async e => await NavigateTo(e.Manifest))"
                              Placeholder="Search"
                              Variant="Variant.Outlined"

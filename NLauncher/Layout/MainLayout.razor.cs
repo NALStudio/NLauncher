@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using MudBlazor;
 using NLauncher.Code.Extensions;
 using NLauncher.Code.IndexSearch;
 using NLauncher.Index.Models.Applications;
@@ -22,6 +23,8 @@ public partial class MainLayout : IDisposable
 
     [Inject]
     private AppInstallService AppInstallService { get; set; } = default!;
+
+    private MudAutocomplete<IndexEntry>? indexSearch;
 
     private bool anyInstallsRunning = false;
 
@@ -51,6 +54,8 @@ public partial class MainLayout : IDisposable
     {
         IndexManifest index = await IndexService.GetIndexAsync();
         NavigationManager.NavigateToApp(index, app);
+
+        await indexSearch!.ResetAsync();
     }
 
     private void InstallCountChanged(int count)

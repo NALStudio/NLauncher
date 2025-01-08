@@ -6,6 +6,7 @@ using NLauncher.Services.Apps.Installing;
 using NLauncher.Services.Apps.Running;
 using NLauncher.Services.Index;
 using NLauncher.Services.Library;
+using NLauncher.Services.Sessions;
 using NLauncher.Services.Settings;
 using System.Diagnostics.CodeAnalysis;
 
@@ -46,6 +47,11 @@ public static class NLauncherServices
     {
         services.AddSingleton<IAppStartup, TAppStartup>();
         services.AddSingleton<AppRunningService>();
+    }
+
+    public static void AddGameSessions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TGameSessions>(IServiceCollection services) where TGameSessions : class, IGameSessionService
+    {
+        services.AddSingleton<IGameSessionService, TGameSessions>();
     }
 
     public static void AddStorage<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TStorage>(IServiceCollection services) where TStorage : class, IStorageService

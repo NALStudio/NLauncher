@@ -7,6 +7,7 @@ using Microsoft.Web.WebView2.Core;
 using NLauncher.Services;
 using NLauncher.Windows.Services;
 using NLauncher.Windows.Services.Apps;
+using NLauncher.Windows.Services.GameSessions;
 
 namespace NLauncher.Windows;
 
@@ -69,6 +70,7 @@ public partial class MainPage : Form
 
         NLauncherServices.AddAppFiles<WindowsAppLocalFiles>(services);
         NLauncherServices.AddAppRunning<WindowsAppStartup>(services);
+        NLauncherServices.AddGameSessions<WindowsGameSessionService>(services);
 
 #if DEBUG
         services.AddBlazorWebViewDeveloperTools();

@@ -18,15 +18,6 @@ public class WindowsGameSessionService : IGameSessionService
         this.logger = logger;
     }
 
-    private static string GetSessionFilePath(Guid appId)
-    {
-        if (!Directory.Exists(SessionDirectory))
-            Directory.CreateDirectory(SessionDirectory);
-
-        string filename = appId.ToString() + ".sessions";
-        return Path.Join(SessionDirectory, filename);
-    }
-
     public async ValueTask<GameSession[]?> LoadSessionsAsync(Guid appId)
     {
         try
@@ -40,12 +31,39 @@ public class WindowsGameSessionService : IGameSessionService
         {
             return null;
         }
+        catch (IOException ex)
+        {
+            logger.LogError(ex, "Game session file could not be opened.");
+            return null;
+        }
+    }
+
+    public async ValueTask<TimeSpan?> ComputeTotalTime(Guid appId)
+    {
+        long totalMs = 0L;
+
+        try
+        {
+            await foreach (GameSession gs in InternalLoadSessions(appId))
+                totalMs += gs.DurationMs;
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
+        catch (IOException ex)
+        {
+            logger.LogError(ex, "Game session file could not be opened.");
+            return null;
+        }
+
+        return TimeSpan.FromMilliseconds(totalMs);
     }
 
     private async IAsyncEnumerable<GameSession> InternalLoadSessions(Guid appId)
     {
         string filepath = GetSessionFilePath(appId);
-        await using FileStream stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        await using FileStream stream = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         using StreamReader sr = new(stream, Encoding.UTF8);
 
         string? line;
@@ -71,6 +89,15 @@ public class WindowsGameSessionService : IGameSessionService
         }
     }
 
+    private static string GetSessionFilePath(Guid appId)
+    {
+        if (!Directory.Exists(SessionDirectory))
+            Directory.CreateDirectory(SessionDirectory);
+
+        string filename = appId.ToString() + ".sessions";
+        return Path.Join(SessionDirectory, filename);
+    }
+
     internal static void WriteNewSessionSynchronous(FileStream stream, GameSession session)
     {
         ReadOnlySpan<byte> sessionBytes = JsonSerializer.SerializeToUtf8Bytes(session, NLauncherJsonContext.Default.GameSession);
@@ -89,8 +116,16 @@ public class WindowsGameSessionService : IGameSessionService
     {
         string filepath = GetSessionFilePath(appId);
 
-        // TODO: try-catch so that we can determine when session start failed (another session is already running)
-        FileStream stream = File.Open(filepath, FileMode.Append, FileAccess.Write, FileShare.Read);
+        FileStream stream;
+        try
+        {
+            stream = File.Open(filepath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read);
+        }
+        catch (IOException)
+        {
+            handle = null;
+            return false;
+        }
 
         handle = new(stream, disposeStream: true);
         return true;

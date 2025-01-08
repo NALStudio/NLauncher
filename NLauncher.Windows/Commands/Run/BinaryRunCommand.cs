@@ -79,9 +79,14 @@ internal class BinaryRunCommand : Command<BinaryRunSettings>
         // In an ideal world, we would disable the c# built-in threadpool to completely shut this application down
         // so that it doesn't use any system resources, but I don't think this is possible at the moment...
 
+        // Try to release as much memory as possible
+        // Impact is small, but still noticeable (8,1 MB to 7,9 MB), this will probably make more of a difference with NativeAOT
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+
         // Wait synchronously so that the runtime is blocked from doing any other work while the game is running
         // as we want to take as little resources from the game as possible
         app.WaitForExit();
+
         DateTimeOffset end = DateTimeOffset.UtcNow;
 
         return new GameSession(start, end);

@@ -23,6 +23,7 @@ public static class Program
 
         NLauncherServices.AddAppFiles<WebAppLocalFiles>(builder.Services);
         NLauncherServices.AddAppRunning<WebAppStartup>(builder.Services);
+        NLauncherServices.AddGameSessions<WebGameSessionService>(builder.Services);
 
         await builder.Build().RunAsync();
     }
