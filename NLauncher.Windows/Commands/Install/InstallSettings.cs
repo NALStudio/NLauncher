@@ -5,7 +5,4 @@ public class InstallSettings : CommandSettings
 {
     [CommandArgument(0, "<APP_ID>")]
     public Guid AppId { get; set; }
-
-    [CommandOption("-u|--update")]
-    public bool Update { get; set; }
 }
