@@ -20,6 +20,13 @@
 @inject IGameSessionService GameSessionService
 @inject IndexService IndexService
 
+@if (ActionButton is not null)
+{
+    <MudMenuItem Href="@(ActionButton.PlayHref)" OnClick="@(Execute(ActionButton.Activate))" Disabled="@(ActionButton.IsInstalling)">
+        @(ActionButton.GetStateMessage())
+    </MudMenuItem>
+}
+
 <MudMenuItem Disabled="@(storePageHref is null)" Href="@storePageHref">Open Store Page</MudMenuItem>
 
 <!-- Hide "remove from library"" button when application can be uninstalled -->
@@ -50,6 +57,9 @@
 
     [Parameter, EditorRequired]
     public required IndexEntry? Entry { get; set; }
+
+    [Parameter, EditorRequired]
+    public required AppActionButton? ActionButton { get; set; }
 
     private bool firstLoadStarted = false;
     private IndexEntry? oldEntry = null;

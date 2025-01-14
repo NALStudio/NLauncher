@@ -3,7 +3,6 @@ using MudBlazor;
 using NLauncher.Code.Models;
 using NLauncher.Components.Dialogs.Installs;
 using NLauncher.Components.Dialogs.Installs.Choose;
-using NLauncher.Index.Enums;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Library;
@@ -47,13 +46,26 @@ public class AppInstallService
         this.appBarMenus = appBarMenus;
     }
 
+
+    /// <inheritdoc cref="StartInstallAsync(AppManifest, AppInstallConfig, bool)"/>
+    public async Task<bool> StartInstallAsync(AppManifest app, AppInstallConfig config)
+    {
+        return await StartInstallAsync(app, config, update: false);
+    }
+
+    /// <inheritdoc cref="StartInstallAsync(AppManifest, AppInstallConfig, bool)"/>
+    public async Task<bool> StartUpdateAsync(AppManifest app, AppInstallConfig config)
+    {
+        return await StartInstallAsync(app, config, update: true);
+    }
+
     /// <summary>
     /// Returns <see langword="true"/> if application installation was started succesfully, otherwise <see langword="false"/>.
     /// The app installation is queued into the <see cref="RunningAppInstall"/> service.
     /// </summary>
-    public async Task<bool> StartInstallAsync(AppManifest app, AppInstallConfig config)
+    private async Task<bool> StartInstallAsync(AppManifest app, AppInstallConfig config, bool update)
     {
-        InstallResult result = await InternalInstall(app, config);
+        InstallResult result = await InternalInstall(app, config, update: update);
         if (result.ErrorMessage is not null)
             await config.DialogService.ShowMessageBox("Error!", result.ErrorMessage);
 
@@ -128,20 +140,42 @@ public class AppInstallService
     /// </remarks>
     public async Task<bool> CanInstall(AppManifest app, bool includeLinkHandled = true)
     {
-        InstallResult<AppVersion> version = await ResolveVersion(app, null, verifyIfNotLatestVersion: false);
+        InstallResult<AppVersion> version = await ResolveVersion(app, null, update: false, verifyIfNotLatestVersion: false);
         if (!version.IsSuccess)
             return false;
 
-        ImmutableArray<AppInstall> installs = version.Value.Installs;
+        return CanInstallVersion(version.Value, includeLinkHandled: includeLinkHandled);
+    }
+
+    public async Task<bool> UpdateAvailable(AppManifest app)
+    {
+        LibraryEntry? entry = await library.TryGetEntry(app.Uuid);
+        if (entry is null)
+            return false;
+
+        LibraryData data = entry.Value.Data;
+        if (!data.IsInstalled)
+            return false;
+
+        AppVersion? ver = app.GetVersion(data.ChosenVerNum);
+        if (ver is null)
+            return false;
+
+        return ver.VerNum != data.Install.VerNum;
+    }
+
+    private static bool CanInstallVersion(AppVersion version, bool includeLinkHandled)
+    {
+        ImmutableArray<AppInstall> installs = version.Installs;
         if (includeLinkHandled)
             return installs.Length > 0;
         else
             return installs.Any(static ins => !AppLinkPlayService.CanPlay(ins));
     }
 
-    private async Task<InstallResult> InternalInstall(AppManifest app, AppInstallConfig config)
+    private async Task<InstallResult> InternalInstall(AppManifest app, AppInstallConfig config, bool update)
     {
-        InstallResult<AppVersion> version = await ResolveVersion(app, config.DialogService, verifyIfNotLatestVersion: config.VerifyIfNotLatestVersion);
+        InstallResult<AppVersion> version = await ResolveVersion(app, config.DialogService, update: update, verifyIfNotLatestVersion: config.VerifyIfNotLatestVersion);
         if (!version.IsSuccess)
             return InstallResult.Failed(version);
 
@@ -183,11 +217,11 @@ public class AppInstallService
 
     private async ValueTask<InstallResult<AppInstall>> ResolveInstall(AppVersion version, IDialogService dialogService, bool alwaysAskInstallMethod)
     {
-        Platforms currentPlatform = PlatformsEnum.GetCurrentPlatform();
-
         AppInstall[] autoInstalls = version.Installs.Where(installer.InstallSupported).ToArray();
         if (autoInstalls.Length == 1 && !alwaysAskInstallMethod)
             return InstallResult.Success(autoInstalls[0]);
+
+        // TODO: Auto select install type from previous install when updating
 
         // Multiple autoinstallers and any amount of manual installers
         // or zero autoinstallers and one or more manual installer.
@@ -199,10 +233,12 @@ public class AppInstallService
         return InstallResult.Success(chosenOption.Value);
     }
 
-    private async Task<InstallResult<AppVersion>> ResolveVersion(AppManifest app, IDialogService? dialogService, bool verifyIfNotLatestVersion)
+    private async Task<InstallResult<AppVersion>> ResolveVersion(AppManifest app, IDialogService? dialogService, bool update, bool verifyIfNotLatestVersion)
     {
         LibraryEntry? libraryEntry = await library.TryGetEntry(app.Uuid);
-        if (libraryEntry?.Data.IsInstalled == true)
+
+        bool alreadyInstalled = libraryEntry?.Data.IsInstalled == true;
+        if (alreadyInstalled && !update)
             return InstallResult.Errored<AppVersion>("App has already been installed.");
 
         uint? vernum = libraryEntry?.Data.ChosenVerNum;

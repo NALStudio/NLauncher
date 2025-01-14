@@ -7,21 +7,52 @@
 @inject AppUninstallService UninstallService
 @inject IDialogService DialogService
 
+@implements IDisposable
+
 <MudPopover @ref=menu Open="@open" Class="mud-popover-position-override" Style=@popoverStyle AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
     <MudList T="object" Dense>
-        <LibraryCardMenuContent ParentMenu="this" Entry="Entry" />
+        <LibraryCardMenuContent ParentMenu="this" Entry="Entry" ActionButton="ActionButton" />
     </MudList>
 </MudPopover>
 
-<MudOverlay Visible="@open" AutoClose OnClosed="Close" />
+<MudOverlay Visible="@open" LockScroll="false" AutoClose OnClosed="Close" />
 
 @code {
     [Parameter, EditorRequired]
     public required IndexEntry? Entry { get; set; }
 
+    [Parameter]
+    public AppActionButton? ActionButton { get; set; }
+
+    private AppActionButton? oldActionButton;
+
     private MudPopover menu = default!;
     private bool open;
     private string? popoverStyle;
+
+    protected override void OnParametersSet()
+    {
+        Unsubscribe(oldActionButton);
+        Subscribe(ActionButton);
+        oldActionButton = ActionButton;
+    }
+
+    private void Subscribe(AppActionButton? btn)
+    {
+        if (btn is not null)
+            btn.OnStateLoaded += OnActionButtonUpdate;
+    }
+
+    private void Unsubscribe(AppActionButton? btn)
+    {
+        if (btn is not null)
+            btn.OnStateLoaded -= OnActionButtonUpdate;
+    }
+
+    private void OnActionButtonUpdate()
+    {
+        StateHasChanged();
+    }
 
     // The incorrect position should be fixed in the next MudBlazor update
     public void Open(MouseEventArgs args)
@@ -42,5 +73,11 @@
     private string GetPopoverStyle(MouseEventArgs args)
     {
         return $"top: {args.PageY.ToPx()}; left: {args.PageX.ToPx()}";
+    }
+
+    public void Dispose()
+    {
+        Unsubscribe(oldActionButton);
+        Unsubscribe(ActionButton);
     }
 }

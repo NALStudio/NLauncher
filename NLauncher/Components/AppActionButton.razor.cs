@@ -47,9 +47,14 @@ public partial class AppActionButton : IDisposable
     [Parameter]
     public bool PropagateClicks { get; set; }
 
+    public event Action? OnStateLoaded;
+
     private bool isActivating = false;
 
+    public bool IsInstalling => isInstalling;
+
     private bool canInstall;
+    private bool canUpdate;
     private bool isInstalling;
     private bool isInstalled;
 
@@ -59,14 +64,15 @@ public partial class AppActionButton : IDisposable
     private void ResetState()
     {
         canInstall = false;
+        canUpdate = false;
         isInstalling = false;
         isInstalled = false;
     }
 
     private async Task LoadState(AppManifest app)
     {
-        // These can be initialized in OnParametersSetAsync since LibraryPage updates all of its children every time an install finishes
         canInstall = await InstallService.CanInstall(app);
+        canUpdate = await InstallService.UpdateAvailable(app);
 
         LibraryEntry? libraryEntry = await LibraryService.TryGetEntry(app.Uuid);
         isInstalled = libraryEntry?.Data.IsInstalled == true;
@@ -74,6 +80,8 @@ public partial class AppActionButton : IDisposable
         // Application install is not finished when InstallCountChanged calls this function
         if (!isInstalled)
             isInstalling = InstallService.IsInstalling(app.Uuid);
+
+        OnStateLoaded?.Invoke();
     }
 
     private async Task ReloadState()
@@ -96,14 +104,18 @@ public partial class AppActionButton : IDisposable
         string css = "padding:16px";
 
         if (Style is not null)
-            css = (css + ";" + Style);
+            css = css + ";" + Style;
 
         return css;
     }
-    private string? GetIcon()
+
+    public string? GetIcon()
     {
         // if (isPlaying)
         //     return Icons.Material.Rounded.Stop;
+
+        if (canUpdate)
+            return Icons.Material.Rounded.SystemUpdateAlt;
 
         if (isInstalled || PlayHref is not null)
             return Icons.Material.Rounded.PlayArrow;
@@ -114,9 +126,29 @@ public partial class AppActionButton : IDisposable
         return null;
     }
 
+    // Not used by this component, exposed for other components to use.
+    public string? GetStateMessage()
+    {
+        if (canUpdate)
+            return "Update";
+
+        if (isInstalled || PlayHref is not null)
+            return "Play";
+
+        if (isInstalling)
+            return "Installing";
+
+        if (canInstall)
+            return "Install";
+
+        return null;
+    }
+
     private Color GetColor()
     {
         if (isInstalling)
+            return Color.Warning;
+        else if (canUpdate)
             return Color.Info;
         else
             return Color.Primary;
