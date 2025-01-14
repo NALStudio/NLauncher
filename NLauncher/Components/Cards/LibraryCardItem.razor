@@ -42,7 +42,10 @@
                @onclick="OnCardPressed"
                @oncontextmenu="@OpenContextMenu" @oncontextmenu:preventDefault>
                 <div class="d-flex align-center justify-center" style="position:absolute;left:0;right:0;top:0;bottom:0">
-                    <AppActionButton Class="library_card_overlay_actionbutton" @ref=actionButton App="@(Entry?.Manifest)" PlayHref="@href" />
+                    <AppActionButton @ref=actionButton
+                                     PropagateClicks
+                                     App="@(Entry?.Manifest)"
+                                     PlayHref="@href" />
                 </div>
 
                 <MudIconButton @onmouseenter=MouseEnteredMoreButton

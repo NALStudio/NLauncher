@@ -5,8 +5,8 @@
         @(TriedRun?.DisplayName ?? "App") could not be started because @(GetReason()).
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="@KillProcess">Kill Process</MudButton>
-        <MudButton OnClick="@(() => Dialog!.Close())" Variant="Variant.Filled" Color="Color.Primary">
+        <MudButton OnClick="@(() => Dialog!.Close(true))">Kill Process</MudButton>
+        <MudButton OnClick="@(() => Dialog!.Close(false))" Variant="Variant.Filled" Color="Color.Primary">
             Ok
         </MudButton>
     </DialogActions>
@@ -51,13 +51,7 @@
         DialogResult? result = await dialog.Result;
         if (result?.Canceled == true)
             return false;
-        else
-            return (result?.Data as bool?) == true;
-    }
 
-    private async Task KillProcess()
-    {
-        bool? kill = await ConfirmApplicationKill.ShowAsync(DialogService, AlreadyRunning);
-        Dialog!.Close(kill);
+        return (bool?)result?.Data == true;
     }
 }

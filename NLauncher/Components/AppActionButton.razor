@@ -1,10 +1,18 @@
 ﻿<MudIconButton Class="@Class"
                Style="@(GetStyleCss())"
-               Icon="@(GetIcon())"
+               Icon="@(!isActivating ? GetIcon() : null)"
                Color="@(GetColor())"
                Size="Size.Large"
                Variant="Variant.Filled"
                DropShadow="false"
-               OnClick="@Activate"
-               Href="@PlayHref"
-               Target="_blank" />
+               OnClick="@ActivateIfNotDisabled"
+               Href="@(!PropagateClicks ? PlayHref : null)"
+               ClickPropagation="@PropagateClicks"
+               Target="_blank" >
+    @if (isActivating)
+    {
+        <div class="d-flex align-center ma-1">
+            <MudProgressCircular Indeterminate Size="Size.Small" />
+        </div>
+    }
+</MudIconButton>

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Services;
-using NLauncher.Services.Apps;
 using NLauncher.Services.Apps.Installing;
 using NLauncher.Services.Apps.Running;
 using NLauncher.Services.Library;
@@ -11,13 +10,10 @@ using NLauncher.Services.Library;
 namespace NLauncher.Components;
 
 // TODO: Update state when download is started
-public partial class AppActionButton
+public partial class AppActionButton : IDisposable
 {
     [Inject]
     private AppInstallService InstallService { get; set; } = default!;
-
-    [Inject]
-    private AppLinkPlayService LinkPlayService { get; set; } = default!;
 
     [Inject]
     private LibraryService LibraryService { get; set; } = default!;
@@ -44,9 +40,55 @@ public partial class AppActionButton
     [Parameter]
     public string? PlayHref { get; set; }
 
+    /// <summary>
+    /// Propagate clicks and disable the click from being handled by this button.
+    /// This can be used to make an entire card handle this button's event using the <see cref="Activate" /> method instead.
+    /// </summary>
+    [Parameter]
+    public bool PropagateClicks { get; set; }
+
+    private bool isActivating = false;
+
     private bool canInstall;
     private bool isInstalling;
     private bool isInstalled;
+
+    // removed because tracking the application exit was too difficult
+    // private bool isPlaying;
+
+    private void ResetState()
+    {
+        canInstall = false;
+        isInstalling = false;
+        isInstalled = false;
+    }
+
+    private async Task LoadState(AppManifest app)
+    {
+        // These can be initialized in OnParametersSetAsync since LibraryPage updates all of its children every time an install finishes
+        canInstall = await InstallService.CanInstall(app);
+
+        LibraryEntry? libraryEntry = await LibraryService.TryGetEntry(app.Uuid);
+        isInstalled = libraryEntry?.Data.IsInstalled == true;
+
+        // Application install is not finished when InstallCountChanged calls this function
+        if (!isInstalled)
+            isInstalling = InstallService.IsInstalling(app.Uuid);
+    }
+
+    private async Task ReloadState()
+    {
+        ResetState();
+        if (App is not null)
+            await LoadState(App);
+
+        StateHasChanged();
+    }
+
+    private async void InstallCountChanged(int count)
+    {
+        await InvokeAsync(ReloadState);
+    }
 
     // Use inline styles instead of class names since class padding gets overridden by MudBlazor
     private string GetStyleCss()
@@ -60,6 +102,9 @@ public partial class AppActionButton
     }
     private string? GetIcon()
     {
+        // if (isPlaying)
+        //     return Icons.Material.Rounded.Stop;
+
         if (isInstalled || PlayHref is not null)
             return Icons.Material.Rounded.PlayArrow;
 
@@ -72,13 +117,15 @@ public partial class AppActionButton
     private Color GetColor()
     {
         if (isInstalling)
-            return Color.Default;
+            return Color.Info;
         else
             return Color.Primary;
     }
 
     protected override void OnInitialized()
     {
+        InstallService.OnActiveCountChanged += InstallCountChanged;
+
         // If App is null, OnParametersSet does not reset these during the first render
         ResetState();
     }
@@ -87,32 +134,17 @@ public partial class AppActionButton
     {
         if (ReferenceEquals(App, previousApp))
             return;
+        previousApp = App;
 
-        ResetState();
-
-        if (App is not null)
-        {
-            previousApp = App;
-            await LoadState(App);
-            StateHasChanged();
-        }
+        await ReloadState();
     }
 
-    private void ResetState()
+    private async Task ActivateIfNotDisabled()
     {
-        canInstall = false;
-        isInstalling = false;
-        isInstalled = false;
-    }
+        if (PropagateClicks)
+            return;
 
-    private async Task LoadState(AppManifest app)
-    {
-        // These can be initialized in OnParametersSetAsync since LibraryPage updates all of its children every time an install finishes
-        canInstall = await InstallService.CanInstall(app);
-        isInstalling = InstallService.IsInstalling(app.Uuid);
-
-        LibraryEntry? libraryEntry = await LibraryService.TryGetEntry(app.Uuid);
-        isInstalled = libraryEntry?.Data.IsInstalled == true;
+        await Activate();
     }
 
     /// <summary>
@@ -125,6 +157,8 @@ public partial class AppActionButton
     {
         if (App is null)
             return;
+        if (isActivating)
+            return;
 
         Guid appId = App.Uuid;
 
@@ -135,6 +169,9 @@ public partial class AppActionButton
             return;
         }
 
+        isActivating = true;
+        StateHasChanged();
+
         if (InstallService.IsInstalling(appId))
         {
             AppBarMenus.OpenDownloads();
@@ -142,13 +179,25 @@ public partial class AppActionButton
         else if (canInstall)
         {
             _ = await InstallService.StartInstallAsync(App, new AppInstallService.AppInstallConfig(DialogService));
-            StateHasChanged(); // Update canInstall
+            await ReloadState(); // update install state
         }
         else if (isInstalled)
         {
             bool success = await RunningService.RunApp(appId, DialogService);
             if (success)
+            {
                 await LibraryService.UpdateEntryAsync(appId); // update timestamp for sorting
+                await ReloadState(); // update isPlaying
+            }
         }
+
+        isActivating = false;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        InstallService.OnActiveCountChanged -= InstallCountChanged;
+        GC.SuppressFinalize(this);
     }
 }

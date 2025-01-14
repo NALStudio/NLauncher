@@ -26,11 +26,11 @@
 <!-- (we also show the button if we can both uninstall and remove from library although this is currently not possible) -->
 @if (!canUninstall || canRemoveFromLibrary)
 {
-    <MudMenuItem Disabled="@(!canRemoveFromLibrary)" OnClick="RemoveFromLibrary">Remove From Library</MudMenuItem>
+    <MudMenuItem Disabled="@(!canRemoveFromLibrary)" OnClick="@Execute(RemoveFromLibrary)">Remove From Library</MudMenuItem>
 }
 
-<MudMenuItem Disabled="@(!BrowseLocalsData.HasValue)" OnClick="BrowseLocals">Browse Local Files</MudMenuItem>
-<MudMenuItem Disabled="@(!canUninstall)" OnClick="Uninstall">Uninstall</MudMenuItem>
+<MudMenuItem Disabled="@(!BrowseLocalsData.HasValue)" OnClick="@Execute(BrowseLocals)">Browse Local Files</MudMenuItem>
+<MudMenuItem Disabled="@(!canUninstall)" OnClick="@Execute(Uninstall)">Uninstall</MudMenuItem>
 
 @if (data.Count > 0)
 {
@@ -45,8 +45,8 @@
 }
 
 @code {
-    [CascadingParameter]
-    private MudPopover? ParentMenu { get; set; }
+    [Parameter, EditorRequired]
+    public required LibraryCardMenu ParentMenu { get; set; }
 
     [Parameter, EditorRequired]
     public required IndexEntry? Entry { get; set; }
@@ -89,6 +89,18 @@
             await LoadData(entry, index, libraryEntry);
             StateHasChanged();
         }
+    }
+
+    ///  <summary>
+    /// Execute the method while handling the library card menu closing.
+    /// </summary>
+    private Func<Task> Execute(Func<Task> func)
+    {
+        return async () =>
+        {
+            ParentMenu.Close();
+            await func();
+        };
     }
 
     private void ResetAll()
