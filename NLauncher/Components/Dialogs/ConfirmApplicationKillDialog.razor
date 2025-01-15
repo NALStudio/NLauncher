@@ -20,12 +20,12 @@
 
     public static async Task<bool> ShowAsync(IDialogService dialogService, AppManifest? app)
     {
-        DialogParameters<ConfirmApplicationKill> parameters = new()
+        DialogParameters<ConfirmApplicationKillDialog> parameters = new()
         {
             { x => x.App, app }
         };
 
-        IDialogReference dialog = await dialogService.ShowAsync<ConfirmApplicationKill>("Kill Process", parameters);
+        IDialogReference dialog = await dialogService.ShowAsync<ConfirmApplicationKillDialog>("Kill Process", parameters);
         DialogResult? result = await dialog.Result;
 
         return result?.Canceled == false;

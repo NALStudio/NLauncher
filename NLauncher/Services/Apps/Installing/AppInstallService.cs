@@ -144,34 +144,33 @@ public class AppInstallService
         if (!version.IsSuccess)
             return false;
 
-        return CanInstallVersion(version.Value, includeLinkHandled: includeLinkHandled);
-    }
-
-    public async Task<bool> UpdateAvailable(AppManifest app)
-    {
-        LibraryEntry? entry = await library.TryGetEntry(app.Uuid);
-        if (entry is null)
-            return false;
-
-        LibraryData data = entry.Value.Data;
-        if (!data.IsInstalled)
-            return false;
-
-        AppVersion? ver = app.GetVersion(data.ChosenVerNum);
-        if (ver is null)
-            return false;
-
-        return ver.VerNum != data.Install.VerNum;
-    }
-
-    private static bool CanInstallVersion(AppVersion version, bool includeLinkHandled)
-    {
-        ImmutableArray<AppInstall> installs = version.Installs;
+        ImmutableArray<AppInstall> installs = version.Value.Installs;
         if (includeLinkHandled)
             return installs.Length > 0;
         else
             return installs.Any(static ins => !AppLinkPlayService.CanPlay(ins));
     }
+
+    public async Task<AppVersion?> TryGetAvailableUpdate(AppManifest app)
+    {
+        LibraryEntry? entry = await library.TryGetEntry(app.Uuid);
+        if (entry is null)
+            return null;
+
+        LibraryData data = entry.Value.Data;
+        if (!data.IsInstalled)
+            return null;
+
+        AppVersion? ver = app.GetVersion(data.ChosenVerNum);
+        if (ver is null)
+            return null;
+
+        if (ver.VerNum == data.Install.VerNum)
+            return null;
+
+        return ver;
+    }
+    public async Task<bool> UpdateAvailable(AppManifest app) => (await TryGetAvailableUpdate(app)) is not null;
 
     private async Task<InstallResult> InternalInstall(AppManifest app, AppInstallConfig config, bool update)
     {

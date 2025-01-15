@@ -1,0 +1,61 @@
+﻿@using NLauncher.Index.Models.Applications
+
+<MudDialog>
+    <DialogContent>
+        <p>@Update is available for download. Do you want to update?</p>
+        @if (Current is not null)
+        {
+            <p class="mt-1">The currently installed version is @(Current.Identifier).</p>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => Dialog!.Cancel())">Cancel</MudButton>
+
+        <MudTooltip Text="Play without updating">
+            <MudButton OnClick="@(() => Dialog!.Close(false))"
+            StartIcon="@(Icons.Material.Rounded.PlayArrow)"
+            Variant="Variant.Outlined"
+            Color="Color.Primary">
+                Play
+            </MudButton>
+        </MudTooltip>
+        <MudTooltip Text=@UpdateTo>
+            <MudButton OnClick="@(() => Dialog!.Close(true))"
+            StartIcon="@(Icons.Material.Rounded.SystemUpdateAlt)"
+            Variant="Variant.Filled"
+            Color="Color.Primary">
+                Update
+            </MudButton>
+        </MudTooltip>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? Dialog { get; set; }
+
+    [Parameter]
+    public AppVersion? Current { get; set; }
+
+    [Parameter]
+    public AppVersion? Available { get; set; }
+
+    private string Update => Available == null ? $"An update" : $"Update {Available.Identifier}";
+    private string UpdateTo => Available == null ? "Update application" : $"Update to {Available.Identifier}";
+
+    public static async Task<bool?> ShowAsync(IDialogService dialogService, AppVersion? current = null, AppVersion? available = null)
+    {
+        DialogParameters<UpdateAvailableDialog> parameters = new()
+        {
+            { x => x.Current, current },
+            { x => x.Available, available }
+        };
+
+        IDialogReference dialog = await dialogService.ShowAsync<UpdateAvailableDialog>("Update Available", parameters);
+        DialogResult? result = await dialog.Result;
+        if (result is null || result.Canceled)
+            return null;
+
+        return (bool)result.Data!;
+    }
+}

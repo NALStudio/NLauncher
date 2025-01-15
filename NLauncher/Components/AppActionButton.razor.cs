@@ -1,10 +1,12 @@
 ﻿
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using NLauncher.Components.Dialogs;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Services;
 using NLauncher.Services.Apps.Installing;
 using NLauncher.Services.Apps.Running;
+using NLauncher.Services.Index;
 using NLauncher.Services.Library;
 
 namespace NLauncher.Components;
@@ -12,6 +14,9 @@ namespace NLauncher.Components;
 // TODO: Update state when download is started
 public partial class AppActionButton : IDisposable
 {
+    [Inject]
+    private IndexService Index { get; set; } = default!;
+
     [Inject]
     private AppInstallService InstallService { get; set; } = default!;
 
@@ -58,6 +63,8 @@ public partial class AppActionButton : IDisposable
     private bool isInstalling;
     private bool isInstalled;
 
+    private uint? installedVersion;
+
     // removed because tracking the application exit was too difficult
     // private bool isPlaying;
 
@@ -67,6 +74,8 @@ public partial class AppActionButton : IDisposable
         canUpdate = false;
         isInstalling = false;
         isInstalled = false;
+
+        installedVersion = null;
     }
 
     private async Task LoadState(AppManifest app)
@@ -80,6 +89,8 @@ public partial class AppActionButton : IDisposable
         // Application install is not finished when InstallCountChanged calls this function
         if (!isInstalled)
             isInstalling = InstallService.IsInstalling(app.Uuid);
+
+        installedVersion = libraryEntry?.Data?.Install?.VerNum;
 
         OnStateLoaded?.Invoke();
     }
@@ -204,16 +215,38 @@ public partial class AppActionButton : IDisposable
         isActivating = true;
         StateHasChanged();
 
+        bool run = isInstalled;
+
         if (InstallService.IsInstalling(appId))
         {
             AppBarMenus.OpenDownloads();
+            run = false;
         }
-        else if (canInstall)
+        else if (canInstall) // Use variable instead of re-checking since we want to start the app as fast as possible
         {
             _ = await InstallService.StartInstallAsync(App, new AppInstallService.AppInstallConfig(DialogService));
+            run = false;
             await ReloadState(); // update install state
         }
-        else if (isInstalled)
+        else if (canUpdate)
+        {
+            bool? update = await AskUpdate();
+            if (update == true)
+            {
+                if (update.Value)
+                {
+                    _ = await InstallService.StartUpdateAsync(App, new AppInstallService.AppInstallConfig(DialogService));
+                    run = false;
+                    await ReloadState();
+                }
+            }
+
+            if (!update.HasValue)
+                run = false;
+
+        }
+
+        if (run)
         {
             bool success = await RunningService.RunApp(appId, DialogService);
             if (success)
@@ -225,6 +258,20 @@ public partial class AppActionButton : IDisposable
 
         isActivating = false;
         StateHasChanged();
+    }
+
+    private async Task<bool?> AskUpdate()
+    {
+        AppVersion? current = null;
+        AppVersion? available = null;
+        if (App is not null)
+        {
+            if (installedVersion.HasValue)
+                current = App.GetVersion(installedVersion.Value);
+            available = await InstallService.TryGetAvailableUpdate(App);
+        }
+
+        return await UpdateAvailableDialog.ShowAsync(DialogService, current, available);
     }
 
     public void Dispose()

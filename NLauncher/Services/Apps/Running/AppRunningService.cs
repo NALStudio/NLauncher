@@ -75,7 +75,7 @@ public class AppRunningService
 
     private static async Task<bool> AskKillRunningApp(IDialogService dialogService, AppManifest? app, AppHandle appHandle)
     {
-        bool kill = await ConfirmApplicationKill.ShowAsync(dialogService, app);
+        bool kill = await ConfirmApplicationKillDialog.ShowAsync(dialogService, app);
         if (kill)
             await appHandle.KillAsync();
         return kill;
@@ -92,7 +92,7 @@ public class AppRunningService
             alreadyRunning = cachedIndex.GetEntryOrNull(alreadyRunningId)?.Manifest;
         }
 
-        bool kill = await ApplicationAlreadyRunning.ShowAsync(dialogService, triedRun: triedRun, alreadyRunning: alreadyRunning);
+        bool kill = await ApplicationAlreadyRunningDialog.ShowAsync(dialogService, triedRun: triedRun, alreadyRunning: alreadyRunning);
         if (kill)
             return await AskKillRunningApp(dialogService, alreadyRunning, alreadyRunningHandle);
         else

@@ -41,13 +41,13 @@
     /// </summary>
     public static async Task<bool> ShowAsync(IDialogService dialogService, AppManifest? triedRun, AppManifest? alreadyRunning)
     {
-        DialogParameters<ApplicationAlreadyRunning> parameters = new()
+        DialogParameters<ApplicationAlreadyRunningDialog> parameters = new()
         {
             { x => x.TriedRun, triedRun },
             { x => x.AlreadyRunning, alreadyRunning }
         };
 
-        IDialogReference dialog = await dialogService.ShowAsync<ApplicationAlreadyRunning>("Application Already Running", parameters);
+        IDialogReference dialog = await dialogService.ShowAsync<ApplicationAlreadyRunningDialog>("Application Already Running", parameters);
         DialogResult? result = await dialog.Result;
         if (result?.Canceled == true)
             return false;
