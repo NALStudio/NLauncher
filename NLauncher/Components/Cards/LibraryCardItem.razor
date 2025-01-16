@@ -36,7 +36,7 @@
                 <MudSkeleton Width="100%" Height="100%" SkeletonType="SkeletonType.Rectangle" />
             }
 
-            <a class="library_card_overlay"
+            <a class=@LibraryCardOverlayClasses
                href="@(!mouseInsideMoreButton ? href : null)"
                target="_blank"
                @onclick="OnCardPressed"
@@ -82,9 +82,12 @@
     transition: opacity 250ms;
 
     user-select: none;
-
-    border-color: var(--mud-palette-overlay-dark);
+}
+.library_card_overlay_dark {
     background-color: var(--mud-palette-overlay-dark);
+}
+.library_card_overlay_light {
+        background-color: var(--mud-palette-overlay-light);
 }
 .library_card_overlay:hover {
     opacity: 1;

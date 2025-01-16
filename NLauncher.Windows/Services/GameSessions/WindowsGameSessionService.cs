@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NLauncher.Code.Json;
 using NLauncher.Services.Sessions;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
@@ -104,7 +103,9 @@ public class WindowsGameSessionService : IGameSessionService
         if (sessionBytes.Contains(newline))
             throw new ArgumentException("Session serialization resulted in newlines.");
 
-        Debug.Assert(stream.Position == stream.Length);
+        // Nothing was written if I don't seek
+        stream.Seek(0, SeekOrigin.End);
+
         stream.Write(sessionBytes);
         stream.WriteByte(newline);
     }

@@ -1,12 +1,10 @@
-﻿
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using NLauncher.Components.Dialogs;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Services;
 using NLauncher.Services.Apps.Installing;
 using NLauncher.Services.Apps.Running;
-using NLauncher.Services.Index;
 using NLauncher.Services.Library;
 
 namespace NLauncher.Components;
@@ -14,9 +12,6 @@ namespace NLauncher.Components;
 // TODO: Update state when download is started
 public partial class AppActionButton : IDisposable
 {
-    [Inject]
-    private IndexService Index { get; set; } = default!;
-
     [Inject]
     private AppInstallService InstallService { get; set; } = default!;
 
@@ -125,10 +120,13 @@ public partial class AppActionButton : IDisposable
         // if (isPlaying)
         //     return Icons.Material.Rounded.Stop;
 
+        if (PlayHref is not null)
+            return Icons.Material.Rounded.OpenInNew;
+
         if (canUpdate)
             return Icons.Material.Rounded.SystemUpdateAlt;
 
-        if (isInstalled || PlayHref is not null)
+        if (isInstalled /*|| PlayHref is not null*/) // PlayHref now displays a "Open in new" icon
             return Icons.Material.Rounded.PlayArrow;
 
         if (canInstall || isInstalling)
@@ -140,10 +138,13 @@ public partial class AppActionButton : IDisposable
     // Not used by this component, exposed for other components to use.
     public string? GetStateMessage()
     {
+        if (PlayHref is not null)
+            return "Open Link";
+
         if (canUpdate)
             return "Update";
 
-        if (isInstalled || PlayHref is not null)
+        if (isInstalled)
             return "Play";
 
         if (isInstalling)
