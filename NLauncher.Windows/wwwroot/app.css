@@ -62,13 +62,12 @@
         .loading-progress circle:last-child {
             stroke: #F44336;
             stroke-opacity: 1;
-            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 100%) * 0.8), 500%;
-            transition: stroke-dasharray 0.05s ease-in-out;
+            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+            transition: stroke-dasharray 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
         }
 
 .loading-progress-image {
     animation: loading-progress-fade-keyframes 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-
     position: absolute;
     object-fit: contain;
     object-position: center;
@@ -80,10 +79,11 @@
 
 @keyframes loading-progress-fade-keyframes {
     0%,100% {
-        opacity: calc(50% + (var(--blazor-load-percentage, 100%) / 2));
+        opacity: 0.5;
     }
+
     50% {
-        opacity: calc(var(--blazor-load-percentage, 100%) / 2);
+        opacity: 1;
     }
 }
 
