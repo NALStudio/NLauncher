@@ -44,35 +44,48 @@
 .loading-progress {
     position: relative;
     display: block;
-    width: 8rem;
-    height: 8rem;
+    width: 10rem;
+    height: 10rem;
     margin: 20vh auto 1rem auto;
 }
 
     .loading-progress circle {
         fill: none;
-        stroke: #e0e0e0;
-        stroke-width: 0.6rem;
+        stroke: #F44336;
+        stroke-opacity: 0.4;
+        stroke-linecap: round;
+        stroke-width: 0.4rem;
         transform-origin: 50% 50%;
         transform: rotate(-90deg);
     }
 
         .loading-progress circle:last-child {
-            stroke: #1b6ec2;
-            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
-            transition: stroke-dasharray 0.05s ease-in-out;
+            stroke: #F44336;
+            stroke-opacity: 1;
+            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 100%) * 0.8), 500%;
+            transition: stroke-dasharray 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
         }
 
-.loading-progress-text {
+.loading-progress-image {
+    animation: loading-progress-fade-keyframes 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+
     position: absolute;
-    text-align: center;
-    font-weight: bold;
-    inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
+    object-fit: contain;
+    object-position: center;
+    margin-left: auto;
+    margin-right: auto;
+    height: 4rem;
+    inset: calc(20vh + 3rem) 0 auto 0.5rem; /* left distance 0.5rem so that the image looks more centered */
 }
 
-    .loading-progress-text:after {
-        content: var(--blazor-load-percentage-text, "Loading");
+@keyframes loading-progress-fade-keyframes {
+    0%,100% {
+        opacity: calc(50% + (var(--blazor-load-percentage, 100%) / 2));
     }
+    50% {
+        opacity: calc(var(--blazor-load-percentage, 100%) / 2);
+    }
+}
 
 code {
     color: #c02d76;
