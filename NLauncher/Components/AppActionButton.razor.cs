@@ -208,6 +208,9 @@ public partial class AppActionButton : IDisposable
 
         if (PlayHref is not null)
         {
+            // Yield first so that the UI has time to react to the Href before updating
+            await Task.Yield();
+
             // Link pressed, update timestamp for sorting and exit
             await LibraryService.UpdateEntryAsync(appId);
             return;

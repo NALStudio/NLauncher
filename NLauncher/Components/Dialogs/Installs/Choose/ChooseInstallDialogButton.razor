@@ -4,7 +4,7 @@
 
 @inject IDialogService DialogService
 
-<MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="@GetVariant()" StartIcon="@GetStartIcon()" EndIcon="@GetEndIcon()" Href="@(href?.ToString())" Target="_blank" OnClick="OnClickHandler">
+<MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="@GetVariant()" StartIcon="@GetStartIcon()" EndIcon="@GetEndIcon()" Href="@(Href?.ToString())" Target="_blank" OnClick="OnClickHandler">
     @GetButtonText()
 </MudButton>
 
@@ -16,29 +16,31 @@
     public bool IsAutomatic { get; set; } = false;
 
     [Parameter]
-    public Action<bool>? OnClick { get; set; }
+    public bool IsManual { get; set; } = false;
+
+    [Parameter]
+    public EventCallback<ChooseInstallDialogButton> OnClick { get; set; }
 
     private Variant GetVariant() => IsAutomatic ? Variant.Outlined : Variant.Text;
 
-    private Uri? href;
+    public Uri? Href { get; private set; }
 
     protected override void OnParametersSet()
     {
-        if (IsAutomatic)
-            href = null;
+        if (IsAutomatic || IsManual)
+            Href = null;
         else
-            href = Install.GetHrefUri();
+            Href = Install.GetHrefUri();
     }
 
-    private void OnClickHandler()
+    private async Task OnClickHandler()
     {
-        bool navigated = href is not null;
-        OnClick?.Invoke(navigated);
+        await OnClick.InvokeAsync(this);
     }
 
     private string? GetEndIcon()
     {
-        if (href is not null)
+        if (Href is not null)
             return Icons.Material.Rounded.OpenInNew;
 
         return null;
@@ -60,7 +62,7 @@
         return Install switch
         {
             BinaryAppInstall => $"{AutomaticOrManualText()} Install ({Install.GetSupportedPlatforms()})",
-            StoreLinkAppInstall or WebsiteAppInstall => $"Open In {href?.Host ?? "<error>"}",
+            StoreLinkAppInstall or WebsiteAppInstall => $"Open In {Href?.Host ?? "<error>"}",
             _ => "<error>"
         };
     }

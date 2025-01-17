@@ -4,13 +4,23 @@
 @using NLauncher.Index.Models.Applications
 @using NLauncher.Index.Models.Applications.Installs
 @using System.Collections.Immutable
+@using System.Diagnostics
+
+@inject IDialogService DialogService
 
 <MudDialog>
     <DialogContent>
         <MudStack Class="mb-2">
             @if (ShowInstallNLauncher)
             {
-                <MudButton FullWidth Size="Size.Large" Color="Color.Primary" Variant="Variant.Outlined" EndIcon="@(Icons.Material.Rounded.OpenInNew)" Href="@(NLauncherConstants.LatestReleaseUrl)" Target="_blank">
+                <MudButton FullWidth
+                           Size="Size.Large"
+                           Color="Color.Primary"
+                           Variant="Variant.Outlined"
+                           StartIcon="@(NLauncherIcons.NLauncherIcon)"
+                           EndIcon="@(Icons.Material.Rounded.OpenInNew)"
+                           Href="@(NLauncherConstants.LatestReleaseUrl)" Target="_blank"
+                           OnClick="InstallNLauncherClose">
                     Install Using NLauncher
                 </MudButton>
             }
@@ -20,10 +30,13 @@
                 if (SupportsAutomaticInstall?.Invoke(install) == true)
                 {
                     // If automatic install is supported, provide both options to user
-                    <ChooseInstallDialogButton Install="@(install)" IsAutomatic="true" OnClick="@(nav => Close(nav, install))"/>
+                    <ChooseInstallDialogButton Install="@(install)" IsAutomatic="true" OnClick="@Close"/>
+                    <ChooseInstallDialogButton Install="@(install)" IsManual="true" OnClick="@Close"/>
                 }
-
-                <ChooseInstallDialogButton Install="@(install)" IsAutomatic="false" OnClick="@(nav => Close(nav, install))"/>
+                else
+                {
+                    <ChooseInstallDialogButton Install="@(install)" IsManual="@(install is BinaryAppInstall)" OnClick="@Close"/>
+                }
             }
         </MudStack>
     </DialogContent>
@@ -42,12 +55,29 @@
     [Parameter]
     public bool ShowInstallNLauncher { get; set; } = false;
 
-    private void Close(bool hrefNavigated, AppInstall chosenOption)
+    private void InstallNLauncherClose()
     {
-        if (!hrefNavigated)
-            Dialog!.Close(chosenOption);
-        else
+        Dialog!.Cancel();
+        return;
+    }
+
+    private async Task Close(ChooseInstallDialogButton btn)
+    {
+        if (btn.IsManual)
+        {
+            Debug.Assert(btn.Href is null);
+            _ = await ConfirmManualInstallDialog.ShowAsync(DialogService, btn.Install.GetHref());
             Dialog!.Cancel();
+            return;
+        }
+
+        if (btn.Href is not null)
+        {
+            Dialog!.Cancel();
+            return;
+        }
+
+        Dialog!.Close(btn.Install);
     }
 
     /// <summary>
