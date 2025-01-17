@@ -44,6 +44,7 @@ partial class MainPage
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
+        BackColor = Color.White;
         ClientSize = new Size(1264, 745);
         Controls.Add(blazorWebView);
         MinimumSize = new Size(480, 270);

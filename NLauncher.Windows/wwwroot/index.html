@@ -25,13 +25,16 @@
 
 <body>
     <div id="app">
-        <!-- Do not display loading content in the Windows app version
+        <!-- Do not display loading circle in the Windows app version
             <svg class="loading-progress">
                 <circle r="40%" cx="50%" cy="50%" />
                 <circle r="40%" cx="50%" cy="50%" />
             </svg>
-            <img class="loading-progress-image" src="_content/NLauncher.Shared/icon.svg" />
         -->
+
+        <!-- Use a copy of the _content/NLauncher.Shared/icon.svg so that we don't mess with the preloaded icon -->
+        <!-- This avoids any main page icons' pop-in issues. (as the preloaded image is discarded in-between frames) -->
+        <img class="loading-progress-image loading-progress-image-windows" src="./icon.svg" />
     </div>
 
     <div id="blazor-error-ui">
