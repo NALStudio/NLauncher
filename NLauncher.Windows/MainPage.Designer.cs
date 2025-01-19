@@ -28,6 +28,7 @@ partial class MainPage
     /// </summary>
     private void InitializeComponent()
     {
+        System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainPage));
         blazorWebView = new Microsoft.AspNetCore.Components.WebView.WindowsForms.BlazorWebView();
         SuspendLayout();
         // 
@@ -47,6 +48,7 @@ partial class MainPage
         BackColor = Color.White;
         ClientSize = new Size(1264, 745);
         Controls.Add(blazorWebView);
+        Icon = (Icon)resources.GetObject("$this.Icon");
         MinimumSize = new Size(480, 270);
         Name = "MainPage";
         Text = "NLauncher";

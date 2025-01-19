@@ -8,6 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
 	  
     <AssemblyName>NLauncher</AssemblyName>
+	  
+    <ApplicationIcon>wwwroot\logo.ico</ApplicationIcon>
 
 	<!-- Not supported by Winforms -->
 	<!--<PublishAot>true</PublishAot>-->
