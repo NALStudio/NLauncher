@@ -8,7 +8,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="@(Dialog!.Cancel)">Cancel</MudButton>
-        <MudButton OnClick="@(() => Dialog!.Close(true))" Variant="Variant.Filled" Color="Color.Error" StartIcon="@(Icons.Material.Rounded.Delete)">
+        <MudButton OnClick="@(() => Dialog!.Close())" Variant="Variant.Filled" Color="Color.Error" StartIcon="@(Icons.Material.Rounded.Delete)">
             Uninstall
         </MudButton>
     </DialogActions>
@@ -39,10 +39,7 @@
         IDialogReference dialog = await dialogService.ShowAsync<ConfirmUninstallDialog>("Uninstall", parameters, options);
         DialogResult? result = await dialog.Result;
 
-        if (result is null || result.Canceled)
-            return false;
-
-        Debug.Assert((bool?)result.Data == true);
-        return true;
+        // True if not null and canceled == false.
+        return result?.Canceled == false;
     }
 }

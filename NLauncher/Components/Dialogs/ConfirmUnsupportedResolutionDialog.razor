@@ -1,0 +1,43 @@
+﻿@using NLauncher.Index.Models.Applications
+
+<MudDialog>
+    <DialogContent>
+        <p>
+            A resolution of at least @(MinRes)p is required by this application. <br />
+            Your current resolution is @(CurrentRes)p.
+        </p>
+        <p class="my-3">
+            You can still install this application, but it might not fit the screen properly or it may have rendering artifacts.
+        </p>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => Dialog?.Cancel())">Cancel</MudButton>
+        <MudButton OnClick="@(() => Dialog?.Close())" Variant="Variant.Filled" Color="Color.Warning">Install Anyway</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance? Dialog { get; set; }
+
+    [Parameter]
+    public int CurrentRes { get; set; }
+
+    [Parameter]
+    public int MinRes { get; set; }
+
+    public static async Task<bool> ShowAsync(IDialogService dialogService, int currentResolution, int minResolution)
+    {
+        DialogParameters<ConfirmUnsupportedResolutionDialog> parameters = new()
+        {
+            { x => x.CurrentRes, currentResolution },
+            { x => x.MinRes, minResolution }
+        };
+
+        IDialogReference dialog = await dialogService.ShowAsync<ConfirmUnsupportedResolutionDialog>("Unsupported Resolution", parameters);
+        DialogResult? result = await dialog.Result;
+
+        // True if not null and canceled == false.
+        return result?.Canceled == false;
+    }
+}

@@ -65,6 +65,7 @@ public partial class MainPage : Form
         services.AddScoped(_ => Program.HttpClient);
 
         NLauncherServices.AddDefault(services);
+        NLauncherServices.AddPlatformInfo<WindowsPlatformInfoService>(services);
         NLauncherServices.AddStorage<WindowsStorageService>(services);
         NLauncherServices.AddInstalling<WindowsPlatformInstaller>(services);
 

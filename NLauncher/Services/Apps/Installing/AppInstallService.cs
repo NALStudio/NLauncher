@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using MudBlazor;
 using NLauncher.Code.Models;
+using NLauncher.Components.Dialogs;
 using NLauncher.Components.Dialogs.Installs;
 using NLauncher.Components.Dialogs.Installs.Choose;
 using NLauncher.Index.Models.Applications;
@@ -21,6 +22,8 @@ public class AppInstallService
         }
 
         public bool VerifyIfNotLatestVersion { get; init; } = true;
+        public bool VerifyIfNotRecommendedResolution { get; init; } = true;
+
         public bool AlwaysAskInstallMethod { get; init; } = false;
     }
 
@@ -34,13 +37,15 @@ public class AppInstallService
 
     private readonly ILogger<AppInstallService> logger;
 
+    private readonly IPlatformInfoService platformInfo;
     private readonly IPlatformInstaller installer;
     private readonly LibraryService library;
     private readonly AppBarMenus appBarMenus;
 
-    public AppInstallService(ILogger<AppInstallService> logger, IPlatformInstaller installer, LibraryService library, AppBarMenus appBarMenus)
+    public AppInstallService(ILogger<AppInstallService> logger, IPlatformInfoService platformInfo, IPlatformInstaller installer, LibraryService library, AppBarMenus appBarMenus)
     {
         this.logger = logger;
+        this.platformInfo = platformInfo;
         this.installer = installer;
         this.library = library;
         this.appBarMenus = appBarMenus;
@@ -140,7 +145,7 @@ public class AppInstallService
     /// </remarks>
     public async Task<bool> CanInstall(AppManifest app, bool includeLinkHandled = true)
     {
-        InstallResult<AppVersion> version = await ResolveVersion(app, null, update: false, verifyIfNotLatestVersion: false);
+        InstallResult<AppVersion> version = await ResolveVersion(app, null, update: false, verifyIfNotLatestVersion: false, verifyIfNotRecommendedResolution: false);
         if (!version.IsSuccess)
             return false;
 
@@ -174,7 +179,7 @@ public class AppInstallService
 
     private async Task<InstallResult> InternalInstall(AppManifest app, AppInstallConfig config, bool update)
     {
-        InstallResult<AppVersion> version = await ResolveVersion(app, config.DialogService, update: update, verifyIfNotLatestVersion: config.VerifyIfNotLatestVersion);
+        InstallResult<AppVersion> version = await ResolveVersion(app, config.DialogService, update: update, verifyIfNotLatestVersion: config.VerifyIfNotLatestVersion, verifyIfNotRecommendedResolution: config.VerifyIfNotRecommendedResolution);
         if (!version.IsSuccess)
             return InstallResult.Failed(version);
 
@@ -232,7 +237,7 @@ public class AppInstallService
         return InstallResult.Success(chosenOption.Value);
     }
 
-    private async Task<InstallResult<AppVersion>> ResolveVersion(AppManifest app, IDialogService? dialogService, bool update, bool verifyIfNotLatestVersion)
+    private async Task<InstallResult<AppVersion>> ResolveVersion(AppManifest app, IDialogService? dialogService, bool update, bool verifyIfNotLatestVersion, bool verifyIfNotRecommendedResolution)
     {
         LibraryEntry? libraryEntry = await library.TryGetEntry(app.Uuid);
 
@@ -243,7 +248,7 @@ public class AppInstallService
         uint? vernum = libraryEntry?.Data.ChosenVerNum;
 
         // Ask user to confirm that they want to install an older version
-        if (vernum.HasValue && verifyIfNotLatestVersion)
+        if (verifyIfNotLatestVersion && vernum.HasValue)
         {
             ArgumentNullException.ThrowIfNull(dialogService);
             CancellableResult<uint?> result = await ConfirmInstallOlderVersionDialog.ShowAsync(dialogService, vernum.Value);
@@ -257,6 +262,19 @@ public class AppInstallService
         AppVersion? version = app.GetVersion(vernum);
         if (version is null)
             return InstallResult.Errored<AppVersion>("Version not found.");
+
+        // null < null => false
+        // null < int => false
+        // int < null => false
+        int? minRes = version.MinRecommendedResolution;
+        int? curRes = platformInfo.PrimaryScreenHeight;
+        if (verifyIfNotRecommendedResolution && minRes.HasValue && curRes.HasValue && minRes.Value < curRes.Value)
+        {
+            ArgumentNullException.ThrowIfNull(dialogService);
+            bool install = await ConfirmUnsupportedResolutionDialog.ShowAsync(dialogService, currentResolution: curRes.Value, minResolution: minRes.Value);
+            if (!install)
+                return InstallResult<AppVersion>.Cancelled();
+        }
 
         return InstallResult.Success(version);
     }

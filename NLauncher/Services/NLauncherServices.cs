@@ -31,6 +31,16 @@ public static class NLauncherServices
         services.AddScoped<AppLinkPlayService>();
     }
 
+    public static void AddPlatformInfo<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPlatformInfo>(IServiceCollection services) where TPlatformInfo : class, IPlatformInfoService
+    {
+        services.AddScoped<IPlatformInfoService, TPlatformInfo>();
+    }
+
+    public static void AddStorage<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TStorage>(IServiceCollection services) where TStorage : class, IStorageService
+    {
+        services.AddScoped<IStorageService, TStorage>();
+    }
+
     public static void AddInstalling<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TInstaller>(IServiceCollection services) where TInstaller : class, IPlatformInstaller
     {
         services.AddScoped<IPlatformInstaller, TInstaller>();
@@ -52,10 +62,5 @@ public static class NLauncherServices
     public static void AddGameSessions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TGameSessions>(IServiceCollection services) where TGameSessions : class, IGameSessionService
     {
         services.AddScoped<IGameSessionService, TGameSessions>();
-    }
-
-    public static void AddStorage<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TStorage>(IServiceCollection services) where TStorage : class, IStorageService
-    {
-        services.AddScoped<IStorageService, TStorage>();
     }
 }

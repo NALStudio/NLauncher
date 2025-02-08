@@ -28,6 +28,7 @@
         IDialogReference dialog = await dialogService.ShowAsync<ConfirmApplicationKillDialog>("Kill Process", parameters);
         DialogResult? result = await dialog.Result;
 
+        // True if not null and canceled == false.
         return result?.Canceled == false;
     }
 }

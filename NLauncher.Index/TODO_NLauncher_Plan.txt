@@ -83,6 +83,7 @@ File layout:
         {
             "vernum": "number", // (i.e. 6)
             "identifier": "string", // (i.e. 1.9.6)
+            "min_recommended_resolution": "number?", // Vertical resolution of the display (i.e. 1440). Can be extended into a full on structure later if needed.
             "installs": [
                 // Multiple install options so that we can have separate binary and binary_diff downloads depending on whether the app is updating or installing for the first time
                 // App will pick the best install option during runtime

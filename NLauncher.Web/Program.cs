@@ -18,6 +18,7 @@ public static class Program
         builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
         NLauncherServices.AddDefault(builder.Services);
+        NLauncherServices.AddPlatformInfo<WebPlatformInfoService>(builder.Services);
         NLauncherServices.AddStorage<WebStorageService>(builder.Services);
         NLauncherServices.AddInstalling<WebPlatformInstaller>(builder.Services);
 
