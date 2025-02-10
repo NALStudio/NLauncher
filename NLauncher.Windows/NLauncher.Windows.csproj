@@ -8,6 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
 	  
     <AssemblyName>NLauncher</AssemblyName>
+    <Version>0.8.0</Version>
 	  
     <ApplicationIcon>wwwroot\logo.ico</ApplicationIcon>
 

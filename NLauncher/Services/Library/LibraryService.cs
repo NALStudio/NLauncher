@@ -188,8 +188,8 @@ public class LibraryService
         LibraryEntry[]? entries = null;
         try
         {
-            string json = await storage.ReadAll(NLauncherConstants.FileNames.Library);
-            if (!string.IsNullOrEmpty(json))
+            byte[] json = await storage.ReadUtf8(NLauncherConstants.FileNames.Library);
+            if (json.Length > 0)
                 entries = JsonSerializer.Deserialize(json, NLauncherJsonContext.Default.LibraryEntryArray) ?? throw new Exception("entries was null.");
         }
         catch (Exception e)
@@ -206,7 +206,7 @@ public class LibraryService
         if (entries is null)
             throw new InvalidOperationException("No entries loaded.");
 
-        string json = JsonSerializer.Serialize(entries.Values, NLauncherJsonContext.Default.IEnumerableLibraryEntry);
-        await storage.WriteAll(NLauncherConstants.FileNames.Library, json);
+        byte[] json = JsonSerializer.SerializeToUtf8Bytes(entries.Values, NLauncherJsonContext.Default.IEnumerableLibraryEntry);
+        await storage.Write(NLauncherConstants.FileNames.Library, json);
     }
 }

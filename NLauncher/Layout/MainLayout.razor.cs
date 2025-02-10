@@ -6,6 +6,7 @@ using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
 using NLauncher.Services;
 using NLauncher.Services.Apps.Installing;
+using NLauncher.Services.CheckUpdate;
 using NLauncher.Services.Index;
 
 namespace NLauncher.Layout;
@@ -24,16 +25,28 @@ public partial class MainLayout : IDisposable
     [Inject]
     private AppInstallService AppInstallService { get; set; } = default!;
 
+    [Inject]
+    private ICheckUpdate CheckUpdate { get; set; } = default!;
+
+
     private MudAutocomplete<IndexEntry>? indexSearch;
 
     private bool anyInstallsRunning = false;
+    private AvailableUpdate? update = null;
 
     private bool drawerOpen = true;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         AppBarMenus.OnChanged += AppBarMenusChanged;
         AppInstallService.OnActiveCountChanged += InstallCountChanged;
+
+        AvailableUpdate? update = await CheckUpdate.CheckForUpdateAsync();
+        if (update is not null)
+        {
+            this.update = update;
+            StateHasChanged();
+        }
     }
 
     private void SetDrawerOpen(bool open)

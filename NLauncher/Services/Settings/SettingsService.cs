@@ -76,8 +76,8 @@ public partial class SettingsService
 
     private async ValueTask InternalSaveSettings(Settings settings)
     {
-        string json = JsonSerializer.Serialize(settings, NLauncherJsonContext.Default.Settings);
-        await storageService.WriteAll(NLauncherConstants.FileNames.Settings, json);
+        byte[] json = JsonSerializer.SerializeToUtf8Bytes(settings, NLauncherJsonContext.Default.Settings);
+        await storageService.Write(NLauncherConstants.FileNames.Settings, json);
     }
 
     public async void LoadSettings()
@@ -99,8 +99,8 @@ public partial class SettingsService
 
     private async Task<Settings?> InternalLoadSettings()
     {
-        string json = await storageService.ReadAll(NLauncherConstants.FileNames.Settings);
-        if (string.IsNullOrEmpty(json))
+        byte[] json = await storageService.ReadUtf8(NLauncherConstants.FileNames.Settings);
+        if (json.Length == 0)
             return null;
 
         return JsonSerializer.Deserialize(json, NLauncherJsonContext.Default.Settings);

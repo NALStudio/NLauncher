@@ -7,6 +7,7 @@ using Microsoft.Web.WebView2.Core;
 using NLauncher.Services;
 using NLauncher.Windows.Services;
 using NLauncher.Windows.Services.Apps;
+using NLauncher.Windows.Services.CheckUpdate;
 using NLauncher.Windows.Services.GameSessions;
 
 namespace NLauncher.Windows;
@@ -67,6 +68,7 @@ public partial class MainPage : Form
         NLauncherServices.AddDefault(services);
         NLauncherServices.AddPlatformInfo<WindowsPlatformInfoService>(services);
         NLauncherServices.AddStorage<WindowsStorageService>(services);
+        NLauncherServices.AddUpdateCheck<WindowsCheckUpdate>(services);
         NLauncherServices.AddInstalling<WindowsPlatformInstaller>(services);
 
         NLauncherServices.AddAppFiles<WindowsAppLocalFiles>(services);

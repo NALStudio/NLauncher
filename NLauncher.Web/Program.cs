@@ -20,6 +20,7 @@ public static class Program
         NLauncherServices.AddDefault(builder.Services);
         NLauncherServices.AddPlatformInfo<WebPlatformInfoService>(builder.Services);
         NLauncherServices.AddStorage<WebStorageService>(builder.Services);
+        NLauncherServices.AddUpdateCheck<WebCheckUpdate>(builder.Services);
         NLauncherServices.AddInstalling<WebPlatformInstaller>(builder.Services);
 
         NLauncherServices.AddAppFiles<WebAppLocalFiles>(builder.Services);

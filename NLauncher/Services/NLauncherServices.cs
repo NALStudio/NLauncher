@@ -4,6 +4,8 @@ using MudBlazor.Services;
 using NLauncher.Services.Apps;
 using NLauncher.Services.Apps.Installing;
 using NLauncher.Services.Apps.Running;
+using NLauncher.Services.Cache;
+using NLauncher.Services.CheckUpdate;
 using NLauncher.Services.Index;
 using NLauncher.Services.Library;
 using NLauncher.Services.Sessions;
@@ -25,6 +27,7 @@ public static class NLauncherServices
         services.AddScoped<AppBarMenus>();
 
         services.AddScoped<SettingsService>();
+        services.AddScoped<CacheService>();
         services.AddScoped<IndexService>();
         services.AddScoped<LibraryService>();
 
@@ -39,6 +42,11 @@ public static class NLauncherServices
     public static void AddStorage<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TStorage>(IServiceCollection services) where TStorage : class, IStorageService
     {
         services.AddScoped<IStorageService, TStorage>();
+    }
+
+    public static void AddUpdateCheck<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TCheck>(IServiceCollection services) where TCheck : class, ICheckUpdate
+    {
+        services.AddScoped<ICheckUpdate, TCheck>();
     }
 
     public static void AddInstalling<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TInstaller>(IServiceCollection services) where TInstaller : class, IPlatformInstaller

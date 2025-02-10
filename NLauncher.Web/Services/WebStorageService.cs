@@ -1,6 +1,7 @@
 ﻿using Microsoft.JSInterop;
 using NLauncher.Services;
 using System.Runtime.Versioning;
+using System.Text;
 
 namespace NLauncher.Web.Services;
 
@@ -23,21 +24,69 @@ public class WebStorageService : IStorageService
         return await js.InvokeAsync<string?>("localStorage.getItem", key);
     }
 
-    private static string GetLocalStorageKey(string filename)
+    private async ValueTask SetLocalStorageUtf8(string key, byte[] utf8)
     {
-        IStorageService.ThrowIfFilenameInvalid(filename);
-        return "NLauncher.Services.Storage.WebStorageService/" + filename;
+        // C# and JavaScript both use utf-16 strings
+        // and LocalStorage doesn't accept any other type except strings.
+
+        // So an unnecessary amount of boilerplate is needed
+        // if I want to optimize this by sending the bytes raw
+        // to JS side before doing the utf8 => utf16 convertsion.
+
+        string value = Encoding.UTF8.GetString(utf8);
+        await SetLocalStorageValue(key, value);
     }
 
-    public async ValueTask WriteAll(string filename, string text)
+    private async ValueTask<byte[]?> GetLocalStorageUtf8(string key)
     {
-        string key = GetLocalStorageKey(filename);
-        await SetLocalStorageValue(key, text);
+        string? value = await GetLocalStorageValue(key);
+        if (value is null)
+            return null;
+        if (value.Length == 0) // UTF8.GetBytes doesn't do this optimization for some reason...
+            return Array.Empty<byte>();
+        return Encoding.UTF8.GetBytes(value);
     }
 
-    public async ValueTask<string> ReadAll(string filename)
+    private static string GetKey(string filename, bool cache = false)
     {
-        string key = GetLocalStorageKey(filename);
+        IStorageService.ThrowIfFilenameInvalid(filename, requireExtension: !cache);
+        string cachePath = cache ? ".cache" : string.Empty;
+        return $"WebStorageService{cachePath}/{filename}";
+    }
+
+    public async ValueTask Write(string filename, byte[] utf8)
+    {
+        string key = GetKey(filename);
+        await SetLocalStorageUtf8(key, utf8);
+    }
+
+    public async ValueTask Write(string filename, string value)
+    {
+        string key = GetKey(filename);
+        await SetLocalStorageValue(key, value);
+    }
+
+    public async ValueTask WriteCache(string key, byte[] utf8)
+    {
+        string lsKey = GetKey(key, cache: true);
+        await SetLocalStorageUtf8(lsKey, utf8);
+    }
+
+    public async ValueTask<byte[]> ReadUtf8(string filename)
+    {
+        string key = GetKey(filename);
+        return await GetLocalStorageUtf8(key) ?? Array.Empty<byte>();
+    }
+
+    public async ValueTask<string> Read(string filename)
+    {
+        string key = GetKey(filename);
         return await GetLocalStorageValue(key) ?? string.Empty;
+    }
+
+    public async ValueTask<byte[]> ReadCache(string key)
+    {
+        string lsKey = GetKey(key, cache: true);
+        return await GetLocalStorageUtf8(lsKey) ?? Array.Empty<byte>();
     }
 }
