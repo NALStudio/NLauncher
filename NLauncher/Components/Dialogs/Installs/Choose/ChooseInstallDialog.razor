@@ -44,7 +44,7 @@
 
 @code {
     [CascadingParameter]
-    private MudDialogInstance? Dialog { get; set; }
+    private IMudDialogInstance? Dialog { get; set; }
 
     [Parameter, EditorRequired]
     public required ImmutableArray<AppInstall> Options { get; set; }

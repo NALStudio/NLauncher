@@ -19,10 +19,10 @@
                 string? message = result.HasValue ? result.Value.ErrorMessage : progress.Message;
 
                 <MudProgressCircular Color="@color"
-                                     Indeterminate="@indeterminate"
-                                     Value="@value"
-                                     Min="0"
-                                     Max="1" />
+                Indeterminate="@indeterminate"
+                Value="@value"
+                Min="0"
+                Max="1" />
 
                 <MudStack Spacing="1">
                     <MudText Typo="Typo.h6">
@@ -46,7 +46,7 @@
 
 @code {
     [CascadingParameter]
-    private MudDialogInstance MudDialog { get; set; } = default!;
+    private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Inject]
     private IndexService IndexService { get; set; } = default!;
@@ -69,14 +69,6 @@
         updateUi = (UpdateUI(ct.Token), ct);
     }
 
-    protected override async Task OnParametersSetAsync()
-    {
-        SetTitle(null);
-        AppManifest? app = await LoadApp();
-        if (app is not null)
-            SetTitle(app);
-    }
-
     public void UpdateProgress(InstallProgress progress)
     {
         bool written = channel.Writer.TryWrite(progress);
@@ -96,7 +88,7 @@
         //     CloseDialog();
     }
 
-    private void SetTitle(AppManifest? app)
+    public static string ConstructTitle(AppManifest? app)
     {
         StringBuilder sb = new("Uninstalling");
 
@@ -107,7 +99,7 @@
         }
 
         sb.Append("...");
-        MudDialog.SetTitle(sb.ToString());
+        return sb.ToString();
     }
 
     private (string State, Color Color) GetState()
@@ -115,34 +107,36 @@
         return DownloadsMenuItem.GetState(result, progress, finishedText: "Uninstalled");
     }
 
-    /*
-    private string? GetIcon()
+        /*
+        private string? GetIcon()
     {
-        if (!result.HasValue)
-            return null;
+    if (!result.HasValue)
+        return null;
 
         if (result.Value.IsSuccess)
             return Icons.Material.Rounded.Check;
 
-        if (result.Value.IsCancelled)
-            return Icons.Material.Rounded.Block;
+    if (result.Value.IsCancelled)
+    return Icons.Material.Rounded.Block;
 
         return Icons.Material.Rounded.PriorityHigh;
     }
     */
 
-    private async Task<AppManifest?> LoadApp()
+    public async Task<bool> TryLoadTitleAsync()
     {
         if (!AppId.HasValue)
-            return null;
+            return false;
 
         Guid appId = AppId.Value;
         IndexManifest index = await IndexService.GetIndexAsync();
 
         if (!index.TryGetEntry(appId, out IndexEntry? entry))
-            return null;
+            return false;
 
-        return entry.Manifest;
+        string title = ConstructTitle(entry.Manifest);
+        await MudDialog.SetTitleAsync(title);
+        return true;
     }
 
     private (bool Indeterminate, double Value) GetProgress()

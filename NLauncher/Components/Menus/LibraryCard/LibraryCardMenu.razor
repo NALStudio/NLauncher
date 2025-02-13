@@ -9,13 +9,9 @@
 
 @implements IDisposable
 
-<MudPopover @ref=menu Open="@open" Class="mud-popover-position-override" Style=@popoverStyle AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-    <MudList T="object" Dense>
-        <LibraryCardMenuContent ParentMenu="this" Entry="Entry" ActionButton="ActionButton" />
-    </MudList>
-</MudPopover>
-
-<MudOverlay Visible="@open" LockScroll="false" AutoClose OnClosed="Close" />
+<MudMenu @ref=menu PositionAtCursor Dense>
+    <LibraryCardMenuContent Entry="Entry" ActionButton="ActionButton" />
+</MudMenu>
 
 @code {
     [Parameter, EditorRequired]
@@ -26,9 +22,7 @@
 
     private AppActionButton? oldActionButton;
 
-    private MudPopover menu = default!;
-    private bool open;
-    private string? popoverStyle;
+    private MudMenu menu = default!;
 
     protected override void OnParametersSet()
     {
@@ -54,25 +48,9 @@
         StateHasChanged();
     }
 
-    // The incorrect position should be fixed in the next MudBlazor update
-    public void Open(MouseEventArgs args)
+    public async Task OpenMenuAsync(MouseEventArgs args)
     {
-        open = true;
-        popoverStyle = GetPopoverStyle(args);
-        StateHasChanged();
-    }
-
-    public void Close()
-    {
-        open = false;
-        StateHasChanged();
-    }
-
-    // This should work once a new MudBlazor version is released.
-    // see: https://github.com/MudBlazor/MudBlazor/pull/10122
-    private string GetPopoverStyle(MouseEventArgs args)
-    {
-        return $"top: {args.PageY.ToPx()}; left: {args.PageX.ToPx()}";
+        await menu.OpenMenuAsync(args);
     }
 
     public void Dispose()

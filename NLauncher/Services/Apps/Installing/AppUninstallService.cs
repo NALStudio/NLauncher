@@ -40,8 +40,10 @@ public class AppUninstallService
             { x => x.AppId, appId }
         };
 
-        IDialogReference dialogRef = await dialogService.ShowAsync<UninstallDialog>(null, parameters, options);
+        // Set initial title, title will be updated asynchronously as it requires an app manifest load.
+        IDialogReference dialogRef = await dialogService.ShowAsync<UninstallDialog>(UninstallDialog.ConstructTitle(null), parameters, options);
         UninstallDialog? dialog = (UninstallDialog?)dialogRef.Dialog;
+        await dialog!.TryLoadTitleAsync();
 
         InstallResult result = await InternalUninstall(appId, onProgressUpdate: dialog!.UpdateProgress);
         dialog.SetResult(result);

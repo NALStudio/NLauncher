@@ -70,7 +70,7 @@ public partial class LibraryCardItem : IDisposable
 
     private void OpenContextMenu(MouseEventArgs args)
     {
-        menu?.Open(args);
+        menu?.OpenMenuAsync(args);
     }
 
     private static string GetBackgroundImageCss(IndexAsset? asset)
