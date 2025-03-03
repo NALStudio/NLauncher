@@ -12,5 +12,5 @@ public interface IGameSessionService
     /// <summary>
     /// Returns the total time the game has been played or <see langword="null"/> if the game hasn't been played even once.
     /// </summary>
-    public abstract ValueTask<TimeSpan?> ComputeTotalTime(Guid appId);
+    public abstract ValueTask<TimeSpan?> ComputeTotalTimeAsync(Guid appId);
 }

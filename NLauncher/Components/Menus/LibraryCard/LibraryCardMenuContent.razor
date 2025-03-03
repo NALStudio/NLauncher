@@ -126,7 +126,7 @@
 
     private async Task LoadData(IndexEntry entry, IndexManifest index, LibraryEntry? libraryEntry)
     {
-        TimeSpan? playtime = await GameSessionService.ComputeTotalTime(entry.Manifest.Uuid);
+        TimeSpan? playtime = await GameSessionService.ComputeTotalTimeAsync(entry.Manifest.Uuid);
         if (playtime.HasValue)
             AddData("Playtime", HumanizeTime.HumanizeTimeSpan(playtime.Value));
 

@@ -24,7 +24,7 @@ internal class GameSessionHandle : IDisposable, IAsyncDisposable
         if (disposed)
             throw new InvalidOperationException("Handle has been disposed.");
 
-        WindowsGameSessionService.WriteNewSessionSynchronous(stream, session);
+        WindowsGameSessionService.WriteNewSession(stream, session);
     }
 
     public void Dispose()
