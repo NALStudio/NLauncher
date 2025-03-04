@@ -1,9 +1,11 @@
-﻿@using NLauncher.Index.Models.Applications
+﻿@using NLauncher.Code.Language
+@using NLauncher.Index.Models.Applications
+@using NLauncher.Services.Sessions
 
-<MudDialog>
+<MudDialog Class="pb-4 mud-theme-transparent" Style="backdrop-filter:blur(48px)">
     <DialogContent>
-        <MudStack Spacing="0">
-            <div>
+        <MudExpansionPanels Style="backdrop-filter: blur(48px)" Elevation="0">
+            <MudExpansionPanel Expanded Text="Application">
                 @{
                     AppVersion? latest = App.GetLatestVersion();
                     string latestText = $"Latest ({latest?.Identifier ?? "unknown"})";
@@ -20,32 +22,66 @@
                         }
                     </MudSelect>
                 }
-            </div>
 
-            <MudStack Class="mt-2" Row AlignItems="AlignItems.Center" Spacing="0">
-                <MudText Class="mr-2" Inline>Local Files:</MudText>
-                @if (size is not null)
-                {
-                    // Size available
-                    <MudText Inline Color="Color.Primary"><b>@size</b></MudText>
-                }
-                else if (!sizeLoaded)
-                {
-                    // Waiting for size to load
-                    <MudProgressCircular Indeterminate Size="Size.Small" />
-                }
-                else
-                {
-                    // No size data available
-                    <MudText Inline><b>N/A</b></MudText>
-                }
+                <MudStack Class="my-2" Row AlignItems="AlignItems.Center" Spacing="0">
+                    <MudText Class="mr-2" Inline>Local Files:</MudText>
+                    @if (size is not null)
+                    {
+                        // Size available
+                        <MudText Inline Color="Color.Primary"><b>@size</b></MudText>
+                    }
+                    else if (!sizeLoaded)
+                    {
+                        // Waiting for size to load
+                        <MudProgressCircular Indeterminate Size="Size.Small" />
+                    }
+                    else
+                    {
+                        // No size data available
+                        <MudText Inline><b>N/A</b></MudText>
+                    }
 
-                <MudSpacer />
+                    <MudSpacer />
 
-                <MudButton Disabled="(!CanBrowseLocalFiles)"
-                           OnClick="BrowseLocalFilesAsync"
-                           Variant="Variant.Filled">Browse</MudButton>
-            </MudStack>
-        </MudStack>
+                    <MudButton Disabled="(!CanBrowseLocalFiles)"
+                                DropShadow="false"
+                                OnClick="BrowseLocalFilesAsync"
+                                Variant="Variant.Filled">Browse</MudButton>
+                </MudStack>
+            </MudExpansionPanel>
+
+            @if (gameSessionsSorted.Length > 0)
+            {
+                <MudExpansionPanel Text="Sessions">
+                    <!-- Setting style in expansion panel shows the scroll always and setting it to timeline breaks timeline rendering -->
+                    <div style="max-height:420px;overflow-y:auto">
+                        <MudTimeline>
+                            @{
+                                DateOnly? previousDate = null;                        
+                                foreach (GameSession ses in gameSessionsSorted)
+                                {
+                                    DateOnly date = DateOnly.FromDateTime(ses.StartDateTime);
+                                    bool newDate = date != previousDate;
+                                    previousDate = date;
+
+                                    <MudTimelineItem Color="@(newDate ? Color.Primary : Color.Default)" Elevation="0" TimelineAlign="TimelineAlign.End">
+                                        <ItemOpposite>
+                                            @if (newDate)
+                                            {
+                                                <MudText Color="Color.Primary" Typo="Typo.h6">@(date.ToShortDateString())</MudText>
+                                            }
+                                        </ItemOpposite>
+                                        <ItemContent>
+                                            <MudText Typo="Typo.body2">@(ses.StartDateTime.ToShortTimeString()) - @(ses.EndDateTime.ToShortTimeString())</MudText>
+                                            <MudText Typo="Typo.body2" Class="mud-text-secondary">@(HumanizeTime.HumanizeTimeSpan(ses.Duration))</MudText>
+                                        </ItemContent>
+                                    </MudTimelineItem>
+                                }
+                            }
+                        </MudTimeline>
+                    </div>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
     </DialogContent>
 </MudDialog>

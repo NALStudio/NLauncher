@@ -173,7 +173,7 @@
     {
         if (!CanOpenProperties)
             return;
-        await AppPropertiesDialog.OpenAsync(DialogService, Entry.Manifest);
+        await AppPropertiesDialog.OpenAsync(DialogService, Entry);
     }
 
     private async Task RemoveFromLibrary()

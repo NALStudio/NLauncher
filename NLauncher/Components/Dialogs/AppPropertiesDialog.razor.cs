@@ -5,9 +5,11 @@ using NLauncher.Code.Models;
 using NLauncher.Components.Dialogs.Installs;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
+using NLauncher.Index.Models.Index;
 using NLauncher.Services.Apps;
 using NLauncher.Services.Apps.Installing;
 using NLauncher.Services.Library;
+using NLauncher.Services.Sessions;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NLauncher.Components.Dialogs;
@@ -20,6 +22,9 @@ public partial class AppPropertiesDialog : IDisposable
     private IAppLocalFiles LocalFiles { get; set; } = default!;
 
     [Inject]
+    private IGameSessionService GameSessions { get; set; } = default!;
+
+    [Inject]
     private AppInstallService AppInstall { get; set; } = default!;
 
     [Inject]
@@ -29,12 +34,16 @@ public partial class AppPropertiesDialog : IDisposable
     private IMudDialogInstance? Dialog { get; set; }
 
     [Parameter, EditorRequired]
-    public required AppManifest App { get; set; }
+    public required IndexEntry Entry { get; set; }
+    public AppManifest App => Entry.Manifest;
+    public Guid AppId => Entry.Manifest.Uuid;
 
     private LibraryEntry? libraryEntry;
     private AppInstall? ExistingInstall => libraryEntry?.Data.Install?.Install;
 
     private bool canInstall = false;
+
+    private GameSession[] gameSessionsSorted = Array.Empty<GameSession>();
 
     private bool sizeLoaded = false;
     private string? size;
@@ -52,12 +61,30 @@ public partial class AppPropertiesDialog : IDisposable
 
     protected override async Task OnParametersSetAsync()
     {
-        libraryEntry = await Library.TryGetEntry(App.Uuid);
+        libraryEntry = await Library.TryGetEntry(AppId);
+        StateHasChanged();
 
+        await LoadGameSessions();
         StateHasChanged();
 
         await DeferredComputeSize(ExistingInstall);
         StateHasChanged();
+    }
+
+    private async Task LoadGameSessions()
+    {
+        GameSession[]? sessions = await GameSessions.LoadSessionsAsync(AppId);
+        if (sessions is null)
+        {
+            gameSessionsSorted = Array.Empty<GameSession>();
+            return;
+        }
+
+        // Only show sessions over 10 seconds long
+        // Order from newest to oldest
+        gameSessionsSorted = sessions.Where(static s => s.DurationMs > 10_000)
+                                     .OrderByDescending(static s => s.Start)
+                                     .ToArray();
     }
 
     private async Task VerifyAndChangeVersionAsync(uint? version)
@@ -72,12 +99,12 @@ public partial class AppPropertiesDialog : IDisposable
         }
 
         bool vernumChanged = false;
-        libraryEntry = await Library.UpdateEntryAsync(App.Uuid, ld =>
+        libraryEntry = await Library.UpdateEntryAsync(AppId, ld =>
         {
             if (ld.ChosenVerNum != version)
             {
                 vernumChanged = true;
-                return ld with { ChosenVerNum = version, };
+                return ld with { ChosenVerNum = version };
             }
             else
             {
@@ -85,7 +112,7 @@ public partial class AppPropertiesDialog : IDisposable
             }
         });
 
-        if (vernumChanged && !AppInstall.IsInstalling(App.Uuid))
+        if (vernumChanged && !AppInstall.IsInstalling(AppId))
             await AppInstall.StartUpdateAsync(App, new AppInstallService.AppInstallConfig(DialogService) { VerifyIfNotLatestVersion = false });
         StateHasChanged();
     }
@@ -95,9 +122,9 @@ public partial class AppPropertiesDialog : IDisposable
     /// </summary>
     private void UpdateCanInstall(RunningAppInstall? install)
     {
-        if (install is null || install.App.Uuid == App.Uuid)
+        if (install is null || install.App.Uuid == AppId)
         {
-            canInstall = !AppInstall.IsInstalling(App.Uuid);
+            canInstall = !AppInstall.IsInstalling(AppId);
             InvokeAsync(StateHasChanged);
         }
     }
@@ -107,7 +134,7 @@ public partial class AppPropertiesDialog : IDisposable
         if (!CanBrowseLocalFiles)
             return;
 
-        await LocalFiles.OpenFileBrowserAsync(App.Uuid, ExistingInstall);
+        await LocalFiles.OpenFileBrowserAsync(AppId, ExistingInstall);
     }
 
     private async Task DeferredComputeSize(AppInstall? existingInstall)
@@ -117,14 +144,14 @@ public partial class AppPropertiesDialog : IDisposable
         {
             // Add a small delay so that the user is aware that we are actually loading something
             await Task.Delay(Random.Shared.Next(750, 1250));
-            byteSize = await Task.Run(() => LocalFiles.ComputeSizeInBytes(App.Uuid, existingInstall));
+            byteSize = await Task.Run(() => LocalFiles.ComputeSizeInBytes(AppId, existingInstall));
         }
 
         size = byteSize.HasValue ? HumanizeBinary.HumanizeBytes(byteSize.Value) : null;
         sizeLoaded = true;
     }
 
-    public static Task OpenAsync(IDialogService dialogService, AppManifest app)
+    public static Task OpenAsync(IDialogService dialogService, IndexEntry entry)
     {
         DialogOptions options = new()
         {
@@ -135,10 +162,10 @@ public partial class AppPropertiesDialog : IDisposable
 
         DialogParameters<AppPropertiesDialog> parameters = new()
         {
-            { x => x.App, app }
+            { x => x.Entry, entry }
         };
 
-        return dialogService.ShowAsync<AppPropertiesDialog>($"{app.DisplayName}'s Properties", parameters, options);
+        return dialogService.ShowAsync<AppPropertiesDialog>($"{entry.Manifest.DisplayName}'s Properties", parameters, options);
     }
 
     public void Dispose()
