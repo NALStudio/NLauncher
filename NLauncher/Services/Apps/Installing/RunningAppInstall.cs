@@ -66,24 +66,26 @@ public class RunningAppInstall
     }
 
     /// <summary>
-    /// Returns <see langword="true"/> if restart was successful.
+    /// Returns <see langword="false"/> if restart was unsuccessful. (The install finished successfully before we had time to restart)
     /// </summary>
-    public async ValueTask RestartAsync()
+    public async ValueTask<bool> RestartAsync()
     {
         if (installTask.HasValue)
         {
             installTask.Value.Cancellation.Cancel();
 
             InstallResult result = await installTask.Value.Task;
-            // This check resulted in a failed retry when trying to retry an errored install.
-            // if (!result.IsCancelled)
-            //     return false;
+            // Use result.IsSuccess instead of !result.IsCancelled so that we can restart an errored install as well
+            if (result.IsSuccess)
+                return false;
 
             installTask = null;
             LatestProgress = null;
         }
 
         Start();
+
+        return true;
     }
 
     public void RequestCancel()

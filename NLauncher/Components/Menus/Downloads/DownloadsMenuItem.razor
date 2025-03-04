@@ -130,7 +130,7 @@
 
         restartingInstall = true;
 
-        await Install.RestartAsync();
+        _ = await Install.RestartAsync();
         ResetProgressAndResult(); // Reset progress after so that install can clear its data first
         StateHasChanged();
 
