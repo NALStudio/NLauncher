@@ -1,5 +1,6 @@
 ﻿@using MudBlazor.Utilities
 @using NLauncher.Code.Language
+@using NLauncher.Components.Dialogs
 @using NLauncher.Components.Dialogs.Uninstalls
 @using NLauncher.Index.Models.Applications.Installs
 @using NLauncher.Index.Models.Index
@@ -10,6 +11,7 @@
 @using NLauncher.Services.Index
 @using NLauncher.Services.Library
 @using NLauncher.Services.Sessions
+@using System.Diagnostics.CodeAnalysis
 
 @inject AppUninstallService UninstallService
 @inject IDialogService DialogService
@@ -36,7 +38,8 @@
     <MudMenuItem Disabled="@(!canRemoveFromLibrary)" OnClick="@RemoveFromLibrary">Remove From Library</MudMenuItem>
 }
 
-<MudMenuItem Disabled="@(!BrowseLocalsData.HasValue)" OnClick="@BrowseLocals">Browse Local Files</MudMenuItem>
+<!--<MudMenuItem Disabled="@(!BrowseLocalsData.HasValue)" OnClick="@BrowseLocals">Browse Local Files</MudMenuItem>-->
+<MudMenuItem Disabled="@(!CanOpenProperties)" OnClick="@OpenPropertiesMenu">Properties</MudMenuItem>
 <MudMenuItem Disabled="@(!canUninstall)" OnClick="@Uninstall">Uninstall</MudMenuItem>
 
 @if (data.Count > 0)
@@ -66,9 +69,11 @@
 
     // Buttons
     private string? storePageHref;
-    private (Guid appId, AppInstall install)? BrowseLocalsData;
     private bool canRemoveFromLibrary;
     private bool canUninstall;
+
+    [MemberNotNullWhen(true, nameof(Entry))]
+    private bool CanOpenProperties => Entry is not null;
 
     // Data
     private readonly List<(string Label, string Value)> data = new();
@@ -104,7 +109,7 @@
     private void ResetAll()
     {
         storePageHref = null;
-        BrowseLocalsData = null;
+        // BrowseLocalsData = null;
         canRemoveFromLibrary = false;
         canUninstall = false;
 
@@ -117,8 +122,8 @@
 
         storePageHref = AppStorePage.GetPageRoute(index, entry.Manifest.Uuid);
 
-        if (installed is not null && AppLocalFiles.OpenFileBrowserSupported(installed))
-            BrowseLocalsData = (entry.Manifest.Uuid, installed);
+        // if (installed is not null && AppLocalFiles.OpenFileBrowserSupported(installed))
+        //     BrowseLocalsData = (entry.Manifest.Uuid, installed);
 
         canRemoveFromLibrary = libraryEntry?.Data.IsInstalled != true && !AppInstallService.IsInstalling(entry.Manifest.Uuid);
         canUninstall = await UninstallService.CanUninstall(entry.Manifest.Uuid);
@@ -133,9 +138,10 @@
         LibraryInstallData? install = libraryEntry?.Data.Install;
         if (install is not null)
         {
-            long? sizeInBytes = await Task.Run(() => AppLocalFiles.ComputeSizeInBytes(entry.Manifest.Uuid, install.Install));
-            if (sizeInBytes.HasValue)
-                AddData("Size", HumanizeBinary.HumanizeBytes(sizeInBytes.Value));
+            // Displayed in properties menu instead, as it's stupid to enumerate all files every time we right click a card
+            // long? sizeInBytes = await Task.Run(() => AppLocalFiles.ComputeSizeInBytes(entry.Manifest.Uuid, install.Install));
+            // if (sizeInBytes.HasValue)
+            //     AddData("Size", HumanizeBinary.HumanizeBytes(sizeInBytes.Value));
 
             TryAddData("Version", entry.Manifest.GetVersion(install.VerNum)?.Identifier);
         }
@@ -163,18 +169,11 @@
             _ = await UninstallService.UninstallAsync(Entry.Manifest.Uuid, DialogService);
     }
 
-    private async Task BrowseLocals()
+    private async Task OpenPropertiesMenu()
     {
-        if (!BrowseLocalsData.HasValue)
+        if (!CanOpenProperties)
             return;
-
-        (Guid appId, AppInstall install) = BrowseLocalsData.Value;
-        bool opened = false;
-        if (AppLocalFiles.OpenFileBrowserSupported(install))
-            opened = await AppLocalFiles.OpenFileBrowserAsync(appId, install);
-
-        if (!opened)
-            await ShowError("Local files could not be opened.");
+        await AppPropertiesDialog.OpenAsync(DialogService, Entry.Manifest);
     }
 
     private async Task RemoveFromLibrary()

@@ -1,0 +1,51 @@
+﻿@using NLauncher.Index.Models.Applications
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="0">
+            <div>
+                @{
+                    AppVersion? latest = App.GetLatestVersion();
+                    string latestText = $"Latest ({latest?.Identifier ?? "unknown"})";
+
+                    <MudSelect T="uint?" Disabled="@(!libraryEntry.HasValue || !canInstall)" Value="@(libraryEntry?.Data.ChosenVerNum)" ValueChanged="@VerifyAndChangeVersionAsync" Label="Version" Placeholder="@latestText">
+                        <MudSelectItem T="uint?" Value="null">@latestText</MudSelectItem>
+
+                        @foreach (AppVersion ver in App.Versions.OrderByDescending(static v => v.VerNum))
+                        {
+                            if (ver.VerNum == latest?.VerNum)
+                                continue;
+
+                            <MudSelectItem T="uint?" Value="@(ver.VerNum)">@(ver.Identifier)</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+            </div>
+
+            <MudStack Class="mt-2" Row AlignItems="AlignItems.Center" Spacing="0">
+                <MudText Class="mr-2" Inline>Local Files:</MudText>
+                @if (size is not null)
+                {
+                    // Size available
+                    <MudText Inline Color="Color.Primary"><b>@size</b></MudText>
+                }
+                else if (!sizeLoaded)
+                {
+                    // Waiting for size to load
+                    <MudProgressCircular Indeterminate Size="Size.Small" />
+                }
+                else
+                {
+                    // No size data available
+                    <MudText Inline><b>N/A</b></MudText>
+                }
+
+                <MudSpacer />
+
+                <MudButton Disabled="(!CanBrowseLocalFiles)"
+                           OnClick="BrowseLocalFilesAsync"
+                           Variant="Variant.Filled">Browse</MudButton>
+            </MudStack>
+        </MudStack>
+    </DialogContent>
+</MudDialog>

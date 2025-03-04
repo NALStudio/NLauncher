@@ -82,6 +82,7 @@ public partial class AppActionButton : IDisposable
         isInstalled = libraryEntry?.Data.IsInstalled == true;
 
         // Application install is not finished when InstallCountChanged calls this function
+        // UPDATE: Not anymore, InstallCountChanged is only called after the install has finished.
         if (!isInstalled)
             isInstalling = InstallService.IsInstalling(app.Uuid);
 
@@ -99,9 +100,10 @@ public partial class AppActionButton : IDisposable
         StateHasChanged();
     }
 
-    private async void InstallCountChanged(int count)
+    private void InstallStartedOrFinished(RunningAppInstall ins)
     {
-        await InvokeAsync(ReloadState);
+        if (ins.App.Uuid == App?.Uuid)
+            InvokeAsync(ReloadState);
     }
 
     // Use inline styles instead of class names since class padding gets overridden by MudBlazor
@@ -168,7 +170,8 @@ public partial class AppActionButton : IDisposable
 
     protected override void OnInitialized()
     {
-        InstallService.OnActiveCountChanged += InstallCountChanged;
+        InstallService.OnInstallStarted += InstallStartedOrFinished;
+        InstallService.OnInstallFinished += InstallStartedOrFinished;
 
         // If App is null, OnParametersSet does not reset these during the first render
         ResetState();
@@ -280,7 +283,9 @@ public partial class AppActionButton : IDisposable
 
     public void Dispose()
     {
-        InstallService.OnActiveCountChanged -= InstallCountChanged;
+        InstallService.OnInstallStarted -= InstallStartedOrFinished;
+        InstallService.OnInstallFinished -= InstallStartedOrFinished;
+
         GC.SuppressFinalize(this);
     }
 }

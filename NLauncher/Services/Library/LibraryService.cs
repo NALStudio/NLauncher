@@ -91,12 +91,13 @@ public class LibraryService
     /// <remarks>
     /// Entry's timestamp will be updated to the current time.
     /// </remarks>
-    public async Task UpdateEntryAsync(Guid appId, Func<LibraryData, LibraryData> updateFunc)
+    public async Task<LibraryEntry> UpdateEntryAsync(Guid appId, Func<LibraryData, LibraryData> updateFunc)
     {
         // Get timestamp before awaiting so that entries are ordered in the call order and not in the order the lock is acquired.
         long timestamp = GetTimestamp();
 
         await entriesSemaphore.WaitAsync();
+        LibraryEntry newEntry;
         try
         {
             await TryLoadEntries();
@@ -108,7 +109,7 @@ public class LibraryService
                 oldData = new(); // If no data found, create new data with default values.
 
             LibraryData newData = updateFunc(oldData);
-            LibraryEntry newEntry = new(appId, timestamp, newData);
+            newEntry = new(appId, timestamp, newData);
             entries.Add(appId, newEntry);
 
             await SaveEntries();
@@ -119,6 +120,8 @@ public class LibraryService
         }
 
         EntriesChanged?.Invoke();
+
+        return newEntry;
     }
 
     /// <summary>

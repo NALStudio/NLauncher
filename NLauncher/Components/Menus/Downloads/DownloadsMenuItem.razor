@@ -130,7 +130,7 @@
 
         restartingInstall = true;
 
-        _ = await Install.RestartAsync();
+        await Install.RestartAsync();
         ResetProgressAndResult(); // Reset progress after so that install can clear its data first
         StateHasChanged();
 
@@ -139,7 +139,7 @@
         restartingInstall = false;
     }
 
-    private void RestartUiUpdate()
+    private void RestartUiUpdate(RunningAppInstall? _ = null) // Unused argument for event handling
     {
         if (uiTask.HasValue)
             uiTask.Value.Cancellation.Cancel();

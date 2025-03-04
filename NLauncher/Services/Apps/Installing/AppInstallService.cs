@@ -24,6 +24,11 @@ public class AppInstallService
         public bool VerifyIfNotLatestVersion { get; init; } = true;
         public bool VerifyIfNotRecommendedResolution { get; init; } = true;
 
+        /// <summary>
+        /// Does not affect anything if <see cref="VerifyIfNotLatestVersion"/> is <see langword="false"/>.
+        /// </summary>
+        public bool UpdateLibraryIfOldVersionChangedToLatest { get; init; } = true;
+
         public bool AlwaysAskInstallMethod { get; init; } = false;
     }
 
@@ -34,6 +39,9 @@ public class AppInstallService
     private int _activeCount;
     public int ActiveCount => _activeCount;
     public event Action<int>? OnActiveCountChanged;
+
+    public event Action<RunningAppInstall>? OnInstallStarted;
+    public event Action<RunningAppInstall>? OnInstallFinished;
 
     private readonly ILogger<AppInstallService> logger;
 
@@ -145,7 +153,7 @@ public class AppInstallService
     /// </remarks>
     public async Task<bool> CanInstall(AppManifest app, bool includeLinkHandled = true)
     {
-        InstallResult<AppVersion> version = await ResolveVersion(app, null, update: false, verifyIfNotLatestVersion: false, verifyIfNotRecommendedResolution: false);
+        InstallResult<AppVersion> version = await ResolveVersion(app, null, update: false, verifyIfNotLatestVersion: false, updateLibraryIfChangedToLatest: false, verifyIfNotRecommendedResolution: false);
         if (!version.IsSuccess)
             return false;
 
@@ -179,7 +187,12 @@ public class AppInstallService
 
     private async Task<InstallResult> InternalInstall(AppManifest app, AppInstallConfig config, bool update)
     {
-        InstallResult<AppVersion> version = await ResolveVersion(app, config.DialogService, update: update, verifyIfNotLatestVersion: config.VerifyIfNotLatestVersion, verifyIfNotRecommendedResolution: config.VerifyIfNotRecommendedResolution);
+        InstallResult<AppVersion> version = await ResolveVersion(
+            app, config.DialogService, update: update,
+            verifyIfNotLatestVersion: config.VerifyIfNotLatestVersion,
+            updateLibraryIfChangedToLatest: config.UpdateLibraryIfOldVersionChangedToLatest,
+            verifyIfNotRecommendedResolution: config.VerifyIfNotRecommendedResolution
+        );
         if (!version.IsSuccess)
             return InstallResult.Failed(version);
 
@@ -237,7 +250,7 @@ public class AppInstallService
         return InstallResult.Success(chosenOption.Value);
     }
 
-    private async Task<InstallResult<AppVersion>> ResolveVersion(AppManifest app, IDialogService? dialogService, bool update, bool verifyIfNotLatestVersion, bool verifyIfNotRecommendedResolution)
+    private async Task<InstallResult<AppVersion>> ResolveVersion(AppManifest app, IDialogService? dialogService, bool update, bool verifyIfNotLatestVersion, bool updateLibraryIfChangedToLatest, bool verifyIfNotRecommendedResolution)
     {
         LibraryEntry? libraryEntry = await library.TryGetEntry(app.Uuid);
 
@@ -257,6 +270,9 @@ public class AppInstallService
 
             // Install the version the user chose (uint for old version, null for latest)
             vernum = result.Value;
+
+            if (updateLibraryIfChangedToLatest && !vernum.HasValue) // Update library entry if chose latest
+                libraryEntry = await library.UpdateEntryAsync(app.Uuid, static ld => ld with { ChosenVerNum = null });
         }
 
         AppVersion? version = app.GetVersion(vernum);
@@ -291,15 +307,27 @@ public class AppInstallService
         OnActiveCountChanged?.Invoke(count);
     }
 
+    private void AppInstallStarted(RunningAppInstall ins)
+    {
+        IncrementActiveCount();
+        OnInstallStarted?.Invoke(ins);
+    }
+
+    private void AppInstallFinished(RunningAppInstall ins)
+    {
+        DecrementActiveCount();
+        OnInstallFinished?.Invoke(ins);
+    }
+
     private void SubscribeEvents(RunningAppInstall install)
     {
-        install.OnStarted += IncrementActiveCount;
-        install.OnBeforeFinish += DecrementActiveCount;
+        install.OnStarted += AppInstallStarted;
+        install.OnFinished += AppInstallFinished;
     }
 
     private void UnsubscribeEvents(RunningAppInstall install)
     {
-        install.OnStarted -= IncrementActiveCount;
-        install.OnBeforeFinish -= DecrementActiveCount;
+        install.OnStarted -= AppInstallStarted;
+        install.OnFinished -= AppInstallFinished;
     }
 }

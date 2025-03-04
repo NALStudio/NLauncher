@@ -28,15 +28,15 @@ public class RunningAppInstall
     public InstallProgress? LatestProgress { get; private set; }
     private InstallTask? installTask = null;
 
-    public event Action? OnStarted;
+    public event Action<RunningAppInstall>? OnStarted;
 
     /// <summary>
-    /// Fires just before the install is about to finish.
+    /// Fires after the install has finished.
     /// </summary>
     /// <remarks>
     /// This function will almost always be called from another thread.
     /// </remarks>
-    public event Action? OnBeforeFinish;
+    public event Action<RunningAppInstall>? OnFinished;
 
     public RunningAppInstall(LibraryService library, IPlatformInstaller installer, AppManifest app, AppVersion version, AppInstall install)
     {
@@ -58,32 +58,32 @@ public class RunningAppInstall
 
         CancellationTokenSource ct = new();
         Task<InstallResult> task = Task.Run(() => RunInstall(channel.Writer, ct.Token));
+        task.ContinueWith(_ => OnFinished?.Invoke(this));
 
         installTask = new(task, ct, channel.Reader);
 
-        OnStarted?.Invoke();
+        OnStarted?.Invoke(this);
     }
 
     /// <summary>
     /// Returns <see langword="true"/> if restart was successful.
     /// </summary>
-    public async ValueTask<bool> RestartAsync()
+    public async ValueTask RestartAsync()
     {
         if (installTask.HasValue)
         {
             installTask.Value.Cancellation.Cancel();
 
             InstallResult result = await installTask.Value.Task;
-            if (!result.IsCancelled)
-                return false;
+            // This check resulted in a failed retry when trying to retry an errored install.
+            // if (!result.IsCancelled)
+            //     return false;
 
             installTask = null;
             LatestProgress = null;
         }
 
         Start();
-
-        return true;
     }
 
     public void RequestCancel()
@@ -106,7 +106,9 @@ public class RunningAppInstall
     public async ValueTask<InstallResult> WaitForResult(CancellationToken cancellationToken = default)
     {
         if (IsFinished)
+        {
             return GetResult();
+        }
         else
         {
             ThrowIfNotRunning();
@@ -152,7 +154,6 @@ public class RunningAppInstall
         // No need to register to CancellationToken as we catch the OperationCanceledException
         progressChannel.Complete();
 
-        OnBeforeFinish?.Invoke();
         return result;
     }
 

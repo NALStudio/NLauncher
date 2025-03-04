@@ -5,6 +5,7 @@ using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Apps.Installing;
 using NLauncher.Windows.Models;
 using System.Diagnostics;
+using System.Text;
 
 namespace NLauncher.Windows.Services;
 public class WindowsPlatformInstaller : IPlatformInstaller, IDisposable
@@ -26,19 +27,26 @@ public class WindowsPlatformInstaller : IPlatformInstaller, IDisposable
     {
         InstallResult result = await RunInstallAsync(uninstall: false, appId, install, onProgressUpdate, cancellationToken);
 
-        // Clean download directory
-        DirectoryInfo downloadDir = SystemDirectories.GetDownloadsPath(appId);
-        if (downloadDir.Exists)
+        // Try to clean download directory
+        try
         {
-            if (result.IsSuccess)
+            DirectoryInfo downloadDir = SystemDirectories.GetDownloadsPath(appId);
+            if (downloadDir.Exists)
             {
-                logger.LogError("Install process did not clean up the download directory.");
+                if (result.IsSuccess)
+                {
+                    logger.LogError("Install process did not clean up the download directory.");
+                }
+                else
+                {
+                    logger.LogInformation("Cleaning killed install process's download directory...");
+                    downloadDir.Delete(recursive: true);
+                }
             }
-            else
-            {
-                logger.LogInformation("Cleaning killed install process's download directory...");
-                downloadDir.Delete(recursive: true);
-            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Download directory could not be cleaned.");
         }
 
         return result;
@@ -56,9 +64,11 @@ public class WindowsPlatformInstaller : IPlatformInstaller, IDisposable
 
         // Run process
         int exitCode;
+        StringBuilder installStdout = new();
         using (Process process = CreateInstallProcess(appId, (BinaryAppInstall)install, uninstall: uninstall))
         {
             process.OutputDataReceived += (s, e) => OutputDataReceived(appId, e.Data, onProgressUpdate);
+            process.OutputDataReceived += (s, e) => installStdout.AppendLine(e.Data);
 
             cancellationToken.Register(() => KillProcessAndChildren(process));
 
@@ -77,7 +87,10 @@ public class WindowsPlatformInstaller : IPlatformInstaller, IDisposable
             exitCode = process.ExitCode;
         }
 
-        logger.LogInformation("Windows install finished with exit code: {}", exitCode);
+        if (exitCode == 0)
+            logger.LogInformation("Windows install succeeded with exit code: {}", exitCode);
+        else
+            logger.LogError("Windows install failed with exit code: {}. Full output below:\n{}", exitCode, installStdout.ToString());
 
         // Exit
         if (exitCode != 0)
@@ -144,7 +157,18 @@ public class WindowsPlatformInstaller : IPlatformInstaller, IDisposable
         return InstallProgress.Indeterminate(line);
     }
 
-    private void KillProcessAndChildren(Process p) => p.Kill(entireProcessTree: true);
+    private static void KillProcessAndChildren(Process p)
+    {
+        try
+        {
+            p.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException)
+        {
+            // App has already exited.
+            // There is no reliable way to check this other than catching the exception.
+        }
+    }
 
     public void Dispose()
     {
