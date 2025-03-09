@@ -9,54 +9,63 @@ using NLauncher.IndexManager.Components.Paths;
 using SkiaSharp;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Commands.Applications.Build;
 internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCommandVariant
 {
     private readonly record struct ImageSize(int Width, int Height);
+    private class InternalSettings : IBuildSettings
+    {
+        public string? OutputPath { get; init; }
+        public IndexEnvironment? Environment { get; init; }
+
+        public required bool MinifyOutput { get; init; }
+    }
 
     #region AsyncCommand
-    public override async Task<int> ExecuteAsync(CommandContext context, BuildSettings settings) => await ExecuteAsync(settings, outputPath: settings.OutputPath, humanReadable: !settings.MinifyOutput);
+    public override async Task<int> ExecuteAsync(CommandContext context, BuildSettings settings) => await ExecuteAsync(settings, settings);
     public override ValidationResult Validate(CommandContext context, BuildSettings settings) => Validate(settings);
     #endregion
 
     #region IMainCommand
-    public async Task<int> ExecuteAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, humanReadable: false);
+    public async Task<int> ExecuteAsync(MainSettings settings) => await ExecuteAsync(settings, new InternalSettings() { MinifyOutput = true });
     public ValidationResult Validate(MainSettings settings) => ValidationResult.Success();
     #endregion
 
     #region IMainCommandVariant
-    public async Task<int> ExecuteVariantAsync(MainSettings settings) => await ExecuteAsync(settings, outputPath: null, humanReadable: true);
+    public async Task<int> ExecuteVariantAsync(MainSettings settings) => await ExecuteAsync(settings, new InternalSettings() { MinifyOutput = false });
     #endregion
 
-    public static async Task<int> ExecuteAsync(MainSettings settings, string? outputPath, bool humanReadable)
+    public static async Task<int> ExecuteAsync(MainSettings settings, IBuildSettings buildSettings)
     {
-        // We don't create the directories due to safety reasons (we don't want to accidentally create a bunch of directories in the wrong place)
+        Dictionary<IndexEnvironment, string?> outputs = Enum.GetValues<IndexEnvironment>().ToDictionary(keySelector: key => key, elementSelector: _ => (string?)null);
 
-        string? actualOutputPath = await AnsiConsole.Status().StartAsync("Building Index...", ctx => ExecuteWithStatusAsync(ctx, settings, outputPath: outputPath, humanReadable: humanReadable));
-        if (actualOutputPath is null)
-            return 1;
+        foreach (IndexEnvironment env in outputs.Keys)
+        {
+            // We don't create the directories due to safety reasons (we don't want to accidentally create a bunch of directories in the wrong place)
+            string? actualOutputPath = await AnsiConsole.Status().StartAsync($"Building Index... ({env})", ctx => ExecuteWithStatusAsync(ctx, settings, buildSettings, env));
+            outputs[env] = actualOutputPath;
 
-        AnsiConsole.Write("Index built: ");
-        AnsiConsole.Write(AnsiFormatter.CreatedFile(actualOutputPath));
-        AnsiConsole.WriteLine();
+            if (actualOutputPath is not null)
+            {
+                AnsiConsole.Write("Index built: ");
+                AnsiConsole.Write(AnsiFormatter.CreatedFile(actualOutputPath));
+                AnsiConsole.WriteLine();
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[darkred]Index failed to build.[/]");
+            }
+        }
 
-        return 0;
+        return outputs.Values.All(static v => v is not null) ? 0 : 1;
     }
 
-    private static async Task<string?> ExecuteWithStatusAsync(StatusContext ctx, MainSettings settings, string? outputPath, bool humanReadable)
+    private static async Task<string?> ExecuteWithStatusAsync(StatusContext ctx, MainSettings settings, IBuildSettings buildSettings, IndexEnvironment environment)
     {
         IndexPaths paths = settings.Context.Paths;
 
@@ -65,17 +74,20 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         if (meta is null)
             return null;
 
-        IndexManifest? manifest = await TryBuild(ctx, meta, paths);
+        IndexManifest? manifest = await TryBuild(ctx, meta, paths, environment);
         if (manifest is null)
             return null;
 
         ctx.Status("Serializing output...");
-        IndexJsonContext jsonContext = humanReadable ? IndexJsonContext.HumanReadable : IndexJsonContext.Default;
+        IndexJsonContext jsonContext = buildSettings.MinifyOutput ? IndexJsonContext.Default : IndexJsonContext.HumanReadable;
         string json = JsonSerializer.Serialize(manifest, jsonContext.IndexManifest);
 
         ctx.Status("Writing output...");
-        outputPath ??= Path.Join(paths.Directory, meta.IndexManifestPath);
-        outputPath = Path.GetFullPath(outputPath);
+        string outputPath;
+        if (buildSettings.OutputPath is null)
+            outputPath = Path.Join(paths.Directory, meta.BuildDir, environment.GetFilename());
+        else
+            outputPath = Path.GetFullPath(buildSettings.OutputPath);
 
         string? outputDirectory = Path.GetDirectoryName(outputPath);
         if (!Directory.Exists(outputDirectory))
@@ -88,7 +100,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         return outputPath;
     }
 
-    private static async ValueTask<IndexManifest?> TryBuild(StatusContext ctx, IndexMeta meta, IndexPaths paths)
+    private static async ValueTask<IndexManifest?> TryBuild(StatusContext ctx, IndexMeta meta, IndexPaths paths, IndexEnvironment environment)
     {
         ctx.Status($"Loading {paths.GetRelativePath(paths.AliasesFile)}...");
         AppAliases? aliases = await TryLoadAndDeserialize(paths, paths.AliasesFile, IndexJsonContext.Default.AppAliases);
@@ -101,12 +113,13 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
             return null;
 
         ctx.Status($"Loading app manifests...");
-        ImmutableArray<IndexEntry>? entries = await GetApps(meta, paths);
+        ImmutableArray<IndexEntry>? entries = await GetApps(meta, paths, environment);
         if (!entries.HasValue)
             return null;
 
         return new IndexManifest()
         {
+            Environment = environment,
             Aliases = aliases,
             Metadata = meta,
             News = news.Value,
@@ -170,7 +183,7 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
         };
     }
 
-    private static async ValueTask<ImmutableArray<IndexEntry>?> GetApps(IndexMeta meta, IndexPaths paths)
+    private static async ValueTask<ImmutableArray<IndexEntry>?> GetApps(IndexMeta meta, IndexPaths paths, IndexEnvironment environment)
     {
         Dictionary<Guid, IndexEntry> entries = new();
 
@@ -181,6 +194,9 @@ internal class BuildCommand : AsyncCommand<BuildSettings>, IMainCommand, IMainCo
             IndexEntry? e = await TryConstructEntry(meta, paths, mPaths);
             if (e is null)
                 return null;
+
+            if (e.Manifest.Environment.HasValue && e.Manifest.Environment.Value != environment)
+                continue;
 
             bool added = entries.TryAdd(e.Manifest.Uuid, e);
             if (!added)

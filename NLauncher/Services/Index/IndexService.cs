@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NLauncher.Code;
+using NLauncher.Index.Enums;
 using NLauncher.Index.Json;
 using NLauncher.Index.Models.Index;
 using NLauncher.Services.Cache;
@@ -31,7 +32,7 @@ public partial class IndexService : IDisposable
 
     public bool TryGetCachedIndex([MaybeNullWhen(false)] out IndexManifest manifest)
     {
-        manifest = this.cached;
+        manifest = cached;
         return manifest is not null;
 
         /*
@@ -88,7 +89,7 @@ public partial class IndexService : IDisposable
     {
         // Try to load cached value from storage
         IndexManifest? cached = await cache.TryRead(NLauncherConstants.CacheNames.Index, IndexJsonContext.Default.IndexManifest);
-        if (cached is not null)
+        if (ValidateCachedIndexManifest(cached))
         {
             logger.LogInformation("Loaded index from cache.");
             return cached;
@@ -100,6 +101,20 @@ public partial class IndexService : IDisposable
 
         logger.LogInformation("Fetched index from GitHub.");
         return fetched;
+    }
+
+    /// <summary>
+    /// Validates that the cached manifest exists and it isn't of a different environment.
+    /// </summary>
+    private static bool ValidateCachedIndexManifest([NotNullWhen(true)] IndexManifest? manifest)
+    {
+        if (manifest is null)
+            return false;
+
+        if (manifest.Environment != IndexEnvironmentEnum.GetCurrentEnvironment())
+            return false;
+
+        return true;
     }
 
     private async Task<IndexManifest> FetchIndexFromGitHub()

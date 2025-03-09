@@ -8,6 +8,7 @@ public record class AppManifest
 {
     public required string DisplayName { get; init; }
     public required Guid Uuid { get; init; }
+    public IndexEnvironment? Environment { get; init; }
 
     public required string Developer { get; init; }
     public required string Publisher { get; init; }

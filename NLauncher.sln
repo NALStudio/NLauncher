@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLauncher", "NLauncher\NLau
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NLauncher.Windows", "NLauncher.Windows\NLauncher.Windows.csproj", "{22C65EAC-B6BA-4619-82ED-612CB8BE0D8A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XTestApp", "XTestApp\XTestApp.csproj", "{0BB2CBFF-848F-4871-B0CA-E9632C317F4A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +46,10 @@ Global
 		{22C65EAC-B6BA-4619-82ED-612CB8BE0D8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22C65EAC-B6BA-4619-82ED-612CB8BE0D8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22C65EAC-B6BA-4619-82ED-612CB8BE0D8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0BB2CBFF-848F-4871-B0CA-E9632C317F4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BB2CBFF-848F-4871-B0CA-E9632C317F4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BB2CBFF-848F-4871-B0CA-E9632C317F4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BB2CBFF-848F-4871-B0CA-E9632C317F4A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

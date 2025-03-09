@@ -70,6 +70,7 @@ File layout:
 {
     "display_name": "string",
     "uuid": "string" // Use UUID to decouple app names from identifiers (so that the publisher and app_name directories can be renamed at will)
+    "environment": "string?" // null | release | development (The environment to publish this app in. To publish on all environments, use null)
     "developer": "string", // Developer display name
     "publisher": "string", // Publisher display name, will not be displayed if it is the same as the developer display name
     "release": {

@@ -6,13 +6,8 @@ using NLauncher.IndexManager.Components.FileChangeTree;
 using NLauncher.IndexManager.Components.Paths;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Commands.Commands;
 internal class CreateCommand : AsyncCommand<MainSettings>, IMainCommand
@@ -40,7 +35,7 @@ internal class CreateCommand : AsyncCommand<MainSettings>, IMainCommand
 
         IndexMeta meta = new()
         {
-            IndexManifestPath = "./indexmanifest.json",
+            BuildDir = "./@build",
             Repository = new()
             {
                 Owner = owner,

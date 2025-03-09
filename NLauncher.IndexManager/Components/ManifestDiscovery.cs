@@ -2,13 +2,8 @@
 using NLauncher.Index.Models.Applications;
 using NLauncher.IndexManager.Components.Paths;
 using NLauncher.IndexManager.Models;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Components;
 internal static class ManifestDiscovery
@@ -37,9 +32,7 @@ internal static class ManifestDiscovery
         {
             AppManifest? manifest;
             await using (FileStream stream = file.OpenRead())
-            {
-                manifest = await JsonSerializer.DeserializeAsync<AppManifest>(stream, IndexJsonContext.Default.AppManifest);
-            }
+                manifest = await JsonSerializer.DeserializeAsync(stream, IndexJsonContext.Default.AppManifest);
 
             if (manifest is null)
                 throw new InvalidOperationException($"Manifest could not be deserialized: '{file.FullName}'");

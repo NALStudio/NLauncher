@@ -1,4 +1,5 @@
-﻿using NLauncher.Index.Models.News;
+﻿using NLauncher.Index.Enums;
+using NLauncher.Index.Models.News;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
@@ -6,6 +7,8 @@ using System.Text.Json.Serialization;
 namespace NLauncher.Index.Models.Index;
 public class IndexManifest
 {
+    public required IndexEnvironment Environment { get; init; }
+
     public required AppAliases Aliases { get; init; }
     public required IndexMeta Metadata { get; init; }
 

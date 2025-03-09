@@ -8,12 +8,6 @@ using NLauncher.IndexManager.Models;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NLauncher.IndexManager.Commands.Applications;
 internal class ListCommand : AsyncCommand<MainSettings>, IMainCommand
@@ -65,16 +59,32 @@ internal class ListCommand : AsyncCommand<MainSettings>, IMainCommand
         new TableColumn("Age Rating").Centered(),
         new TableColumn("Priority").Centered()
     };
-    private static Text[] FormatValue(AppManifest m) => new Text[]
+    private static Text[] FormatValue(AppManifest m)
     {
-        GetColorSquare(m),
-        new Text(m.DisplayName).Ellipsis(),
-        new Text(m.Developer).Ellipsis(),
-        new Text(m.Publisher).Ellipsis(),
-        new(m.Release.ReleaseDate?.ToString("d") ?? string.Empty),
-        new(m.AgeRating.HasValue ? m.AgeRating.Value.ToString("d") : string.Empty),
-        new(m.Priority.ToString())
-    };
+        Style style = new(foreground: GetEnvironmentColor(m.Environment));
+
+        return new Text[]
+        {
+            GetColorSquare(m),
+            new Text(m.DisplayName, style).Ellipsis(),
+            new Text(m.Developer, style).Ellipsis(),
+            new Text(m.Publisher, style).Ellipsis(),
+            new(m.Release.ReleaseDate?.ToString("d") ?? string.Empty, style),
+            new(m.AgeRating.HasValue ? m.AgeRating.Value.ToString("d") : string.Empty, style),
+            new(m.Priority.ToString(), style)
+        };
+    }
+
+    private static ConsoleColor? GetEnvironmentColor(IndexEnvironment? env)
+    {
+        return env switch
+        {
+            IndexEnvironment.Release => ConsoleColor.Cyan,
+            IndexEnvironment.Development => ConsoleColor.Yellow,
+            null => null,
+            _ => throw new ArgumentOutOfRangeException(nameof(env)),
+        };
+    }
 
     private static Text GetColorSquare(AppManifest m)
     {

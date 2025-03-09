@@ -1,8 +1,11 @@
-﻿namespace NLauncher.Code;
+﻿using NLauncher.Index.Enums;
+
+namespace NLauncher.Code;
 internal static class NLauncherConstants
 {
     public const string LatestReleaseUrl = "https://github.com/NALStudio/NLauncher/releases/latest";
-    public const string IndexManifestUrl = "https://api.github.com/repos/NALStudio/NLauncher-Index/contents/indexmanifest.json";
+
+    public static readonly string IndexManifestUrl = $"https://api.github.com/repos/NALStudio/NLauncher-Index/contents/{IndexEnvironmentEnum.GetCurrentEnvironment().GetFilename()}";
 
     public static class FileNames
     {
