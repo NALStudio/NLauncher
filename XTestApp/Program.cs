@@ -8,7 +8,7 @@ internal static class Program
         Console.WriteLine("Hello, World!");
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine("Args:");
+        Console.WriteLine(Environment.CommandLine);
         Console.ResetColor();
 
         Console.WriteLine();

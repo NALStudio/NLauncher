@@ -2,6 +2,8 @@
 using MudBlazor;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Apps.Running;
+using NLauncher.Windows.Helpers;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 
 namespace NLauncher.Windows.Services.Apps;
@@ -13,12 +15,12 @@ public class WindowsAppStartup : IAppStartup
         this.logger = logger;
     }
 
-    public async ValueTask<AppHandle?> StartAsync(Guid appId, AppInstall install, IDialogService dialogService)
+    public async ValueTask<AppHandle?> StartAsync(Guid appId, AppInstall install, string? args, IDialogService dialogService)
     {
-        Process process = CreateProcess(appId, install);
+        ProcessStartInfo start = CreateProcessStart(appId, install, args);
 
-        bool started = process.Start();
-        if (!started)
+        Process? process = Process.Start(start);
+        if (process is null)
         {
             await ShowStartFailedMessageBox(dialogService);
             logger.LogError("Process start failed.");
@@ -47,7 +49,7 @@ public class WindowsAppStartup : IAppStartup
             return null;
         }
 
-        return new WindowsAppHandle(process, startedSuccesfully: started);
+        return new WindowsAppHandle(process);
     }
 
     private static async Task ShowStartFailedMessageBox(IDialogService dialogService)
@@ -55,33 +57,44 @@ public class WindowsAppStartup : IAppStartup
         _ = await dialogService.ShowMessageBox("Internal Error", "Application could not be started.");
     }
 
-    private static string[]? CreateArgs(AppInstall install)
+    private static void AddRunData(AppInstall install, Collection<string> args)
     {
-        return install switch
+        switch (install)
         {
-            BinaryAppInstall bai => new string[] { "binary", "--executable", bai.ExecutablePath },
-            _ => null,
-        };
+            case BinaryAppInstall bai:
+                args.Add("binary");
+                args.Add("--executable");
+                args.Add(bai.ExecutablePath);
+                break;
+        }
     }
 
-    private static Process CreateProcess(Guid appId, AppInstall install)
+    private static ProcessStartInfo CreateProcessStart(Guid appId, AppInstall install, string? appArgs)
     {
-        string[] args = [
-            "run",
-            appId.ToString(),
-            ..CreateArgs(install)
-        ];
-
-        return new Process()
+        ProcessStartInfo start = new(Application.ExecutablePath)
         {
-            StartInfo = new ProcessStartInfo(Application.ExecutablePath, args)
-            {
-                UseShellExecute = false, // we redirect stdout
-                RedirectStandardOutput = true
+            UseShellExecute = false, // we redirect stdout
+            RedirectStandardOutput = true
 
-                // probably not needed...?
-                // Verb = "runas"
-            }
+            // probably not needed...?
+            // Verb = "runas"
         };
+        Collection<string> args = start.ArgumentList; // ProcessStartInfo.ArgumentList escapes all arguments automatically
+
+        args.Add("run");
+        args.Add(appId.ToString());
+
+        AddRunData(install, args);
+
+        if (appArgs is not null)
+        {
+            // Escape since ProcessStartInfo doesn't seem to be able to escape this string automatically
+            string appArgsEscaped = CommandLineHelpers.EscapeStringWindows(appArgs);
+
+            args.Add("--args");
+            args.Add(appArgsEscaped);
+        }
+
+        return start;
     }
 }

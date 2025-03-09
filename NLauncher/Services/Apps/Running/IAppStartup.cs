@@ -13,5 +13,5 @@ public interface IAppStartup
     /// <returns>
     /// An app handle to the started app or <see langword="null"/> if startup failed.
     /// </returns>
-    public ValueTask<AppHandle?> StartAsync(Guid appId, AppInstall install, IDialogService dialogService);
+    public ValueTask<AppHandle?> StartAsync(Guid appId, AppInstall install, string? args, IDialogService dialogService);
 }

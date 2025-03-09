@@ -11,6 +11,7 @@ using NLauncher.Services.Apps.Installing;
 using NLauncher.Services.Library;
 using NLauncher.Services.Sessions;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 namespace NLauncher.Components.Dialogs;
 public partial class AppPropertiesDialog : IDisposable
@@ -39,6 +40,8 @@ public partial class AppPropertiesDialog : IDisposable
     public Guid AppId => Entry.Manifest.Uuid;
 
     private LibraryEntry? libraryEntry;
+
+    [NotNullIfNotNull(nameof(libraryEntry))]
     private AppInstall? ExistingInstall => libraryEntry?.Data.Install?.Install;
 
     private bool canInstall = false;
@@ -50,6 +53,9 @@ public partial class AppPropertiesDialog : IDisposable
 
     [MemberNotNullWhen(true, nameof(ExistingInstall))]
     private bool CanBrowseLocalFiles => ExistingInstall is AppInstall ins && LocalFiles.OpenFileBrowserSupported(ins);
+
+    [MemberNotNullWhen(true, nameof(ExistingInstall), nameof(libraryEntry))]
+    private bool CanEditArgs => ExistingInstall is not null;
 
     protected override void OnInitialized()
     {
@@ -68,6 +74,21 @@ public partial class AppPropertiesDialog : IDisposable
         StateHasChanged();
 
         await DeferredComputeSize(ExistingInstall);
+        StateHasChanged();
+    }
+
+    private static string SanitizeCustomArgs(string args)
+    {
+        return WhitespaceRegex().Replace(args, " ").Trim();
+    }
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegex();
+
+    private async Task UpdateArgs(string args)
+    {
+        string? sanitizedArgs = !string.IsNullOrWhiteSpace(args) ? SanitizeCustomArgs(args) : null;
+        libraryEntry = await Library.UpdateEntryAsync(AppId, ld => ld with { LaunchOptions = sanitizedArgs });
         StateHasChanged();
     }
 

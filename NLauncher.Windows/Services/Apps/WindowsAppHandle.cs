@@ -5,11 +5,8 @@ namespace NLauncher.Windows.Services.Apps;
 public class WindowsAppHandle : AppHandle
 {
     private readonly Process process;
-    public WindowsAppHandle(Process process, bool startedSuccesfully)
+    public WindowsAppHandle(Process process)
     {
-        if (!startedSuccesfully)
-            throw new ArgumentException($"Only succesfully started processes should be passed to {nameof(WindowsAppHandle)}");
-
         this.process = process;
     }
 

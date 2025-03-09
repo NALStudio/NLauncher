@@ -1,4 +1,5 @@
 ﻿using NLauncher.Services.Sessions;
+using NLauncher.Windows.Helpers;
 using NLauncher.Windows.Services.GameSessions;
 using Spectre.Console.Cli;
 using System.Diagnostics;
@@ -9,6 +10,9 @@ internal class BinaryRunSettings : RunSettings
 {
     [CommandOption("-x|--executable <REL_PATH>")]
     public required string ExePath { get; init; }
+
+    [CommandOption("--args <ARGUMENTS>")]
+    public string? Arguments { get; init; }
 }
 
 internal class BinaryRunCommand : Command<BinaryRunSettings>
@@ -35,7 +39,7 @@ internal class BinaryRunCommand : Command<BinaryRunSettings>
         {
             try
             {
-                GameSession? session = TryRunProcessAndWait(libraryPath, exeRelative);
+                GameSession? session = TryRunProcessAndWait(libraryPath: libraryPath, exePath: exeRelative, args: settings.Arguments);
                 if (session is null)
                 {
                     Console.WriteLine("Process could not be started.");
@@ -58,18 +62,24 @@ internal class BinaryRunCommand : Command<BinaryRunSettings>
         return 0;
     }
 
-    private static ProcessStartInfo CreateProcessStartInfo(string libraryPath, string exePath)
+    private static ProcessStartInfo CreateProcessStartInfo(string libraryPath, string exePath, string? args)
     {
+        // We redirect the binary run command's stdout so argument parsing is thus broken
+        // and we have to manually escape/unescape the args.
+        if (args?.StartsWith('\"') == true && args.EndsWith('\"'))
+            args = CommandLineHelpers.UnescapeStringWindows(args);
+
         string exeFullPath = Path.Join(libraryPath, exePath);
         return new ProcessStartInfo(exeFullPath)
         {
-            WorkingDirectory = libraryPath
+            WorkingDirectory = libraryPath,
+            Arguments = args
         };
     }
 
-    private static GameSession? TryRunProcessAndWait(string libraryPath, string exePath)
+    private static GameSession? TryRunProcessAndWait(string libraryPath, string exePath, string? args)
     {
-        ProcessStartInfo startInfo = CreateProcessStartInfo(libraryPath, exePath);
+        ProcessStartInfo startInfo = CreateProcessStartInfo(libraryPath, exePath, args);
 
         DateTimeOffset start = DateTimeOffset.UtcNow;
         Process? app = Process.Start(startInfo);

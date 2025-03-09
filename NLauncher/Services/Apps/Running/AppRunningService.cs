@@ -40,14 +40,14 @@ public class AppRunningService
                 return false;
         }
 
-        LibraryInstallData? install = (await libraryService.TryGetEntry(appId))?.Data.Install;
-        if (install is null)
+        LibraryData? libraryData = (await libraryService.TryGetEntry(appId))?.Data;
+        if (libraryData?.Install is null)
         {
             await dialogService.ShowMessageBox("Error", "Application hasn't been installed.");
             return false;
         }
 
-        AppHandle? handle = await appStartup.StartAsync(appId, install.Install, dialogService);
+        AppHandle? handle = await appStartup.StartAsync(appId, libraryData.Install.Install, libraryData.LaunchOptions, dialogService);
         if (handle is null)
             return false; // IAppStartup.StartAsync should've already displayed an error.
 

@@ -50,6 +50,24 @@
                 </MudStack>
             </MudExpansionPanel>
 
+            @if (CanEditArgs)
+            {
+                <MudExpansionPanel Text="Options">
+                    <MudTextField T="string"
+                                  Style="word-break:break-all"
+                                  Immediate="false"
+                                  Value="@(libraryEntry.Value.Data.LaunchOptions)"
+                                  ValueChanged="@UpdateArgs"
+                                  TextUpdateSuppression="false"
+                                  Label="Launch Options"
+                                  HelperText="Advanced users may choose to enter modifications to their launch options."
+                                  Variant="Variant.Outlined"
+                                  ShrinkLabel
+                                  Lines="5"
+                                  AutoGrow />
+                </MudExpansionPanel>
+            }
+
             @if (gameSessionsSorted.Length > 0)
             {
                 <MudExpansionPanel Text="Sessions">

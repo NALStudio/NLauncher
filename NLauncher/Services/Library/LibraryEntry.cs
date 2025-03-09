@@ -29,6 +29,8 @@ public record class LibraryData
     /// </summary>
     [JsonPropertyName("vernum")]
     public uint? ChosenVerNum { get; init; }
+
+    public string? LaunchOptions { get; init; }
 }
 
 public record class LibraryInstallData([property: JsonPropertyName("vernum")] uint VerNum, AppInstall Install);
