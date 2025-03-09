@@ -71,33 +71,30 @@
             @if (gameSessionsSorted.Length > 0)
             {
                 <MudExpansionPanel Text="Sessions">
-                    <!-- Setting style in expansion panel shows the scroll always and setting it to timeline breaks timeline rendering -->
-                    <div style="max-height:420px;overflow-y:auto">
-                        <MudTimeline>
-                            @{
-                                DateOnly? previousDate = null;                        
-                                foreach (GameSession ses in gameSessionsSorted)
-                                {
-                                    DateOnly date = DateOnly.FromDateTime(ses.StartDateTime);
-                                    bool newDate = date != previousDate;
-                                    previousDate = date;
+                    <MudTimeline>
+                        @{
+                            DateOnly? previousDate = null;                        
+                            foreach (GameSession ses in gameSessionsSorted)
+                            {
+                                DateOnly date = DateOnly.FromDateTime(ses.StartDateTime);
+                                bool newDate = date != previousDate;
+                                previousDate = date;
 
-                                    <MudTimelineItem Color="@(newDate ? Color.Primary : Color.Default)" Elevation="0" TimelineAlign="TimelineAlign.End">
-                                        <ItemOpposite>
-                                            @if (newDate)
-                                            {
-                                                <MudText Color="Color.Primary" Typo="Typo.h6">@(date.ToShortDateString())</MudText>
-                                            }
-                                        </ItemOpposite>
-                                        <ItemContent>
-                                            <MudText Typo="Typo.body2">@(ses.StartDateTime.ToShortTimeString()) - @(ses.EndDateTime.ToShortTimeString())</MudText>
-                                            <MudText Typo="Typo.body2" Class="mud-text-secondary">@(HumanizeTime.HumanizeTimeSpan(ses.Duration))</MudText>
-                                        </ItemContent>
-                                    </MudTimelineItem>
-                                }
+                                <MudTimelineItem Color="@(newDate ? Color.Primary : Color.Default)" Elevation="0" TimelineAlign="TimelineAlign.End">
+                                    <ItemOpposite>
+                                        @if (newDate)
+                                        {
+                                            <MudText Color="Color.Primary" Typo="Typo.h6">@(date.ToShortDateString())</MudText>
+                                        }
+                                    </ItemOpposite>
+                                    <ItemContent>
+                                        <MudText Typo="Typo.body2">@(ses.StartDateTime.ToShortTimeString()) - @(ses.EndDateTime.ToShortTimeString())</MudText>
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@(HumanizeTime.HumanizeTimeSpan(ses.Duration))</MudText>
+                                    </ItemContent>
+                                </MudTimelineItem>
                             }
-                        </MudTimeline>
-                    </div>
+                        }
+                    </MudTimeline>
                 </MudExpansionPanel>
             }
         </MudExpansionPanels>

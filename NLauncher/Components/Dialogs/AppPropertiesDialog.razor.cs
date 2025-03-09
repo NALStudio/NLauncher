@@ -11,7 +11,6 @@ using NLauncher.Services.Apps.Installing;
 using NLauncher.Services.Library;
 using NLauncher.Services.Sessions;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
 
 namespace NLauncher.Components.Dialogs;
 public partial class AppPropertiesDialog : IDisposable
@@ -79,11 +78,10 @@ public partial class AppPropertiesDialog : IDisposable
 
     private static string SanitizeCustomArgs(string args)
     {
-        return WhitespaceRegex().Replace(args, " ").Trim();
+        // Do not replace multiple spaces with a single space using regex
+        // since we want to retain these spaces inside quotes
+        return args.ReplaceLineEndings(" ").Trim();
     }
-
-    [GeneratedRegex(@"\s+")]
-    private static partial Regex WhitespaceRegex();
 
     private async Task UpdateArgs(string args)
     {
