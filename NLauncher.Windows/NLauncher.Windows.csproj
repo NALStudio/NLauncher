@@ -6,15 +6,15 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-	  
+      
     <AssemblyName>NLauncher</AssemblyName>
     <Version>0.8.0</Version>
-	  
+      
     <ApplicationIcon>wwwroot\logo.ico</ApplicationIcon>
 
-	<!-- Not supported by Winforms -->
-	<!--<PublishAot>true</PublishAot>-->
-	<!--<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>-->
+    <!-- Not supported by Winforms -->
+    <!--<PublishAot>true</PublishAot>-->
+    <!--<JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>-->
   </PropertyGroup>
 
   <ItemGroup>

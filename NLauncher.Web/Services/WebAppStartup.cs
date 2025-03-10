@@ -6,7 +6,7 @@ namespace NLauncher.Web.Services;
 
 public class WebAppStartup : IAppStartup
 {
-    public ValueTask<AppHandle?> StartAsync(Guid appId, AppInstall install, IDialogService dialogService)
+    public ValueTask<AppHandle?> StartAsync(Guid appId, AppInstall install, string? args, IDialogService dialogService)
     {
         return ValueTask.FromResult<AppHandle?>(null);
     }
