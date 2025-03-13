@@ -8,10 +8,11 @@ using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Library;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NLauncher.Services.Apps.Installing;
-public class AppInstallService
+public class AppInstallService : IDisposable
 {
     public class AppInstallConfig
     {
@@ -32,7 +33,7 @@ public class AppInstallService
         public bool AlwaysAskInstallMethod { get; init; } = false;
     }
 
-    private readonly OrderedDictionary<Guid, RunningAppInstall> installsUnsafe = new();
+    private readonly OrderedDictionary<Guid, Install> installsUnsafe = new();
 
     public event Action? OnCountChanged;
 
@@ -40,8 +41,8 @@ public class AppInstallService
     public int ActiveCount => _activeCount;
     public event Action<int>? OnActiveCountChanged;
 
-    public event Action<RunningAppInstall>? OnInstallStarted;
-    public event Action<RunningAppInstall>? OnInstallFinished;
+    public event Action<Guid>? OnInstallStarted;
+    public event Action<Guid>? OnInstallFinished;
 
     private readonly ILogger<AppInstallService> logger;
 
@@ -74,7 +75,7 @@ public class AppInstallService
 
     /// <summary>
     /// Returns <see langword="true"/> if application installation was started succesfully, otherwise <see langword="false"/>.
-    /// The app installation is queued into the <see cref="RunningAppInstall"/> service.
+    /// The app installation is queued into the <see cref="InstallTask"/> service.
     /// </summary>
     private async Task<bool> StartInstallAsync(AppManifest app, AppInstallConfig config, bool update)
     {
@@ -88,13 +89,13 @@ public class AppInstallService
         return success;
     }
 
-    public RunningAppInstall[] GetInstalls()
+    public Install[] GetInstalls()
     {
         lock (installsUnsafe)
             return installsUnsafe.Values.ToArray();
     }
 
-    public bool TryGetInstall(Guid appId, [MaybeNullWhen(false)] out RunningAppInstall install)
+    public bool TryGetInstall(Guid appId, [MaybeNullWhen(false)] out Install install)
     {
         lock (installsUnsafe)
             return installsUnsafe.TryGetValue(appId, out install);
@@ -102,8 +103,8 @@ public class AppInstallService
 
     public bool IsInstalling(Guid appId)
     {
-        if (TryGetInstall(appId, out RunningAppInstall? install))
-            return !install.IsFinished;
+        if (TryGetInstall(appId, out Install? install))
+            return install.Task.IsRunning;
         else
             return false;
     }
@@ -115,14 +116,16 @@ public class AppInstallService
     {
         lock (installsUnsafe)
         {
-            if (!installsUnsafe.TryGetValue(appId, out RunningAppInstall? install))
+            if (!installsUnsafe.TryGetValue(appId, out Install? install))
                 return false;
 
-            if (!install.IsFinished)
+            if (install.Task.IsRunning)
                 return false;
 
-            if (installsUnsafe.Remove(appId, out RunningAppInstall? removed))
-                UnsubscribeEvents(removed);
+            if (installsUnsafe.Remove(appId, out Install? removed))
+            {
+                DisposeInstall(removed);
+            }
             else
             {
                 logger.LogError("Install removal was unsuccesful even though all checks passed.");
@@ -204,24 +207,28 @@ public class AppInstallService
         if (!installer.InstallSupported(install))
             return InstallResult.Errored("This install is not supported by the current platform.");
 
-        RunningAppInstall runningInstall = new(library, installer, app, version.Value, install);
-        if (!TryAddInstall(app.Uuid, runningInstall))
+        InstallTask insTask = installer.Install(app.Uuid, install);
+        Install ins = new(app, version.Value, insTask);
+        if (!TryAddInstall(app.Uuid, ins))
             return InstallResult.Errored("Application is already installing.");
 
-        runningInstall.Start();
+        // Do not error if start fails
+        // we don't want to show an error message every time the user cancels Run as admin
+        await insTask.StartAsync();
+        await library.AddEntryAsync(app.Uuid);
         return InstallResult.Success();
     }
 
-    private bool TryAddInstall(Guid appId, RunningAppInstall newInstall)
+    private bool TryAddInstall(Guid appId, Install newInstall)
     {
         lock (installsUnsafe)
         {
-            if (installsUnsafe.TryGetValue(appId, out RunningAppInstall? existingInstall))
+            if (installsUnsafe.TryGetValue(appId, out Install? existingInstall))
             {
-                if (!existingInstall.IsFinished)
+                if (existingInstall.Task.IsRunning)
                     return false;
 
-                UnsubscribeEvents(existingInstall);
+                DisposeInstall(existingInstall);
             }
 
             SubscribeEvents(newInstall);
@@ -307,27 +314,64 @@ public class AppInstallService
         OnActiveCountChanged?.Invoke(count);
     }
 
-    private void AppInstallStarted(RunningAppInstall ins)
+    private void AppInstallStarted(object? sender, EventArgs _)
     {
         IncrementActiveCount();
-        OnInstallStarted?.Invoke(ins);
+        OnInstallStarted?.Invoke(((InstallTask?)sender)!.AppId);
     }
 
-    private void AppInstallFinished(RunningAppInstall ins)
+    private void AppInstallFinished(object? sender, InstallResult result)
     {
+        InstallTask ins = sender as InstallTask ?? throw new ArgumentException("Invalid sender type.", nameof(sender));
+
+        if (result.IsSuccess)
+        {
+            if (!ins.IsUnsafe)
+                throw new ArgumentException("Install must be marked unsafe before finishing.");
+
+            LibraryInstallData? installData;
+            if (TryGetInstall(ins.AppId, out Install? install))
+            {
+                Debug.Assert(ReferenceEquals(install.Task, ins));
+                installData = new(install.Version.VerNum, ins.Install);
+            }
+            else
+            {
+                installData = null;
+            }
+
+            _ = library.UpdateEntryAsync(ins.AppId, ld => ld with { Install = installData });
+        }
+        else if (ins.IsUnsafe)
+        {
+            _ = library.UpdateEntryAsync(ins.AppId, ld => ld with { Install = null });
+        }
+
         DecrementActiveCount();
-        OnInstallFinished?.Invoke(ins);
+        OnInstallFinished?.Invoke(ins.AppId);
     }
 
-    private void SubscribeEvents(RunningAppInstall install)
+    private void SubscribeEvents(Install install)
     {
-        install.OnStarted += AppInstallStarted;
-        install.OnFinished += AppInstallFinished;
+        install.Task.Started += AppInstallStarted;
+        install.Task.Finished += AppInstallFinished;
     }
 
-    private void UnsubscribeEvents(RunningAppInstall install)
+    private void DisposeInstall(Install install)
     {
-        install.OnStarted -= AppInstallStarted;
-        install.OnFinished -= AppInstallFinished;
+        install.Task.Started -= AppInstallStarted;
+        install.Task.Finished -= AppInstallFinished;
+
+        install.Task.Dispose();
+    }
+
+    public void Dispose()
+    {
+        lock (installsUnsafe)
+        {
+            foreach (Install ins in installsUnsafe.Values)
+                DisposeInstall(ins);
+            installsUnsafe.Clear();
+        }
     }
 }

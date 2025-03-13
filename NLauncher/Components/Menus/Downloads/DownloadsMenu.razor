@@ -13,11 +13,11 @@
             Open="@Open">
     <MudStack Class="ma-3">
         @{
-            RunningAppInstall[] installs = InstallService.GetInstalls();
+            Install[] installs = InstallService.GetInstalls();
             // Iterate installs backwards (so that latest installs are on top)
             for (int i = installs.Length - 1; i >= 0; i--)
             {
-                RunningAppInstall ins = installs[i];
+                Install ins = installs[i];
                 <DownloadsMenuItem Install="ins" />
             }
 

@@ -8,7 +8,8 @@ public static class InstallHelper
         return new DownloadService(
             new DownloadConfiguration()
             {
-                BufferBlockSize = 8000
+                BufferBlockSize = 8000,
+                ReserveStorageSpaceBeforeStartingDownload = true,
             }
         );
     }

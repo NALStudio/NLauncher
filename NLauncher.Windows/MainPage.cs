@@ -9,6 +9,8 @@ using NLauncher.Windows.Services;
 using NLauncher.Windows.Services.Apps;
 using NLauncher.Windows.Services.CheckUpdate;
 using NLauncher.Windows.Services.GameSessions;
+using NLauncher.Windows.Services.Installing;
+using NReco.Logging.File;
 
 namespace NLauncher.Windows;
 
@@ -51,7 +53,7 @@ public partial class MainPage : Form
             Text = title;
     }
 
-    private static IServiceProvider BuildServices()
+    private static ServiceProvider BuildServices()
     {
         ServiceCollection services = new();
         services.AddLogging(builder =>
@@ -59,6 +61,8 @@ public partial class MainPage : Form
 #if DEBUG
             builder.AddDebug();
 #endif
+
+            builder.AddFile(Path.Join(Constants.GetAppDataDirectory(), Constants.LauncherLogFileName), append: false);
         });
 
         services.AddWindowsFormsBlazorWebView();

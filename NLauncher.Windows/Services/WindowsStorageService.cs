@@ -5,14 +5,8 @@ namespace NLauncher.Windows.Services;
 
 public class WindowsStorageService : IStorageService
 {
-    public static string AppDataPath { get; } = GetAppDataPath();
+    public static string AppDataPath { get; } = Constants.GetAppDataDirectory();
     public static string CachePath { get; } = Path.Join(AppDataPath, Constants.CacheDirectory);
-
-    private static string GetAppDataPath()
-    {
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return Path.Join(appData, Constants.AppDataDirname);
-    }
 
     private static string GetPath(string filename)
     {

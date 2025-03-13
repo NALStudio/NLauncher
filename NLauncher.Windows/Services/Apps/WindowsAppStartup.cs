@@ -81,6 +81,7 @@ public class WindowsAppStartup : IAppStartup
         };
         Collection<string> args = start.ArgumentList; // ProcessStartInfo.ArgumentList escapes all arguments automatically
 
+        args.Add("command");
         args.Add("run");
         args.Add(appId.ToString());
 

@@ -3,7 +3,7 @@
 @using System.Diagnostics
 @using NLauncher.Services.Apps.Installing
 
-@implements IAsyncDisposable
+@implements IDisposable
 
 @inject AppInstallService InstallService
 
@@ -19,16 +19,19 @@
             <MudStack Row Spacing="0" StretchItems="StretchItems.Start">
                 <MudText Typo="Typo.subtitle1">@state</MudText>
 
-                @if (Install.IsFinished && !Install.GetResult().IsSuccess)
+                @if (result.HasValue)
                 {
-                    <MudIconButton Size="Size.Small" Icon="@(Icons.Material.Rounded.Replay)" OnClick="RestartInstall" />
+                    if (!result.Value.IsSuccess)
+                    {
+                        <MudIconButton Size="Size.Small" Icon="@(Icons.Material.Rounded.Replay)" OnClick="RestartInstall" />
+                    }
                 }
-                @if (!Install.IsFinished)
+                else
                 {
                     <MudIconButton Size="Size.Small" Icon="@(Icons.Material.Rounded.Stop)" OnClick="StopInstall" />
                 }
 
-                <MudIconButton Disabled="@(!Install.IsFinished)" Size="Size.Small" Icon="@(Icons.Material.Rounded.Close)" OnClick="RemoveInstall" />
+                <MudIconButton Disabled="@(InstallTask.IsRunning)" Size="Size.Small" Icon="@(Icons.Material.Rounded.Close)" OnClick="RemoveInstall" />
             </MudStack>
             <MudProgressLinear Class="mt-1" Rounded Color="@color" Indeterminate="@(!progress.HasValue)" Value="@(progress ?? 0d)" Min="0d" Max="1d" />
 
@@ -41,15 +44,15 @@
 </MudPaper>
 
 @code {
-    private RunningAppInstall? previousInstall = null;
+    private Install? previousInstall = null;
 
     [Parameter, EditorRequired]
-    public required RunningAppInstall Install { get; set; }
+    public required Install Install { get; set; }
+
+    private InstallTask InstallTask => Install.Task;
 
     private InstallProgress progress = InstallProgress.Starting;
     private InstallResult? result = null;
-
-    private (Task Task, CancellationTokenSource Cancellation)? uiTask;
 
     private bool restartingInstall = false;
 
@@ -64,22 +67,22 @@
         previousInstall = Install;
 
         ResetProgressAndResult();
-        RestartUiUpdate();
     }
 
     private void ResetProgressAndResult()
     {
-        if (Install.LatestProgress is InstallProgress existingProgress)
-            progress = existingProgress;
-        else
-            progress = InstallProgress.Starting;
+        progress = InstallTask.Progress ?? InstallProgress.Starting;
 
-        result = Install.IsFinished ? Install.GetResult() : null;
+        if (!InstallTask.IsStarted)
+            result = InstallResult.Errored("Failed to start install.");
+        else if (InstallTask.IsFinished)
+            result = InstallTask.GetResult();
+        else
+            result = null;
     }
 
     private (string State, Color Color) GetState()
     {
-        InstallResult? result = Install.IsFinished ? Install.GetResult() : null;
         return GetState(result, progress);
     }
 
@@ -107,7 +110,7 @@
 
     private double? GetProgress()
     {
-        if (Install.IsFinished)
+        if (result.HasValue)
             return 1d;
 
         return progress.Progress;
@@ -120,7 +123,7 @@
 
     private void StopInstall()
     {
-        Install.RequestCancel();
+        _ = InstallTask.RequestCancel();
     }
 
     private async Task RestartInstall()
@@ -130,76 +133,43 @@
 
         restartingInstall = true;
 
-        _ = await Install.RestartAsync();
+        _ = await InstallTask.RestartAsync();
         ResetProgressAndResult(); // Reset progress after so that install can clear its data first
         StateHasChanged();
-
-        RestartUiUpdate();
 
         restartingInstall = false;
     }
 
-    private void RestartUiUpdate(RunningAppInstall? _ = null) // Unused argument for event handling
+    private void EventFinished(object? sender, InstallResult result)
     {
-        if (uiTask.HasValue)
-            uiTask.Value.Cancellation.Cancel();
-
-        CancellationTokenSource ct = new();
-        uiTask = (UpdateUI(ct.Token), ct);
+        this.result = result;
+        InvokeAsync(StateHasChanged);
     }
 
-    private async Task UpdateUI(CancellationToken cancellationToken)
+    private void EventProgressChanged(object? sender, InstallProgress progress)
     {
-        if (Install.IsRunning)
-        {
-            await foreach (InstallProgress progress in Install.ListenForProgressUpdates(cancellationToken))
-            {
-                this.progress = progress;
-                StateHasChanged();
-
-                // Wait for a short while so that the UI animations have time to catch up to the progress so that they don't flicker.
-                // During this wait, if new progress is received, it will replace the previous progress (we will always get the latest progress information)
-                await Task.Delay(500, cancellationToken);
-            }
-
-            result = await Install.WaitForResult(cancellationToken);
-            StateHasChanged();
-        }
-        else if (Install.IsFinished)
-        {
-            result = Install.GetResult();
-            StateHasChanged();
-        }
+        this.progress = progress;
+        InvokeAsync(StateHasChanged);
     }
 
-    private void SubscribeEvents(RunningAppInstall install)
+    private void SubscribeEvents(Install install)
     {
-        Install.OnStarted += RestartUiUpdate;
+        Install.Task.InstallProgressChanged += EventProgressChanged;
+        Install.Task.Finished += EventFinished;
     }
 
-    private void UnsubscribeEvents(RunningAppInstall? install)
+    private void UnsubscribeEvents(Install? install)
     {
         if (install is null)
             return;
 
-        Install.OnStarted -= RestartUiUpdate;
+        Install.Task.InstallProgressChanged -= EventProgressChanged;
+        Install.Task.Finished -= EventFinished;
     }
 
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
         UnsubscribeEvents(previousInstall);
         UnsubscribeEvents(Install);
-
-        if (uiTask.HasValue)
-        {
-            uiTask.Value.Cancellation.Cancel();
-            try
-            {
-                await uiTask.Value.Task;
-            }
-            catch (OperationCanceledException)
-            {
-            }
-        }
     }
 }

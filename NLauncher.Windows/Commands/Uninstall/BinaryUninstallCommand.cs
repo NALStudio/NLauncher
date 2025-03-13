@@ -1,12 +1,14 @@
-﻿using Spectre.Console.Cli;
+﻿using NLauncher.Windows.Models;
+using Spectre.Console.Cli;
 
 namespace NLauncher.Windows.Commands.Uninstall;
 
-internal class BinaryUninstallCommand : Command<UninstallSettings>
+internal class BinaryUninstallCommand : AsyncCommand<UninstallSettings>
 {
-    public override int Execute(CommandContext context, UninstallSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, UninstallSettings settings)
     {
-        Console.WriteLine("Uninstalling...");
+        await using CommandOutput output = await settings.ConnectOutputAsync();
+        output.WriteLine("Uninstalling...");
 
         DirectoryInfo dir = SystemDirectories.GetLibraryPath(settings.AppId);
         if (dir.Exists)

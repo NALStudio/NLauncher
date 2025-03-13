@@ -178,7 +178,11 @@ public partial class AppInfoCard : IDisposable
 
         bool installStarted = await AppInstallService.StartInstallAsync(Entry.Manifest, settings);
         if (installStarted)
-            isInstalling = true;
+        {
+            // Check IsInstalling instead of setting straight to true
+            // as the install startup might've failed after we requested the install to be started
+            isInstalling = AppInstallService.IsInstalling(Entry.Manifest.Uuid);
+        }
 
         isStartingInstall = false;
         StateHasChanged();

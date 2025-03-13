@@ -20,29 +20,31 @@ internal class BinaryInstallCommand : AsyncCommand<BinaryInstallSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, BinaryInstallSettings settings)
     {
+        await using CommandOutput output = await settings.ConnectOutputAsync();
+
         #region Downloading
-        Console.WriteLine("Downloading...");
+        await output.WriteLineAsync("Downloading...");
 
         DirectoryInfo downloadDir = SystemDirectories.GetDownloadsPath(settings.AppId);
         string downloadPath = Path.Join(downloadDir.FullName, ".download");
 
-        await DownloadBinary(settings.DownloadUrl, downloadPath);
+        await DownloadBinary(output, settings.DownloadUrl, downloadPath);
         #endregion
 
         #region Verifying
         if (settings.DownloadHash is not null)
         {
-            Console.WriteLine("Verifying...");
+            await output.WriteLineAsync("Verifying...");
             if (!await VerifyHash(downloadPath, settings.DownloadHash))
             {
-                Console.WriteLine("Downloaded file hash does not match the expected hash.");
+                await output.WriteLineAsync("Downloaded file hash does not match the expected hash.");
                 return 1;
             }
         }
         #endregion
 
         #region Installing
-        Console.WriteLine("Installing...");
+        await output.WriteLineAsync("Installing...");
 
         DirectoryInfo gameDir = SystemDirectories.GetLibraryPath(settings.AppId);
         DirectoryInfo zipTmpDir = new(Path.Join(downloadDir.FullName, "unzip"));
@@ -50,24 +52,22 @@ internal class BinaryInstallCommand : AsyncCommand<BinaryInstallSettings>
         #endregion
 
         #region Finishing
-        Console.WriteLine("Finishing...");
+        // Message goes away too fast
+        // await output.WriteLineAsync("Finishing...");
         downloadDir.Delete(true);
         #endregion
 
         return 0;
     }
 
-    private static async Task DownloadBinary(Uri url, string filepath)
+    private static async Task DownloadBinary(CommandOutput output, Uri url, string filepath)
     {
         await using DownloadService downloadService = InstallHelper.CreateDefaultDownloadService();
 
-        downloadService.DownloadStarted += DownloadService_DownloadStarted;
-        downloadService.DownloadProgressChanged += DownloadService_DownloadProgressChanged;
+        downloadService.DownloadStarted += async (sender, args) => await DownloadStarted(output, args);
+        downloadService.DownloadProgressChanged += async (sender, args) => await DownloadProgressChanged(output, args);
 
         await downloadService.DownloadFileTaskAsync(url.ToString(), filepath);
-
-        downloadService.DownloadStarted -= DownloadService_DownloadStarted;
-        downloadService.DownloadProgressChanged -= DownloadService_DownloadProgressChanged;
     }
 
     private static async Task<bool> VerifyHash(string filepath, string expectedHash)
@@ -102,15 +102,15 @@ internal class BinaryInstallCommand : AsyncCommand<BinaryInstallSettings>
         moveDir.MoveTo(gameDir.FullName);
     }
 
-    private static void DownloadService_DownloadStarted(object? sender, DownloadStartedEventArgs e)
+    private static async Task DownloadStarted(CommandOutput output, DownloadStartedEventArgs e)
     {
         DownloadProgress progress = new(DownloadedBytes: 0, TotalBytes: e.TotalBytesToReceive);
-        Console.WriteLine(progress.ToString());
+        await output.WriteLineAsync(progress.ToString());
     }
 
-    private static void DownloadService_DownloadProgressChanged(object? sender, DownloadProgressChangedEventArgs e)
+    private static async Task DownloadProgressChanged(CommandOutput output, DownloadProgressChangedEventArgs e)
     {
         DownloadProgress progress = new(DownloadedBytes: e.ReceivedBytesSize, TotalBytes: e.TotalBytesToReceive);
-        Console.WriteLine(progress.ToString());
+        _ = await output.TryWriteLineAsync(progress.ToString());
     }
 }

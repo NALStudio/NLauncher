@@ -16,14 +16,14 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        if (args.Length < 1)
+        if (args.Length > 0 && args[0] == "command")
         {
-            RunWinForms();
-            return 0;
+            return RunConsole(args[1..]);
         }
         else
         {
-            return RunConsole(args);
+            RunWinForms();
+            return 0;
         }
     }
 
@@ -38,27 +38,68 @@ internal static class Program
     /// <summary>
     /// This method blocks the thread until all tasks are complete.
     /// </summary>
-    private static int RunConsole(string[] args)
+    private static int RunConsole(IEnumerable<string> args)
     {
-        CommandApp app = new();
-
-        app.Configure(config =>
+        string logPath = Path.Join(Constants.GetAppDataDirectory(), string.Format(Constants.CommandLogFileNameTemplate, Guid.NewGuid()));
+        StreamWriter? logWriter;
+        try
         {
-            config.AddBranch<InstallSettings>("install", install =>
+            logWriter = new StreamWriter(File.Open(logPath, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
-                install.AddCommand<BinaryInstallCommand>("binary");
-            });
-            config.AddBranch<UninstallSettings>("uninstall", uninstall =>
-            {
-                uninstall.AddCommand<BinaryUninstallCommand>("binary");
-            });
-            config.AddBranch<RunSettings>("run", run =>
-            {
-                run.AddCommand<BinaryRunCommand>("binary");
-            });
-        });
+                AutoFlush = true
+            };
+            Console.SetOut(logWriter);
+        }
+        catch (Exception ex)
+        {
+            logWriter = null;
+            Console.WriteLine("Could not redirect stdout. Error below:");
+            Console.WriteLine(ex.ToString());
+        }
 
-        return app.Run(args);
+
+        int? result = null;
+        try
+        {
+            Console.WriteLine($"Running command: '{Environment.CommandLine}'");
+
+            CommandApp app = new();
+
+            app.Configure(config =>
+            {
+                config.AddBranch<InstallSettings>("install", install =>
+                {
+                    install.AddCommand<BinaryInstallCommand>("binary");
+                });
+                config.AddBranch<UninstallSettings>("uninstall", uninstall =>
+                {
+                    uninstall.AddCommand<BinaryUninstallCommand>("binary");
+                });
+                config.AddBranch<RunSettings>("run", run =>
+                {
+                    run.AddCommand<BinaryRunCommand>("binary");
+                });
+            });
+
+            result = app.Run(args);
+        }
+        finally
+        {
+            bool deleteLogFile;
+#if DEBUG
+            deleteLogFile = result != 0;
+#else
+            deleteLogFile = true;
+#endif
+
+            if (deleteLogFile && logWriter is not null)
+            {
+                logWriter.Dispose();
+                File.Delete(logPath);
+            }
+        }
+
+        return result ?? -1;
     }
 
     private static HttpClient CreateHttp()

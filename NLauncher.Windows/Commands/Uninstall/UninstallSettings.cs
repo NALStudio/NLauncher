@@ -2,7 +2,7 @@
 
 namespace NLauncher.Windows.Commands.Uninstall;
 
-public class UninstallSettings : CommandSettings
+public class UninstallSettings : BaseSettings
 {
     [CommandArgument(0, "<APP_ID>")]
     public Guid AppId { get; set; }

@@ -1,5 +1,6 @@
 ﻿using NLauncher.Services.Sessions;
 using NLauncher.Windows.Helpers;
+using NLauncher.Windows.Models;
 using NLauncher.Windows.Services.GameSessions;
 using Spectre.Console.Cli;
 using System.Diagnostics;
@@ -19,6 +20,8 @@ internal class BinaryRunCommand : Command<BinaryRunSettings>
 {
     public override int Execute(CommandContext context, BinaryRunSettings settings)
     {
+        using CommandOutput output = settings.ConnectOutput();
+
         string exeRelative = settings.ExePath;
         string libraryPath = SystemDirectories.GetLibraryPath(settings.AppId).FullName;
 
@@ -26,12 +29,12 @@ internal class BinaryRunCommand : Command<BinaryRunSettings>
         // I would love to verify that the relative path doesn't escape out of the game's local files directory, but I have no idea how to do that...
         if (Path.GetExtension(exeRelative) != ".exe")
         {
-            Console.WriteLine($"Invalid file type: '{exeRelative}'");
+            output.WriteLine($"Invalid file type: '{exeRelative}'");
             return 1;
         }
         if (Path.IsPathRooted(exeRelative))
         {
-            Console.WriteLine($"Path must be relative: '{exeRelative}'");
+            output.WriteLine($"Path must be relative: '{exeRelative}'");
             return 1;
         }
 
@@ -42,7 +45,7 @@ internal class BinaryRunCommand : Command<BinaryRunSettings>
                 GameSession? session = TryRunProcessAndWait(libraryPath: libraryPath, exePath: exeRelative, args: settings.Arguments);
                 if (session is null)
                 {
-                    Console.WriteLine("Process could not be started.");
+                    output.WriteLine("Process could not be started.");
                     return 1;
                 }
 
@@ -55,7 +58,7 @@ internal class BinaryRunCommand : Command<BinaryRunSettings>
         }
         else
         {
-            Console.WriteLine("Another instance of this application is already running.");
+            output.WriteLine("Another instance of this application is already running.");
             return 1;
         }
 

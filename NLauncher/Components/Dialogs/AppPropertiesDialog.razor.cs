@@ -61,7 +61,7 @@ public partial class AppPropertiesDialog : IDisposable
         AppInstall.OnInstallStarted += UpdateCanInstall;
         AppInstall.OnInstallFinished += UpdateCanInstall;
 
-        UpdateCanInstall(null);
+        UpdateCanInstall(AppId);
     }
 
     protected override async Task OnParametersSetAsync()
@@ -137,11 +137,11 @@ public partial class AppPropertiesDialog : IDisposable
     }
 
     /// <summary>
-    /// Use null to force a refresh.
+    /// Updates <see cref="canInstall"/> if <paramref name="appId"/> is equal to <see cref="AppId"/>
     /// </summary>
-    private void UpdateCanInstall(RunningAppInstall? install)
+    private void UpdateCanInstall(Guid appId)
     {
-        if (install is null || install.App.Uuid == AppId)
+        if (appId == AppId)
         {
             canInstall = !AppInstall.IsInstalling(AppId);
             InvokeAsync(StateHasChanged);

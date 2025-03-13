@@ -11,6 +11,7 @@ public class AppUninstallService
     private readonly ILogger<AppUninstallService> logger;
     private readonly IPlatformInstaller installer;
     private readonly LibraryService library;
+
     public AppUninstallService(ILogger<AppUninstallService> logger, IPlatformInstaller installer, LibraryService library)
     {
         this.logger = logger;
@@ -45,7 +46,7 @@ public class AppUninstallService
         UninstallDialog? dialog = (UninstallDialog?)dialogRef.Dialog;
         await dialog!.TryLoadTitleAsync();
 
-        InstallResult result = await InternalUninstall(appId, onProgressUpdate: dialog!.UpdateProgress);
+        InstallResult result = await InternalUninstall(appId, onProgressUpdate: (_, prog) => dialog!.UpdateProgress(prog));
         dialog.SetResult(result);
 
         await dialogRef.Result; // Wait for dialog to close
@@ -66,18 +67,32 @@ public class AppUninstallService
         return InstallResult.Success(install);
     }
 
-    private async Task<InstallResult> InternalUninstall(Guid appId, Action<InstallProgress> onProgressUpdate)
+    private async Task<InstallResult> InternalUninstall(Guid appId, EventHandler<InstallProgress> onProgressUpdate)
     {
         InstallResult<AppInstall> install = await ResolveInstall(appId);
         if (!install.IsSuccess)
             return InstallResult.Failed(install);
 
-        await library.UpdateEntryAsync(appId, data => data with { Install = null });
-        InstallResult result = await installer.UninstallAsync(appId, install.Value, onProgressUpdate, CancellationToken.None);
+        using InstallTask task = installer.Uninstall(appId, install.Value);
+        task.InstallProgressChanged += onProgressUpdate;
 
-        bool removed = await library.RemoveEntryAsync(appId);
-        if (!removed)
-            logger.LogError("App could not be removed from library after uninstall.");
+        if (!await task.StartAsync())
+            return InstallResult.Errored("Uninstall failed to start.");
+        InstallResult result = await task.WaitForResult();
+
+        if (result.IsSuccess)
+        {
+            if (!task.IsUnsafe)
+                throw new ArgumentException("Uninstall must be marked unsafe before finishing.");
+
+            bool removed = await library.RemoveEntryAsync(appId);
+            if (!removed)
+                logger.LogError("App could not be removed from library after uninstall.");
+        }
+        else if (task.IsUnsafe)
+        {
+            await library.UpdateEntryAsync(appId, ld => ld with { Install = null });
+        }
 
         return result;
     }

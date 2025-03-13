@@ -100,9 +100,9 @@ public partial class AppActionButton : IDisposable
         StateHasChanged();
     }
 
-    private void InstallStartedOrFinished(RunningAppInstall ins)
+    private void InstallStartedOrFinished(Guid appId)
     {
-        if (ins.App.Uuid == App?.Uuid)
+        if (appId == App?.Uuid)
             InvokeAsync(ReloadState);
     }
 
