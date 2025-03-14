@@ -6,6 +6,7 @@
 #define MyAppPublisher "NALStudio"
 #define MyAppURL "https://nalstudio.github.io/NLauncher"
 #define MyAppExeName "NLauncher.exe"
+#define MyAppDataDir "NALStudio\NLauncher"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -44,6 +45,10 @@ WizardStyle=modern
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "finnish"; MessagesFile: "compiler:Languages\Finnish.isl"
 
+[CustomMessages]
+english.UninstallAppsMessage=Do you want to uninstall all NLauncher applications?%n%n%nThis will remove all files under:%n%n
+finnish.UninstallAppsMessage=Haluatko poistaa kaikki NLauncher sovellukset?%n%n%nTämä poistaa kaikki tiedostot kansiosta:%n%n
+
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
@@ -52,7 +57,40 @@ Source: "bin\Publish\net9.0-windows\*"; DestDir: "{app}"; Excludes: "*.pdb"; Fla
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [InstallDelete]
-Type: filesandordirs; Name: "{app}"
+; Refresh caches during update
+Type: filesandordirs; Name: "{localappdata}\{#MyAppDataDir}\WebView"
+Type: filesandordirs; Name: "{localappdata}\{#MyAppDataDir}\Cache"
+
+[UninstallDelete]
+; Application data
+; Do NOT blanket remove the app dir, see: https://jrsoftware.org/ishelp/topic_uninstalldeletesection.htm
+Type: dirifempty; Name: "{app}\Downloads"
+
+; The app directory remove fails if we removed the library directory during uninstall
+; Thus we force remove it if it's empty
+Type: dirifempty; Name: "{app}"
+
+; Useless appdata
+Type: filesandordirs; Name: "{localappdata}\{#MyAppDataDir}\WebView"
+Type: filesandordirs; Name: "{localappdata}\{#MyAppDataDir}\Cache"
+Type: filesandordirs; Name: "{localappdata}\{#MyAppDataDir}\Logs"
+
+[Code]
+ procedure CurUninstallStepChanged (CurUninstallStep: TUninstallStep);
+ var applibdir : String;
+ var mres : integer;
+ begin
+    case CurUninstallStep of                   
+      usUninstall:
+        begin
+          applibdir := ExpandConstant('{app}\Library');
+          if DirExists(applibdir) and not DelTree(applibdir, True, False, False) then
+            mres := MsgBox(ExpandConstant('{cm:UninstallAppsMessage}') + applibdir, mbConfirmation, MB_YESNO or MB_DEFBUTTON2);
+            if mres = IDYES then
+              DelTree(applibdir, True, True, True);
+       end;
+   end;
+end;
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
