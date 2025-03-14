@@ -30,17 +30,12 @@
     /// </summary>
     public static async Task<bool> ShowAsync(IDialogService dialogService, string href)
     {
-        DialogOptions options = new()
-        {
-            CloseOnEscapeKey = true
-        };
-
         DialogParameters<ConfirmManualInstallDialog> parameters = new()
         {
             { x => x.Href, href }
         };
 
-        IDialogReference dialog = await dialogService.ShowAsync<ConfirmManualInstallDialog>("Warning!", parameters, options);
+        IDialogReference dialog = await dialogService.ShowAsync<ConfirmManualInstallDialog>("Warning!", parameters);
         DialogResult? result = await dialog.Result;
         return result is not null && !result.Canceled;
     }

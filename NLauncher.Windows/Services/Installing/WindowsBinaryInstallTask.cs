@@ -27,6 +27,7 @@ internal class WindowsBinaryInstallTask : InstallTask<BinaryAppInstall>
 
     private Process? process;
 
+    private bool cancelled;
     private bool cancelling;
     private InstallResult? result;
 
@@ -59,17 +60,18 @@ internal class WindowsBinaryInstallTask : InstallTask<BinaryAppInstall>
         if (process is not null)
         {
             cancelling = true;
-            bool cancelled;
+            bool? cancelled = null;
             try
             {
                 cancelled = TryKillProcessAndChildren(process);
             }
             finally
             {
+                this.cancelled = cancelled ?? false;
                 cancelling = false;
             }
 
-            return cancelled;
+            return cancelled.Value;
         }
         else
         {
@@ -80,6 +82,7 @@ internal class WindowsBinaryInstallTask : InstallTask<BinaryAppInstall>
     private void Reset()
     {
         process = null;
+        cancelled = false;
         result = null;
         ResetProgress();
     }
@@ -96,7 +99,7 @@ internal class WindowsBinaryInstallTask : InstallTask<BinaryAppInstall>
         }
         else
         {
-            if (cancelling)
+            if (cancelling || cancelled)
                 result = InstallResult.Cancelled();
             else
                 result = InstallResult.Errored($"Process failed with exit code: {exitCode}");

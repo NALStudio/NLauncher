@@ -62,24 +62,24 @@ public class AppInstallService : IDisposable
 
 
     /// <inheritdoc cref="StartInstallAsync(AppManifest, AppInstallConfig, bool)"/>
-    public async Task<bool> StartInstallAsync(AppManifest app, AppInstallConfig config)
+    public async Task<bool> StartInstallAsync(AppManifest app, AppInstallConfig config, bool reinstall = false)
     {
-        return await StartInstallAsync(app, config, update: false);
+        return await StartInstallAsync(app, config, update: false, reinstall: reinstall);
     }
 
     /// <inheritdoc cref="StartInstallAsync(AppManifest, AppInstallConfig, bool)"/>
     public async Task<bool> StartUpdateAsync(AppManifest app, AppInstallConfig config)
     {
-        return await StartInstallAsync(app, config, update: true);
+        return await StartInstallAsync(app, config, update: true, reinstall: false);
     }
 
     /// <summary>
     /// Returns <see langword="true"/> if application installation was started succesfully, otherwise <see langword="false"/>.
     /// The app installation is queued into the <see cref="InstallTask"/> service.
     /// </summary>
-    private async Task<bool> StartInstallAsync(AppManifest app, AppInstallConfig config, bool update)
+    private async Task<bool> StartInstallAsync(AppManifest app, AppInstallConfig config, bool update, bool reinstall)
     {
-        InstallResult result = await InternalInstall(app, config, update: update);
+        InstallResult result = await InternalInstall(app, config, update: update, reinstall: reinstall);
         if (result.ErrorMessage is not null)
             await config.DialogService.ShowMessageBox("Error!", result.ErrorMessage);
 
@@ -156,7 +156,7 @@ public class AppInstallService : IDisposable
     /// </remarks>
     public async Task<bool> CanInstall(AppManifest app, bool includeLinkHandled = true)
     {
-        InstallResult<AppVersion> version = await ResolveVersion(app, null, update: false, verifyIfNotLatestVersion: false, updateLibraryIfChangedToLatest: false, verifyIfNotRecommendedResolution: false);
+        InstallResult<AppVersion> version = await ResolveVersion(app, null, canOverrideExistingInstall: false, verifyIfNotLatestVersion: false, updateLibraryIfChangedToLatest: false, verifyIfNotRecommendedResolution: false);
         if (!version.IsSuccess)
             return false;
 
@@ -188,10 +188,10 @@ public class AppInstallService : IDisposable
     }
     public async Task<bool> UpdateAvailable(AppManifest app) => (await TryGetAvailableUpdate(app)) is not null;
 
-    private async Task<InstallResult> InternalInstall(AppManifest app, AppInstallConfig config, bool update)
+    private async Task<InstallResult> InternalInstall(AppManifest app, AppInstallConfig config, bool update, bool reinstall)
     {
         InstallResult<AppVersion> version = await ResolveVersion(
-            app, config.DialogService, update: update,
+            app, config.DialogService, canOverrideExistingInstall: update || reinstall,
             verifyIfNotLatestVersion: config.VerifyIfNotLatestVersion,
             updateLibraryIfChangedToLatest: config.UpdateLibraryIfOldVersionChangedToLatest,
             verifyIfNotRecommendedResolution: config.VerifyIfNotRecommendedResolution
@@ -257,12 +257,12 @@ public class AppInstallService : IDisposable
         return InstallResult.Success(chosenOption.Value);
     }
 
-    private async Task<InstallResult<AppVersion>> ResolveVersion(AppManifest app, IDialogService? dialogService, bool update, bool verifyIfNotLatestVersion, bool updateLibraryIfChangedToLatest, bool verifyIfNotRecommendedResolution)
+    private async Task<InstallResult<AppVersion>> ResolveVersion(AppManifest app, IDialogService? dialogService, bool canOverrideExistingInstall, bool verifyIfNotLatestVersion, bool updateLibraryIfChangedToLatest, bool verifyIfNotRecommendedResolution)
     {
         LibraryEntry? libraryEntry = await library.TryGetEntry(app.Uuid);
 
         bool alreadyInstalled = libraryEntry?.Data.IsInstalled == true;
-        if (alreadyInstalled && !update)
+        if (alreadyInstalled && !canOverrideExistingInstall)
             return InstallResult.Errored<AppVersion>("App has already been installed.");
 
         uint? vernum = libraryEntry?.Data.ChosenVerNum;

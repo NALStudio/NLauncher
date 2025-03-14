@@ -97,11 +97,6 @@
 
     public static async Task<CancellableResult<AppInstall>> ShowAsync(IDialogService dialogService, string title, IEnumerable<AppInstall> options, Func<AppInstall, bool>? supportsAutomaticInstall = null, bool showInstallNLauncher = false)
     {
-        DialogOptions dialogOptions = new()
-        {
-            CloseButton = true
-        };
-
         ImmutableArray<AppInstall> optionsArray = options.ToImmutableArray();
         DialogParameters<ChooseInstallDialog> dialogParameters = new()
         {
@@ -110,7 +105,7 @@
             { x => x.ShowInstallNLauncher, showInstallNLauncher }
         };
 
-        IDialogReference dialog = await dialogService.ShowAsync<ChooseInstallDialog>(title, dialogParameters, dialogOptions);
+        IDialogReference dialog = await dialogService.ShowAsync<ChooseInstallDialog>(title, dialogParameters);
         DialogResult? result = await dialog.Result;
         if (result is null || result.Canceled)
             return CancellableResult<AppInstall>.Cancelled();

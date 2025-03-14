@@ -83,8 +83,7 @@ public partial class AppActionButton : IDisposable
 
         // Application install is not finished when InstallCountChanged calls this function
         // UPDATE: Not anymore, InstallCountChanged is only called after the install has finished.
-        if (!isInstalled)
-            isInstalling = InstallService.IsInstalling(app.Uuid);
+        isInstalling = InstallService.IsInstalling(app.Uuid);
 
         installedVersion = libraryEntry?.Data?.Install?.VerNum;
 
@@ -128,10 +127,13 @@ public partial class AppActionButton : IDisposable
         if (canUpdate)
             return Icons.Material.Rounded.SystemUpdateAlt;
 
+        if (isInstalling)
+            return Icons.Material.Rounded.Download;
+
         if (isInstalled /*|| PlayHref is not null*/) // PlayHref now displays a "Open in new" icon
             return Icons.Material.Rounded.PlayArrow;
 
-        if (canInstall || isInstalling)
+        if (canInstall)
             return Icons.Material.Rounded.Download;
 
         return null;
@@ -146,11 +148,11 @@ public partial class AppActionButton : IDisposable
         if (canUpdate)
             return "Update";
 
-        if (isInstalled)
-            return "Play";
-
         if (isInstalling)
             return "Installing";
+
+        if (isInstalled)
+            return "Play";
 
         if (canInstall)
             return "Install";
@@ -255,7 +257,7 @@ public partial class AppActionButton : IDisposable
 
         if (run)
         {
-            bool success = await RunningService.RunApp(appId, DialogService);
+            bool success = await RunningService.RunApp(App, DialogService);
             if (success)
             {
                 await LibraryService.UpdateEntryAsync(appId); // update timestamp for sorting

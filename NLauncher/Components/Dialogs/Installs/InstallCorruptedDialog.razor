@@ -1,0 +1,27 @@
+﻿<MudDialog>
+    <DialogContent>
+        <p>This install seems to be broken.</p>
+        <p>You can try to fix this problem by reinstalling the application.</p>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(Dialog!.Cancel)">Cancel</MudButton>
+        <MudButton OnClick="@(() => Dialog!.Close())" Variant="Variant.Filled" Color="Color.Primary" EndIcon="@(Icons.Material.Rounded.Download)">
+            Reinstall
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance? Dialog { get; set; }
+
+    /// <summary>
+    /// Returns <see langword="true" /> if user navigated to the download page, <see langword="false" /> otherwise.
+    /// </summary>
+    public static async Task<bool> ShowAsync(IDialogService dialogService)
+    {
+        IDialogReference dialog = await dialogService.ShowAsync<InstallCorruptedDialog>("Install Corrupted!");
+        DialogResult? result = await dialog.Result;
+        return result is not null && !result.Canceled;
+    }
+}

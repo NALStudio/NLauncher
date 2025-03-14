@@ -1,7 +1,9 @@
 ﻿using MudBlazor;
 using NLauncher.Components.Dialogs;
+using NLauncher.Components.Dialogs.Installs;
 using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
+using NLauncher.Services.Apps.Installing;
 using NLauncher.Services.Index;
 using NLauncher.Services.Library;
 using System.Diagnostics.CodeAnalysis;
@@ -11,13 +13,17 @@ public class AppRunningService
 {
     private readonly IndexService indexService;
     private readonly LibraryService libraryService;
+    private readonly AppInstallService installService;
     private readonly IAppStartup appStartup;
+    private readonly IPlatformInstaller platformInstaller;
 
-    public AppRunningService(IndexService index, LibraryService library, IAppStartup appStartup)
+    public AppRunningService(IndexService index, LibraryService library, AppInstallService install, IAppStartup appStartup, IPlatformInstaller platformInstaller)
     {
         indexService = index;
         libraryService = library;
+        installService = install;
         this.appStartup = appStartup;
+        this.platformInstaller = platformInstaller;
     }
 
 
@@ -31,8 +37,10 @@ public class AppRunningService
     /// <summary>
     /// Returns <see langword="true"/> if app was ran succesfully, otherwise <see langword="false"/>
     /// </summary>
-    public async Task<bool> RunApp(Guid appId, IDialogService dialogService)
+    public async Task<bool> RunApp(AppManifest app, IDialogService dialogService)
     {
+        Guid appId = app.Uuid;
+
         if (AnyIsRunning)
         {
             bool killed = await AppAlreadyRunning(dialogService, triedRunId: appId, alreadyRunningId: running.Value.AppId, alreadyRunningHandle: running.Value.Handle);
@@ -44,6 +52,14 @@ public class AppRunningService
         if (libraryData?.Install is null)
         {
             await dialogService.ShowMessageBox("Error", "Application hasn't been installed.");
+            return false;
+        }
+
+        if (!await platformInstaller.IsInstallFound(appId, libraryData.Install.Install))
+        {
+            bool reinstall = await InstallCorruptedDialog.ShowAsync(dialogService);
+            if (reinstall)
+                _ = await installService.StartInstallAsync(app, new AppInstallService.AppInstallConfig(dialogService), reinstall: true);
             return false;
         }
 
