@@ -54,7 +54,7 @@ internal class WindowsCheckUpdate : ICheckUpdate
         return release;
     }
 
-    private AvailableUpdate? CheckUpdate(GitHubRelease release)
+    private static AvailableUpdate? CheckUpdate(GitHubRelease release)
     {
         string latestVersion = release.TagName;
         string currentVersion = Application.ProductVersion.Split('+', 2)[0];

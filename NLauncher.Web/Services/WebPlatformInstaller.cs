@@ -1,5 +1,4 @@
-﻿using NLauncher.Code.Models;
-using NLauncher.Index.Models.Applications.Installs;
+﻿using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Apps.Installing;
 
 namespace NLauncher.Web.Services;
@@ -8,12 +7,17 @@ public class WebPlatformInstaller : IPlatformInstaller
 {
     public bool InstallSupported(AppInstall install) => false;
 
-    public Task<InstallResult> InstallAsync(Guid appId, AppInstall install, Action<InstallProgress> onProgressUpdate, CancellationToken cancellationToken)
+    public ValueTask<bool> IsInstallFound(Guid appId, AppInstall install)
+    {
+        return ValueTask.FromResult(false);
+    }
+
+    public InstallTask Install(Guid appId, AppInstall install)
     {
         throw new NotSupportedException();
     }
 
-    public Task<InstallResult> UninstallAsync(Guid appId, AppInstall existingInstall, Action<InstallProgress> onProgressUpdate, CancellationToken cancellationToken)
+    public InstallTask Uninstall(Guid appId, AppInstall existingInstall)
     {
         throw new NotSupportedException();
     }

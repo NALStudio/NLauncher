@@ -2,7 +2,6 @@
 using MudBlazor;
 using NLauncher.Code.Extensions;
 using NLauncher.Code.IndexSearch;
-using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Index;
 using NLauncher.Services;
 using NLauncher.Services.Apps.Installing;
@@ -63,12 +62,16 @@ public partial class MainLayout : IDisposable
         return await Task.Run(() => new IndexSearcher(search).SearchIndex(index), cancellationToken);
     }
 
-    private async ValueTask NavigateTo(AppManifest app)
+    private async Task NavigateTo(IndexEntry? entry)
     {
-        IndexManifest index = await IndexService.GetIndexAsync();
-        NavigationManager.NavigateToApp(index, app);
+        if (entry is null)
+            return;
 
-        await indexSearch!.ResetAsync();
+        IndexManifest index = await IndexService.GetIndexAsync();
+        NavigationManager.NavigateToApp(index, entry.Manifest);
+
+        await indexSearch!.BlurAsync();
+        await indexSearch!.ClearAsync();
     }
 
     private void InstallCountChanged(int count)

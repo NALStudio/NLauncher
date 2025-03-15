@@ -60,7 +60,7 @@
                              SearchFunc="SearchIndex"
                              ToStringFunc="@(static e => e?.Manifest?.DisplayName)"
                              MaxItems="5"
-                             ValueChanged="@(async e => await NavigateTo(e.Manifest))"
+                             ValueChanged="NavigateTo"
                              Placeholder="Search"
                              Variant="Variant.Outlined"
                              Adornment="Adornment.Start"

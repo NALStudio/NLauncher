@@ -10,7 +10,8 @@ public interface IPlatformInstaller
     /// A rudimentary check to verify that the app is installed.
     /// </summary>
     /// <remarks>
-    /// This is mostly used as a backup when NLauncher is uninstalled and then reinstalled.
+    /// <para>This is mostly used as a backup when NLauncher is uninstalled and then reinstalled.</para>
+    /// <para>This method can be executed regardless of <see cref="InstallSupported"/> or <see cref="UninstallSupported"/>.</para>
     /// </remarks>
     public abstract ValueTask<bool> IsInstallFound(Guid appId, AppInstall install);
     public abstract InstallTask Install(Guid appId, AppInstall install);
