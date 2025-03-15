@@ -291,7 +291,7 @@ public class AppInstallService : IDisposable
         // int < null => false
         int? minRes = version.MinRecommendedResolution;
         int? curRes = platformInfo.PrimaryScreenHeight;
-        if (verifyIfNotRecommendedResolution && minRes.HasValue && curRes.HasValue && minRes.Value < curRes.Value)
+        if (verifyIfNotRecommendedResolution && curRes < minRes)
         {
             ArgumentNullException.ThrowIfNull(dialogService);
             bool install = await ConfirmUnsupportedResolutionDialog.ShowAsync(dialogService, currentResolution: curRes.Value, minResolution: minRes.Value);
