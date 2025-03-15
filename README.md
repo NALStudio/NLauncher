@@ -4,7 +4,7 @@
 NLauncher is the go-to launcher for Finnish indie games.
 <br />
 <br />
-You can grab the latest release [here](https://github.com/NALStudio/NALStudio-Game-Launcher/releases/latest). \
+You can grab the latest release [here](https://github.com/NALStudio/NLauncher/releases/latest). \
 Or try our web version [here](https://nalstudio.github.io/NLauncher).
 <br />
 <details>
