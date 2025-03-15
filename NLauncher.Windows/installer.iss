@@ -71,6 +71,7 @@ Type: dirifempty; Name: "{app}\Downloads"
 Type: dirifempty; Name: "{app}"
 
 ; Useless appdata
+; This will only remove this data from this current user, all others are left untouched, which is fine since deleting these files isn't that crucial anyway.
 Type: filesandordirs; Name: "{localappdata}\{#MyAppDataDir}\WebView"
 Type: filesandordirs; Name: "{localappdata}\{#MyAppDataDir}\Cache"
 Type: filesandordirs; Name: "{localappdata}\{#MyAppDataDir}\Logs"
