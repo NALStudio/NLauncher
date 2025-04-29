@@ -32,8 +32,14 @@ public class CommandOutput : IDisposable, IAsyncDisposable
     {
         if (writeLock is not null)
             await writeLock.WaitAsync();
-        await UnthrottledWriteLineAsync(line);
-        DelayedReleaseWriteLock();
+        try
+        {
+            await UnthrottledWriteLineAsync(line);
+        }
+        finally
+        {
+            DelayedReleaseWriteLock();
+        }
     }
 
     /// <summary>
@@ -43,9 +49,14 @@ public class CommandOutput : IDisposable, IAsyncDisposable
     {
         if (writeLock?.Wait(millisecondsTimeout: 0) == false)
             return false;
-
-        await UnthrottledWriteLineAsync(line);
-        DelayedReleaseWriteLock();
+        try
+        {
+            await UnthrottledWriteLineAsync(line);
+        }
+        finally
+        {
+            DelayedReleaseWriteLock();
+        }
 
         return true;
     }
@@ -53,17 +64,28 @@ public class CommandOutput : IDisposable, IAsyncDisposable
     public void WriteLine(string line)
     {
         writeLock?.Wait();
-        UnthrottledWriteLine(line);
-        DelayedReleaseWriteLock();
+        try
+        {
+            UnthrottledWriteLine(line);
+        }
+        finally
+        {
+            DelayedReleaseWriteLock();
+        }
     }
 
     public bool TryWriteLine(string line)
     {
         if (writeLock?.Wait(millisecondsTimeout: 0) == false)
             return false;
-
-        UnthrottledWriteLine(line);
-        DelayedReleaseWriteLock();
+        try
+        {
+            UnthrottledWriteLine(line);
+        }
+        finally
+        {
+            DelayedReleaseWriteLock();
+        }
 
         return true;
     }
@@ -81,7 +103,6 @@ public class CommandOutput : IDisposable, IAsyncDisposable
 
     private async ValueTask UnthrottledWriteLineAsync(string line)
     {
-
         if (writer is not null)
         {
             await writer.WriteLineAsync(line);
@@ -93,37 +114,59 @@ public class CommandOutput : IDisposable, IAsyncDisposable
 
     private void DelayedReleaseWriteLock()
     {
-        static async Task ReleaseSem(SemaphoreSlim semaphore, CancellationToken cancellationToken)
+        static async Task ThrottleReleaseSem(SemaphoreSlim semaphore, TimeSpan delay, CancellationToken cancellationToken)
         {
-            await Task.Delay(throttleDelay, cancellationToken);
-            semaphore.Release();
+            try
+            {
+                await Task.Delay(delay, cancellationToken);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         if (writeLock is not null)
-            releaseWrite = ReleaseSem(writeLock, writeReleaseCancel!.Token);
+            releaseWrite = ThrottleReleaseSem(writeLock, throttleDelay, writeReleaseCancel!.Token);
     }
 
 
     public void Dispose()
     {
+        // Cancel
         writeReleaseCancel?.Cancel();
+
+        // Dispose
         writeLock?.Dispose();
         pipe?.Dispose();
         writer?.Dispose();
+
+        // Wait
+        releaseWrite?.Wait();
+
+        // Finalize
         GC.SuppressFinalize(this);
     }
 
     public async ValueTask DisposeAsync()
     {
-        GC.SuppressFinalize(this);
-
+        // Cancel
         writeReleaseCancel?.Cancel();
+
+        // Dispose
         writeLock?.Dispose();
 
-        // Dispose writer before pipe so it can flush everything out
-        if (writer is not null)
+        // Dispose Async
+        if (writer is not null) // Dispose writer before pipe so it can flush everything out
             await writer.DisposeAsync();
         if (pipe is not null)
             await pipe.DisposeAsync();
+
+        // Wait
+        if (releaseWrite is not null)
+            await releaseWrite.WaitAsync(CancellationToken.None); // Wait without throwing
+
+        // Finalize
+        GC.SuppressFinalize(this);
     }
 }

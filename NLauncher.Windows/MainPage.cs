@@ -16,11 +16,12 @@ namespace NLauncher.Windows;
 
 public partial class MainPage : Form
 {
-    public MainPage()
+    public MainPage(string? path)
     {
         InitializeComponent();
 
         blazorWebView.HostPage = "wwwroot\\index.html";
+        blazorWebView.StartPath = string.IsNullOrWhiteSpace(path) ? "/" : path;
         blazorWebView.Services = BuildServices();
         blazorWebView.RootComponents.Add<WinApp>("#app");
         blazorWebView.RootComponents.Add<HeadOutlet>("head::after");

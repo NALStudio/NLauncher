@@ -38,13 +38,14 @@ public class WindowsPlatformInstaller : IPlatformInstaller
         );
     }
 
-    public ValueTask<bool> IsInstallFound(Guid appId, AppInstall install)
+    public ValueTask<bool> IsInstallFound(Guid appId, AppInstall install) => ValueTask.FromResult(InstallExists(appId, install));
+
+    public static bool InstallExists(Guid appId, AppInstall install)
     {
         if (install is not BinaryAppInstall bai)
-            return ValueTask.FromResult(false);
+            return false;
 
         string dir = SystemDirectories.GetLibraryPath(appId).FullName;
-        bool exists = File.Exists(Path.Join(dir, bai.ExecutablePath));
-        return ValueTask.FromResult(exists);
+        return File.Exists(Path.Join(dir, bai.ExecutablePath));
     }
 }

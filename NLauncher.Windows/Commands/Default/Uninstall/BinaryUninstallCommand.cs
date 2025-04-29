@@ -1,7 +1,7 @@
 ﻿using NLauncher.Windows.Models;
 using Spectre.Console.Cli;
 
-namespace NLauncher.Windows.Commands.Uninstall;
+namespace NLauncher.Windows.Commands.Default.Uninstall;
 
 internal class BinaryUninstallCommand : AsyncCommand<UninstallSettings>
 {

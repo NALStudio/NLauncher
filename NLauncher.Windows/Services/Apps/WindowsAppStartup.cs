@@ -57,8 +57,10 @@ public class WindowsAppStartup : IAppStartup
         _ = await dialogService.ShowMessageBox("Internal Error", "Application could not be started.");
     }
 
-    private static void AddRunData(AppInstall install, Collection<string> args)
+    public static void CreateRunCommandArgs(ICollection<string> args, Guid appId, AppInstall install, string? appArgs, bool escapeAppArgs = false)
     {
+        args.Add(appId.ToString());
+
         switch (install)
         {
             case BinaryAppInstall bai:
@@ -66,6 +68,15 @@ public class WindowsAppStartup : IAppStartup
                 args.Add("--executable");
                 args.Add(bai.ExecutablePath);
                 break;
+        }
+
+        if (appArgs is not null)
+        {
+            args.Add("--args");
+            if (escapeAppArgs)
+                args.Add(CommandLineHelpers.EscapeStringWindows(appArgs));
+            else
+                args.Add(appArgs);
         }
     }
 
@@ -79,22 +90,12 @@ public class WindowsAppStartup : IAppStartup
             // probably not needed...?
             // Verb = "runas"
         };
-        Collection<string> args = start.ArgumentList; // ProcessStartInfo.ArgumentList escapes all arguments automatically
 
+        Collection<string> args = start.ArgumentList;
         args.Add("command");
         args.Add("run");
-        args.Add(appId.ToString());
-
-        AddRunData(install, args);
-
-        if (appArgs is not null)
-        {
-            // Escape since ProcessStartInfo doesn't seem to be able to escape this string automatically
-            string appArgsEscaped = CommandLineHelpers.EscapeStringWindows(appArgs);
-
-            args.Add("--args");
-            args.Add(appArgsEscaped);
-        }
+        // Escape since ProcessStartInfo doesn't seem to be able to escape this string automatically
+        CreateRunCommandArgs(args, appId, install, appArgs, escapeAppArgs: true);
 
         return start;
     }

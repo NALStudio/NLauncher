@@ -4,7 +4,7 @@ using Spectre.Console.Cli;
 using System.IO.Compression;
 using System.Security.Cryptography;
 
-namespace NLauncher.Windows.Commands.Install;
+namespace NLauncher.Windows.Commands.Default.Install;
 
 internal class BinaryInstallSettings : InstallSettings
 {

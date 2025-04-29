@@ -21,6 +21,12 @@
                             <MudSelectItem T="uint?" Value="@(ver.VerNum)">@(ver.Identifier)</MudSelectItem>
                         }
                     </MudSelect>
+
+                    #if DEBUG
+                    {
+                        <MudText Typo="Typo.caption">ID: @(App.Uuid)</MudText>
+                    }
+                    #endif
                 }
 
                 <MudStack Class="my-2" Row AlignItems="AlignItems.Center" Spacing="0">

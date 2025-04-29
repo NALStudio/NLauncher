@@ -8,6 +8,8 @@
 #define MyAppExeName "NLauncher.exe"
 #define MyAppDataDir "NALStudio\NLauncher"
 
+#define MyAppUrlProtocolName "nlauncher"
+
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
@@ -55,6 +57,13 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 Source: "bin\Publish\net9.0-windows\*"; DestDir: "{app}"; Excludes: "*.pdb"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+
+[Registry]
+; https://stackoverflow.com/questions/13567119/inno-setup-registry-entry-for-custom-url-protocol/13567401#13567401
+Root: HKCR; Subkey: "{#MyAppUrlProtocolName}"; ValueType: "string"; ValueData: "URL:Custom Protocol"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "{#MyAppUrlProtocolName}"; ValueType: "string"; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCR; Subkey: "{#MyAppUrlProtocolName}\DefaultIcon"; ValueType: "string"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCR; Subkey: "{#MyAppUrlProtocolName}\shell\open\command"; ValueType: "string"; ValueData: """{app}\{#MyAppExeName}"" protoc ""%1"""
 
 [InstallDelete]
 ; Refresh caches during update

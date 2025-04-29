@@ -6,9 +6,9 @@ using System.Text.Json;
 namespace NLauncher.Services.Library;
 public class LibraryService
 {
-    private readonly ILogger<LibraryService> logger;
+    private readonly ILogger<LibraryService>? logger;
     private readonly IStorageService storage;
-    public LibraryService(ILogger<LibraryService> logger, IStorageService storage)
+    public LibraryService(ILogger<LibraryService>? logger, IStorageService storage)
     {
         this.logger = logger;
         this.storage = storage;

@@ -1,6 +1,7 @@
-using NLauncher.Windows.Commands.Install;
-using NLauncher.Windows.Commands.Run;
-using NLauncher.Windows.Commands.Uninstall;
+using NLauncher.Windows.Commands.Default.Install;
+using NLauncher.Windows.Commands.Default.Run;
+using NLauncher.Windows.Commands.Default.Uninstall;
+using NLauncher.Windows.Commands.Protoc.RunGameId;
 using Spectre.Console.Cli;
 using System.Net.Http.Headers;
 
@@ -16,30 +17,132 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        if (args.Length > 0 && args[0] == "command")
+        string? arg0 = args.Length > 0 ? args[0] : null;
+        string[] argsRest = args.Length > 1 ? args[1..] : Array.Empty<string>();
+
+        switch (arg0)
         {
-            return RunConsole(args[1..]);
-        }
-        else
-        {
-            RunWinForms();
-            return 0;
+            case "command":
+                return RunConsole(argsRest, BuildDefaultCommandApp());
+            case "protoc":
+                return RunUrlProtocol(argsRest, BuildProtocCommandApp());
+            default:
+                RunWinForms(args);
+                return 0;
         }
     }
 
-    private static void RunWinForms()
+    private static string EnsureSafePagePath(string path)
     {
+        // Ensure that the path starts with a slash, so we don't escape out of NLauncher URLs
+
+        if (path.StartsWith('/'))
+            return path;
+        else
+            return "/" + path;
+    }
+
+    private static void RunWinForms(string[] args)
+    {
+        // We only do very limited input handling so that our URL handling won't be an attack vector to the app
+        string? path = null;
+        if (args.Length > 1 && args[0] == "--page")
+            path = EnsureSafePagePath(args[1]);
+
         // To customize application configuration such as set high DPI settings or default font,
         // see https://aka.ms/applicationconfiguration.
         ApplicationConfiguration.Initialize();
-        Application.Run(new MainPage());
+        Application.Run(new MainPage(path));
     }
 
     /// <summary>
     /// This method blocks the thread until all tasks are complete.
     /// </summary>
-    private static int RunConsole(IEnumerable<string> args)
+    private static int RunConsole(IEnumerable<string> args, CommandApp app)
     {
+        StreamWriter? logWriter = RedirectStdOutToLog(debugOnly: true);
+
+        bool deleteLogFile = true;
+        try
+        {
+            Console.WriteLine($"Running command: '{Environment.CommandLine}'");
+            return app.Run(args);
+        }
+        catch
+        {
+            deleteLogFile = false;
+            throw;
+        }
+        finally
+        {
+            DisposeLogWriter(logWriter, deleteLogFile);
+        }
+    }
+
+    private static int RunUrlProtocol(string[] args, CommandApp app)
+    {
+        StreamWriter? logWriter = RedirectStdOutToLog(debugOnly: true);
+
+        int result;
+        try
+        {
+            result = app.Run(args);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            result = -1;
+        }
+
+        if (result != 0)
+            MessageBox.Show($"An error occured while running command:\n'{string.Join(' ', args)}'", "Failed To Run Command", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+        DisposeLogWriter(logWriter, deleteLog: result == 0);
+        return result;
+    }
+
+    public static CommandApp BuildDefaultCommandApp()
+    {
+        CommandApp app = new();
+
+        app.Configure(config =>
+        {
+            config.AddBranch<InstallSettings>("install", install =>
+            {
+                install.AddCommand<BinaryInstallCommand>("binary");
+            });
+            config.AddBranch<UninstallSettings>("uninstall", uninstall =>
+            {
+                uninstall.AddCommand<BinaryUninstallCommand>("binary");
+            });
+            config.AddBranch<RunSettings>("run", run =>
+            {
+                run.AddCommand<BinaryRunCommand>("binary");
+            });
+        });
+
+        return app;
+    }
+
+    public static CommandApp BuildProtocCommandApp()
+    {
+        CommandApp app = new();
+
+        app.Configure(config =>
+        {
+            config.AddCommand<RunGameIdCommand>("rungameid");
+        });
+
+        return app;
+    }
+
+    private static StreamWriter? RedirectStdOutToLog(bool debugOnly)
+    {
+#if !DEBUG
+        if (debugOnly)
+            return null;
+#endif
+
         string logPath = Path.Join(Constants.GetAppDataDirectory(), string.Format(Constants.CommandLogFileNameTemplate, Guid.NewGuid()));
         StreamWriter? logWriter;
         try
@@ -57,49 +160,27 @@ internal static class Program
             Console.WriteLine(ex.ToString());
         }
 
+        return logWriter;
+    }
 
-        int? result = null;
-        try
+    private static void DisposeLogWriter(StreamWriter? writer, bool deleteLog)
+    {
+        if (writer is null)
+            return;
+
+        writer.Dispose();
+        if (deleteLog)
         {
-            Console.WriteLine($"Running command: '{Environment.CommandLine}'");
-
-            CommandApp app = new();
-
-            app.Configure(config =>
+            try
             {
-                config.AddBranch<InstallSettings>("install", install =>
-                {
-                    install.AddCommand<BinaryInstallCommand>("binary");
-                });
-                config.AddBranch<UninstallSettings>("uninstall", uninstall =>
-                {
-                    uninstall.AddCommand<BinaryUninstallCommand>("binary");
-                });
-                config.AddBranch<RunSettings>("run", run =>
-                {
-                    run.AddCommand<BinaryRunCommand>("binary");
-                });
-            });
-
-            result = app.Run(args);
-        }
-        finally
-        {
-            bool deleteLogFile;
-#if DEBUG
-            deleteLogFile = result != 0;
-#else
-            deleteLogFile = true;
-#endif
-
-            if (deleteLogFile && logWriter is not null)
+                File.Delete(((FileStream)writer.BaseStream).Name);
+            }
+            catch (Exception ex)
             {
-                logWriter.Dispose();
-                File.Delete(logPath);
+                Console.WriteLine("Could not delete log file. Error below:");
+                Console.WriteLine(ex.ToString());
             }
         }
-
-        return result ?? -1;
     }
 
     private static HttpClient CreateHttp()

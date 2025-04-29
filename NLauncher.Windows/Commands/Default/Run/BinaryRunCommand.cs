@@ -5,7 +5,7 @@ using NLauncher.Windows.Services.GameSessions;
 using Spectre.Console.Cli;
 using System.Diagnostics;
 
-namespace NLauncher.Windows.Commands.Run;
+namespace NLauncher.Windows.Commands.Default.Run;
 
 internal class BinaryRunSettings : RunSettings
 {

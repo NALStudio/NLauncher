@@ -2,8 +2,8 @@
 using Spectre.Console.Cli;
 using System.IO.Pipes;
 
-namespace NLauncher.Windows.Commands;
-public abstract class BaseSettings : CommandSettings
+namespace NLauncher.Windows.Commands.Default;
+public abstract class DefaultSettings : CommandSettings
 {
     [CommandOption("-p|--pipe <PIPE_ID>")]
     public string? Pipe { get; set; }

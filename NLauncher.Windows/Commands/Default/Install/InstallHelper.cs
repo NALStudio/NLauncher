@@ -1,6 +1,6 @@
 ﻿using Downloader;
 
-namespace NLauncher.Windows.Commands.Install;
+namespace NLauncher.Windows.Commands.Default.Install;
 public static class InstallHelper
 {
     public static DownloadService CreateDefaultDownloadService()
