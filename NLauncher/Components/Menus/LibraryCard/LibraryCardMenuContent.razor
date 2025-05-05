@@ -1,4 +1,5 @@
-﻿@using MudBlazor.Utilities
+﻿@using Microsoft.Extensions.Logging
+@using MudBlazor.Utilities
 @using NLauncher.Code.Language
 @using NLauncher.Components.Dialogs
 @using NLauncher.Components.Dialogs.Uninstalls
@@ -21,6 +22,7 @@
 @inject IPlatformInstaller PlatformInstaller
 @inject IGameSessionService GameSessionService
 @inject IndexService IndexService
+@inject ILogger<LibraryCardMenuContent> Logger
 
 @if (ActionButton is not null)
 {
@@ -31,6 +33,9 @@
 
 <MudMenuItem Disabled="@(storePageHref is null)" Href="@storePageHref">Open Store Page</MudMenuItem>
 
+<MudMenuItem Disabled=@(!CanCreateShortcut) OnClick="@CreateShortcut">Create Shortcut</MudMenuItem>
+<!--<MudMenuItem Disabled="@(!BrowseLocalsData.HasValue)" OnClick="@BrowseLocals">Browse Local Files</MudMenuItem>-->
+
 <!-- Hide "remove from library"" button when application can be uninstalled -->
 <!-- (we also show the button if we can both uninstall and remove from library although this is currently not possible) -->
 @if (!canUninstall || canRemoveFromLibrary)
@@ -38,7 +43,6 @@
     <MudMenuItem Disabled="@(!canRemoveFromLibrary)" OnClick="@RemoveFromLibrary">Remove From Library</MudMenuItem>
 }
 
-<!--<MudMenuItem Disabled="@(!BrowseLocalsData.HasValue)" OnClick="@BrowseLocals">Browse Local Files</MudMenuItem>-->
 <MudMenuItem Disabled="@(!CanOpenProperties)" OnClick="@OpenPropertiesMenu">Properties</MudMenuItem>
 <MudMenuItem Disabled="@(!canUninstall)" OnClick="@Uninstall">Uninstall</MudMenuItem>
 
@@ -71,6 +75,10 @@
     private string? storePageHref;
     private bool canRemoveFromLibrary;
     private bool canUninstall;
+    private LibraryEntry? shortcutData;
+
+    [MemberNotNullWhen(true, nameof(shortcutData))]
+    private bool CanCreateShortcut => shortcutData.HasValue && shortcutData.Value.Data.IsInstalled && PlatformInstaller.ShortcutSupported(shortcutData.Value.Data.Install.Install);
 
     [MemberNotNullWhen(true, nameof(Entry))]
     private bool CanOpenProperties => Entry is not null;
@@ -118,8 +126,6 @@
 
     private async Task LoadButtons(IndexEntry entry, IndexManifest index, LibraryEntry? libraryEntry)
     {
-        AppInstall? installed = libraryEntry?.Data.Install?.Install;
-
         storePageHref = AppStorePage.GetPageRoute(index, entry.Manifest.Uuid);
 
         // if (installed is not null && AppLocalFiles.OpenFileBrowserSupported(installed))
@@ -127,6 +133,8 @@
 
         canRemoveFromLibrary = libraryEntry?.Data.IsInstalled != true && !AppInstallService.IsInstalling(entry.Manifest.Uuid);
         canUninstall = await UninstallService.CanUninstall(entry.Manifest.Uuid);
+
+        shortcutData = libraryEntry;
     }
 
     private async Task LoadData(IndexEntry entry, IndexManifest index, LibraryEntry? libraryEntry)
@@ -183,6 +191,41 @@
 
         if (!await LibraryService.RemoveEntryAsync(Entry.Manifest.Uuid))
             await ShowError("Failed to remove app from library");
+    }
+
+    private async Task CreateShortcut()
+    {
+        if (!CanCreateShortcut)
+            return;
+
+        if (Entry is null)
+        {
+            await ShowError("Unknown application.");
+            return;
+        }
+
+        AppInstall? install = shortcutData.Value.Data.Install?.Install;
+        if (install is null)
+        {
+            await ShowError("Application is not currently installed.");
+            return;
+        }
+
+        if (!PlatformInstaller.ShortcutSupported(install))
+        {
+            await ShowError("Shortcuts of this type are not supported by the current platform.");
+            return;
+        }
+
+        try
+        {
+            await PlatformInstaller.CreateShortcut(Entry, install);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "An error occured while trying to create a shortcut.");
+            await ShowError("An internal error occured while trying to create the shortcut.");
+        }
     }
 
     private async Task ShowError(string message)

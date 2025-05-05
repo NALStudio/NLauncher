@@ -1,7 +1,7 @@
 using NLauncher.Windows.Commands.Default.Install;
 using NLauncher.Windows.Commands.Default.Run;
 using NLauncher.Windows.Commands.Default.Uninstall;
-using NLauncher.Windows.Commands.Protoc.RunGameId;
+using NLauncher.Windows.Commands.Protoc;
 using Spectre.Console.Cli;
 using System.Net.Http.Headers;
 
@@ -23,9 +23,9 @@ internal static class Program
         switch (arg0)
         {
             case "command":
-                return RunConsole(argsRest, BuildDefaultCommandApp());
+                return RunConsole(argsRest);
             case "protoc":
-                return RunUrlProtocol(argsRest, BuildProtocCommandApp());
+                return RunUrlProtocol(argsRest);
             default:
                 RunWinForms(args);
                 return 0;
@@ -58,7 +58,7 @@ internal static class Program
     /// <summary>
     /// This method blocks the thread until all tasks are complete.
     /// </summary>
-    private static int RunConsole(IEnumerable<string> args, CommandApp app)
+    private static int RunConsole(IEnumerable<string> args)
     {
         StreamWriter? logWriter = RedirectStdOutToLog(debugOnly: true);
 
@@ -66,7 +66,7 @@ internal static class Program
         try
         {
             Console.WriteLine($"Running command: '{Environment.CommandLine}'");
-            return app.Run(args);
+            return BuildDefaultCommandApp().Run(args);
         }
         catch
         {
@@ -79,26 +79,48 @@ internal static class Program
         }
     }
 
-    private static int RunUrlProtocol(string[] args, CommandApp app)
+    private static int RunUrlProtocol(string[] args)
     {
         StreamWriter? logWriter = RedirectStdOutToLog(debugOnly: true);
 
-        int result;
+        ProtocError? error = null;
         try
         {
-            result = app.Run(args);
+            if (args.Length == 1 && Uri.TryCreate(args[0], UriKind.Absolute, out Uri? uri) && uri.IsWellFormedOriginalString())
+            {
+                string auth = uri.Authority;
+                ProtocCommand? command = auth switch
+                {
+                    "rungameid" => new RunGameIdCommand(),
+                    _ => null
+                };
+
+                if (command is not null)
+                {
+                    string[] cmdArgs = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                    ProtocError? err = command?.ExecuteAsync(cmdArgs).Result;
+                    if (err is not null)
+                        error = err;
+                }
+                else
+                {
+                    error = $"Command not found: '{auth}'";
+                }
+            }
+            else
+            {
+                error = "URL path could not be parsed into arguments.";
+            }
+
+            if (error is not null)
+                MessageBox.Show(error.Message, "Failed To Run Command", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
-        catch (Exception ex)
+        finally
         {
-            Console.WriteLine(ex);
-            result = -1;
+            DisposeLogWriter(logWriter, deleteLog: error is null);
         }
 
-        if (result != 0)
-            MessageBox.Show($"An error occured while running command:\n'{string.Join(' ', args)}'", "Failed To Run Command", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-        DisposeLogWriter(logWriter, deleteLog: result == 0);
-        return result;
+        return error is null ? 0 : 1;
     }
 
     public static CommandApp BuildDefaultCommandApp()
@@ -119,18 +141,6 @@ internal static class Program
             {
                 run.AddCommand<BinaryRunCommand>("binary");
             });
-        });
-
-        return app;
-    }
-
-    public static CommandApp BuildProtocCommandApp()
-    {
-        CommandApp app = new();
-
-        app.Configure(config =>
-        {
-            config.AddCommand<RunGameIdCommand>("rungameid");
         });
 
         return app;
