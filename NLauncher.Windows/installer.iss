@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "NLauncher"
-#define MyAppVersion "0.8.0"
+#define MyAppVersion "0.9.0"
 #define MyAppPublisher "NALStudio"
 #define MyAppURL "https://nalstudio.github.io/NLauncher"
 #define MyAppExeName "NLauncher.exe"
