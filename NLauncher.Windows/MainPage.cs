@@ -1,28 +1,20 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebView;
 using Microsoft.AspNetCore.Components.WebView.WindowsForms;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Web.WebView2.Core;
-using NLauncher.Services;
 using NLauncher.Windows.Services;
-using NLauncher.Windows.Services.Apps;
-using NLauncher.Windows.Services.CheckUpdate;
-using NLauncher.Windows.Services.GameSessions;
-using NLauncher.Windows.Services.Installing;
-using NReco.Logging.File;
 
 namespace NLauncher.Windows;
 
 public partial class MainPage : Form
 {
-    public MainPage(string? path)
+    public MainPage(string? path, IServiceProvider services)
     {
         InitializeComponent();
 
         blazorWebView.HostPage = "wwwroot\\index.html";
         blazorWebView.StartPath = string.IsNullOrWhiteSpace(path) ? "/" : path;
-        blazorWebView.Services = BuildServices();
+        blazorWebView.Services = services;
         blazorWebView.RootComponents.Add<WinApp>("#app");
         blazorWebView.RootComponents.Add<HeadOutlet>("head::after");
 
@@ -52,38 +44,5 @@ public partial class MainPage : Form
         // We check this each time because WebView first shows the title from the <head>, then random gibberish and then again the title from <head> which is dumb as fuck
         if (title.StartsWith("NLauncher", StringComparison.OrdinalIgnoreCase))
             Text = title;
-    }
-
-    private static ServiceProvider BuildServices()
-    {
-        ServiceCollection services = new();
-        services.AddLogging(builder =>
-        {
-#if DEBUG
-            builder.AddDebug();
-#endif
-
-            builder.AddFile(Path.Join(Constants.GetAppDataDirectory(), Constants.LauncherLogFileName), append: false);
-        });
-
-        services.AddWindowsFormsBlazorWebView();
-
-        services.AddScoped(_ => Program.HttpClient);
-
-        NLauncherServices.AddDefault(services);
-        NLauncherServices.AddPlatformInfo<WindowsPlatformInfoService>(services);
-        NLauncherServices.AddStorage<WindowsStorageService>(services);
-        NLauncherServices.AddUpdateCheck<WindowsCheckUpdate>(services);
-        NLauncherServices.AddInstalling<WindowsPlatformInstaller>(services);
-
-        NLauncherServices.AddAppFiles<WindowsAppLocalFiles>(services);
-        NLauncherServices.AddAppRunning<WindowsAppStartup>(services);
-        NLauncherServices.AddGameSessions<WindowsGameSessionService>(services);
-
-#if DEBUG
-        services.AddBlazorWebViewDeveloperTools();
-#endif
-
-        return services.BuildServiceProvider();
     }
 }

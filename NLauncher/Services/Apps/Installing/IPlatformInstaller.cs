@@ -1,5 +1,5 @@
-﻿using NLauncher.Index.Models.Applications.Installs;
-using NLauncher.Index.Models.Index;
+﻿using NLauncher.Index.Models.Applications;
+using NLauncher.Index.Models.Applications.Installs;
 
 namespace NLauncher.Services.Apps.Installing;
 public interface IPlatformInstaller
@@ -19,5 +19,5 @@ public interface IPlatformInstaller
     abstract InstallTask Uninstall(Guid appId, AppInstall existingInstall);
 
     abstract bool ShortcutSupported(AppInstall install);
-    abstract ValueTask CreateShortcut(IndexEntry app, AppInstall install);
+    abstract ValueTask CreateShortcut(AppManifest app, AppInstall install);
 }

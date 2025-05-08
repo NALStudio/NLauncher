@@ -136,13 +136,19 @@ public class CommandOutput : IDisposable, IAsyncDisposable
         // Cancel
         writeReleaseCancel?.Cancel();
 
+        try
+        {
+            // Wait until the write lock has been released (before we dispose it)
+            releaseWrite?.Wait();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+
         // Dispose
         writeLock?.Dispose();
-        pipe?.Dispose();
         writer?.Dispose();
-
-        // Wait
-        releaseWrite?.Wait();
+        pipe?.Dispose();
 
         // Finalize
         GC.SuppressFinalize(this);
@@ -153,6 +159,15 @@ public class CommandOutput : IDisposable, IAsyncDisposable
         // Cancel
         writeReleaseCancel?.Cancel();
 
+        try
+        {
+            if (releaseWrite is not null)
+                await releaseWrite.WaitAsync(CancellationToken.None);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+
         // Dispose
         writeLock?.Dispose();
 
@@ -161,10 +176,6 @@ public class CommandOutput : IDisposable, IAsyncDisposable
             await writer.DisposeAsync();
         if (pipe is not null)
             await pipe.DisposeAsync();
-
-        // Wait
-        if (releaseWrite is not null)
-            await releaseWrite.WaitAsync(CancellationToken.None); // Wait without throwing
 
         // Finalize
         GC.SuppressFinalize(this);

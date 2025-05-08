@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLauncher.Index.Enums;
+using NLauncher.Index.Models.Applications;
 using NLauncher.Index.Models.Applications.Installs;
-using NLauncher.Index.Models.Index;
 using NLauncher.Services.Apps.Installing;
 using System.Collections.Frozen;
 
@@ -56,13 +56,13 @@ public class WindowsPlatformInstaller : IPlatformInstaller
 
     public bool ShortcutSupported(AppInstall install) => install is BinaryAppInstall;
 
-    public async ValueTask CreateShortcut(IndexEntry app, AppInstall install)
+    public async ValueTask CreateShortcut(AppManifest app, AppInstall install)
     {
         if (install is not BinaryAppInstall bai)
             throw new ArgumentException($"Install not supported: '{install.GetType().Name}'");
 
-        string? filename = TryGetFilename(app.Manifest.DisplayName);
-        filename ??= TryGetFilename(app.Manifest.Uuid.ToString());
+        string? filename = TryGetFilename(app.DisplayName);
+        filename ??= TryGetFilename(app.Uuid.ToString());
         filename ??= "NLauncher Shortcut";
 
         string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
@@ -71,14 +71,13 @@ public class WindowsPlatformInstaller : IPlatformInstaller
         await using FileStream fs = File.Open(filepath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
         await using StreamWriter writer = new(fs);
 
-        Guid appId = app.Manifest.Uuid;
-        string exePath = Path.Join(SystemDirectories.GetLibraryPath(appId).FullName, bai.ExecutablePath);
+        string exePath = Path.Join(SystemDirectories.GetLibraryPath(app.Uuid).FullName, bai.ExecutablePath);
 
         // https://stackoverflow.com/questions/4897655/create-a-shortcut-on-desktop/4897700#4897700
         await writer.WriteLineAsync("[InternetShortcut]");
 
         await writer.WriteAsync("URL=nlauncher://rungameid/");
-        await writer.WriteLineAsync(appId.ToString());
+        await writer.WriteLineAsync(app.Uuid.ToString());
 
         await writer.WriteLineAsync("IconIndex=0");
 

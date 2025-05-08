@@ -1,5 +1,5 @@
-﻿using NLauncher.Services.Library;
-using NLauncher.Windows.Services;
+﻿using Microsoft.Extensions.DependencyInjection;
+using NLauncher.Services.Library;
 using NLauncher.Windows.Services.Apps;
 using NLauncher.Windows.Services.Installing;
 using System.Globalization;
@@ -7,13 +7,12 @@ using System.Globalization;
 namespace NLauncher.Windows.Commands.Protoc;
 internal class RunGameIdCommand : ProtocCommand
 {
-    public override async Task<ProtocError?> ExecuteAsync(string[] args)
+    public override async Task<ProtocError?> ExecuteAsync(IServiceProvider services, string[] args)
     {
         if (!(args.Length > 0 && Guid.TryParse(args[0], CultureInfo.InvariantCulture, out Guid appId)))
             return "Could not parse game id.";
 
-        LibraryService library = new(logger: null, new WindowsStorageService());
-
+        LibraryService library = services.GetRequiredService<LibraryService>();
         LibraryEntry? entry = await library.TryGetEntry(appId);
         if (!entry.HasValue)
             return "Application not found.";

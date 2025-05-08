@@ -29,6 +29,7 @@ internal static class Constants
 
     public const string LauncherLogFileName = "Logs/launcher.log";
     public const string CommandLogFileNameTemplate = "Logs/command_{0}.log";
+    public const string ProtocolLogFileNameTemplate = "Logs/protocol_{0}.log";
 
     public const string LatestReleaseCacheKey = "latest_release";
 }

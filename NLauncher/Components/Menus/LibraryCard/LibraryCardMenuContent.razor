@@ -2,7 +2,9 @@
 @using MudBlazor.Utilities
 @using NLauncher.Code.Language
 @using NLauncher.Components.Dialogs
+@using NLauncher.Components.Dialogs.Installs
 @using NLauncher.Components.Dialogs.Uninstalls
+@using NLauncher.Index.Models.Applications
 @using NLauncher.Index.Models.Applications.Installs
 @using NLauncher.Index.Models.Index
 @using NLauncher.Pages
@@ -198,7 +200,9 @@
         if (!CanCreateShortcut)
             return;
 
-        if (Entry is null)
+        AppManifest? app = Entry?.Manifest;
+
+        if (app is null)
         {
             await ShowError("Unknown application.");
             return;
@@ -211,6 +215,14 @@
             return;
         }
 
+        if (!await PlatformInstaller.IsInstallFound(app.Uuid, install))
+        {
+            bool reinstall = await InstallCorruptedDialog.ShowAsync(DialogService);
+            if (reinstall)
+                await AppInstallService.StartInstallAsync(app, new AppInstallService.AppInstallConfig(DialogService), reinstall: true);
+            return;
+        }
+
         if (!PlatformInstaller.ShortcutSupported(install))
         {
             await ShowError("Shortcuts of this type are not supported by the current platform.");
@@ -219,7 +231,7 @@
 
         try
         {
-            await PlatformInstaller.CreateShortcut(Entry, install);
+            await PlatformInstaller.CreateShortcut(app, install);
         }
         catch (Exception ex)
         {
