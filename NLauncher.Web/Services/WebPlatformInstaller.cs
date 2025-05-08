@@ -1,5 +1,5 @@
-﻿using NLauncher.Index.Models.Applications.Installs;
-using NLauncher.Index.Models.Index;
+﻿using NLauncher.Index.Models.Applications;
+using NLauncher.Index.Models.Applications.Installs;
 using NLauncher.Services.Apps.Installing;
 
 namespace NLauncher.Web.Services;
@@ -24,7 +24,7 @@ public class WebPlatformInstaller : IPlatformInstaller
     }
 
     public bool ShortcutSupported(AppInstall install) => false;
-    public ValueTask CreateShortcut(IndexEntry app, AppInstall install)
+    public ValueTask CreateShortcut(AppManifest app, AppInstall install)
     {
         throw new NotSupportedException();
     }
